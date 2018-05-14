@@ -7,7 +7,10 @@ $ cd build && cmake .. && make && cd ..
 $ ./bin/dbserver
 ```
 
-### Todo (build)
-- unit tests
-- gameserver
-- space module
+### Run tests
+```
+$ ./bin/bangonetwork_test
+$ ./bin/bangospace_test
+
+...
+```
