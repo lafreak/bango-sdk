@@ -1,4 +1,6 @@
 {
+  "files.eol": "\n",
+  "editor.tabSize": 4,
   "files.associations": {
     "algorithm": "cpp",
     "cmath": "cpp",
