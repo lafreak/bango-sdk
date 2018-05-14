@@ -17,3 +17,6 @@ find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 add_executable(bangospace_test test/main.cpp)
 target_link_libraries(bangospace_test ${GTEST_LIBRARIES} bangospace pthread)
+
+add_executable(bangospace_benchmark benchmark/main.cpp)
+target_link_libraries(bangospace_benchmark benchmark bangospace pthread)
