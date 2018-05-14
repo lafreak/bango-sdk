@@ -49,7 +49,14 @@
     "cwctype": "cpp",
     "iomanip": "cpp",
     "sstream": "cpp",
-    "functional": "cpp"
+    "functional": "cpp",
+    "atomic": "cpp",
+    "chrono": "cpp",
+    "condition_variable": "cpp",
+    "memory": "cpp",
+    "mutex": "cpp",
+    "ratio": "cpp",
+    "thread": "cpp"
   },
   "C_Cpp.errorSquiggles": "Disabled"
 }

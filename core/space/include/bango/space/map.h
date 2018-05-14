@@ -1,3 +1,5 @@
+#pragma once
+
 #include <list>
 #include <functional>
 #include <stdio.h>
@@ -9,8 +11,9 @@ namespace bango { namespace space {
     // base object
     struct entity
     {
+        explicit entity(int x, int y, std::string& name) : m_x(x), m_y(y), m_name(name) {}
         explicit entity(int x, int y, std::string&& name) : m_x(x), m_y(y), m_name(name) {}
-
+        
         int m_x;
         int m_y;
         std::string m_name;

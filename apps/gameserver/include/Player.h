@@ -1,25 +1,28 @@
 #pragma once
 
+#include <bango/network.h>
+#include <bango/space.h>
+
 #include <inix/protocol.h>
 #include <inix/common.h>
 #include <inix/structures.h>
-#include <bango/network.h>
 
 #include "Inventory.h"
 
 using namespace bango::network;
+using namespace bango::space;
 
-class Player : public component
+class Player : public component, public notifable_entity
 {
-    using component::component;
-
     PLAYERINFO m_data;
-
-    std::string m_name;
-
     Inventory m_inventory;
 
 public:
+
+    Player(session* sess)
+        : component(sess), notifable_entity(0, 0, "")
+    {
+    }
 
     const char* id() const override
     {
@@ -54,8 +57,8 @@ public:
     unsigned short      GetSUPoint()    const { return m_data.SUPoint; }
     unsigned short      GetContribute() const { return m_data.Contribute; }
     unsigned int        GetRage()       const { return m_data.Rage; }
-    unsigned int        GetX()          const { return m_data.X; }
-    unsigned int        GetY()          const { return m_data.Y; }
+    unsigned int        GetX()          const { return m_x; }
+    unsigned int        GetY()          const { return m_y; }
     unsigned int        GetZ()          const { return m_data.Z; }
     unsigned char       GetFace()       const { return m_data.Face; }
     unsigned char       GetHair()       const { return m_data.Hair; }

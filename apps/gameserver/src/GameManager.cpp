@@ -137,16 +137,20 @@ void GameManager::Initialize()
     });
 
     m_gameserver.when(C2S_START, [&](const std::shared_ptr<session>& s, packet& p) {
+        // TODO: Add check if already in game
         s->get<Player>()->GameStart(p);
+        m_map->insert(s->get<Player>().get());
     });
 
     m_gameserver.when(C2S_RESTART, [&](const std::shared_ptr<session>& s, packet& p) {
+        // TODO: Check if ingame
         if (p.pop<char>() == 1) // Can I logout?
             s->write(S2C_ANS_RESTART, "b", s->get<Player>()->CanLogout() ? 1 : 0); // 1=Yes, 0=No -> In Fight? PVP? Etc
         else
         {
             s->get<Player>()->GameRestart();
             m_dbclient.write(S2D_RESTART, "dd", s->get_id(), s->get<Player>()->GetAccountID());
+            m_map->remove(s->get<Player>().get());
         }
     });
 
@@ -158,6 +162,20 @@ void GameManager::Initialize()
         m_dbclient.write(S2D_DISCONNECT, "d", s->get<Player>()->GetAccountID());
         std::cout << "::< " << s->get_host() << " has disconnected" << std::endl; 
     });
+
+    m_map = new bango::space::map(400, 400, 1024, MAX_PLAYER_SIGHT);
+
+    m_map->on_appear([](notifable_entity* receiver, entity* sender) {
+        std::cout << "appear:" << receiver->m_name << "<-" << sender->m_name << std::endl;
+    });
+
+    m_map->on_disappear([](notifable_entity* receiver, entity* sender) {
+        std::cout << "disappear:" << receiver->m_name << "<-" << sender->m_name << std::endl;
+    });
+
+    m_map->on_move([](notifable_entity* receiver, entity* sender, int new_x, int new_y) {
+        std::cout << "move:" << receiver->m_name << "<-" << sender->m_name << std::endl;
+    });
 }
 
 bool GameManager::ConnectToDatabase(const std::string& host, const std::int32_t port)
@@ -168,4 +186,9 @@ bool GameManager::ConnectToDatabase(const std::string& host, const std::int32_t 
 bool GameManager::StartGameServer(const std::string& host, const std::int32_t port)
 {
     return m_gameserver.start(host, port);
+}
+
+GameManager::~GameManager()
+{
+    delete m_map;
 }

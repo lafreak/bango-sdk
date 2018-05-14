@@ -7,6 +7,7 @@ set (CMAKE_CXX_STANDARD 11)
 include_directories(include)
 include_directories(../shared)
 include_directories(bangonetwork)
+include_directories(bangospace)
 
 link_directories(../../thirdparty)
 
@@ -21,6 +22,7 @@ set(SOURCES
 add_executable(gameserver ${SOURCES})
 target_link_libraries(gameserver 
   bangonetwork 
+  bangospace 
   tacopie 
   pthread
   )

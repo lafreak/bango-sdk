@@ -449,12 +449,12 @@ void DatabaseManager::LoadPlayer(const std::shared_ptr<session>& s, packet& p)
     out.push<unsigned short>(query.get_int("supoint"));
     out.push<unsigned short>(query.get_int("contribute"));
     out.push<unsigned int>(query.get_int("anger"));
-    out.push<unsigned int>(query.get_int("x"));
-    out.push<unsigned int>(query.get_int("y"));
-    out.push<unsigned int>(query.get_int("z"));
+    out.push<int>(query.get_int("z"));
     out.push<char>(query.get_int("face"));
     out.push<char>(query.get_int("hair"));
     out.push_str(query.get_str("name"));
+    out.push<int>(query.get_int("x"));
+    out.push<int>(query.get_int("y"));
 
     s->write(out);
 

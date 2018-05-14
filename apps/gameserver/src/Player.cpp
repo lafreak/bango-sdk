@@ -5,6 +5,9 @@ void Player::OnLoadPlayer(packet& p)
 {
     p >> m_data >> m_name;
 
+    m_x = p.pop<int>();
+    m_y = p.pop<int>();
+
     get_session()->write(S2C_PROPERTY, "bsbwwwwwwddwwwwwbIwwwwwwbbbbbd",
         0, //Grade
         "\0", //GuildName

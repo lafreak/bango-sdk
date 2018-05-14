@@ -59,9 +59,9 @@ struct PLAYERINFO
     unsigned short SUPoint;
     unsigned short Contribute;
     unsigned int Rage;
-    unsigned int X;
-    unsigned int Y;
-    unsigned int Z;
+    //int X;
+    //int Y;
+    int Z;
     unsigned char Face;
     unsigned char Hair;
 };
