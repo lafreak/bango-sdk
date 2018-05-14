@@ -40,6 +40,16 @@
     "xstddef": "cpp",
     "xstring": "cpp",
     "xtr1common": "cpp",
-    "xutility": "cpp"
-  }
+    "xutility": "cpp",
+    "array": "cpp",
+    "*.tcc": "cpp",
+    "cctype": "cpp",
+    "clocale": "cpp",
+    "ctime": "cpp",
+    "cwctype": "cpp",
+    "iomanip": "cpp",
+    "sstream": "cpp",
+    "functional": "cpp"
+  },
+  "C_Cpp.errorSquiggles": "Disabled"
 }

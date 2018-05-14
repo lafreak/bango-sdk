@@ -30,6 +30,7 @@
                 "${workspaceRoot}/core/network/include",
                 "${workspaceRoot}/core/persistence/include",
                 "${workspaceRoot}/core/persistence/include/zdb",
+                "${workspaceRoot}/core/network/space",
                 "${localappdata}/lxss/rootfs/usr/include/c++/5",
                 "${localappdata}/lxss/rootfs/usr/include/x86_64-linux-gnu/c++/5",
                 "${localappdata}/lxss/rootfs/usr/include/c++/5/backward",
@@ -37,7 +38,8 @@
                 "${localappdata}/lxss/rootfs/usr/local/include",
                 "${localappdata}/lxss/rootfs/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed",
                 "${localappdata}/lxss/rootfs/usr/include/x86_64-linux-gnu",
-                "${localappdata}/lxss/rootfs/usr/include"
+                "${localappdata}/lxss/rootfs/usr/include",
+                "${workspaceFolder}/core/space/include"
             ],
             "defines": [
                 "__linux__",
