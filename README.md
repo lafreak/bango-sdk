@@ -3,8 +3,7 @@
 ### Build
 ```
 $ sudo apt-get install libmysqlcppconn-dev
-$ cd build
-$ cmake .. && make && cd ..
+$ cd build && cmake .. && make && cd ..
 $ ./bin/dbserver
 ```
 
