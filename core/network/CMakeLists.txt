@@ -16,3 +16,8 @@ set(SOURCES
 
 add_library(bangonetwork ${SOURCES})
 target_include_directories(bangonetwork PUBLIC include)
+
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
+add_executable(bangonetwork_test test/main.cpp)
+target_link_libraries(bangonetwork_test ${GTEST_LIBRARIES} bangonetwork pthread)
