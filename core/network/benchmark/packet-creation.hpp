@@ -23,6 +23,3 @@ static void BM_PacketCreationWithBuffer(benchmark::State &state)
         bango::network::packet p(buffer);
 }
 
-BENCHMARK(BM_PacketCreationDefault);
-BENCHMARK(BM_PacketCreationWithType);
-BENCHMARK(BM_PacketCreationWithBuffer);

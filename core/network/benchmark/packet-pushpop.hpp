@@ -112,11 +112,3 @@ static void BM_PacketMerge(benchmark::State &state)
         p.pop<char>();
     }
 }
-
-BENCHMARK(BM_PacketPushPopInt);
-BENCHMARK(BM_PacketPushPopIntOnLarge);
-BENCHMARK(BM_PacketPushPopStruct);
-BENCHMARK(BM_PacketPushPopStructPacked);
-BENCHMARK(BM_PacketPushPopStructOnLarge);
-BENCHMARK(BM_PacketPushPopStructOnLargePacked);
-BENCHMARK(BM_PacketMerge);

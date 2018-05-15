@@ -9,6 +9,7 @@ include_directories(include)
 set(SOURCES
   src/component.cpp
   src/packet.cpp
+  src/qpacket.cpp
   src/session.cpp
   src/tcp_client.cpp
   src/tcp_server.cpp

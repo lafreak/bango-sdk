@@ -1,27 +1,27 @@
-TEST(PacketTest, DefaultConstructor)
+TEST(QPacketTest, DefaultConstructor)
 {
-    packet p;
+    qpacket p;
     EXPECT_EQ(3, p.size());
     EXPECT_EQ(0, p.type());
 }
 
-TEST(PacketTest, TypeConstructor)
+TEST(QPacketTest, TypeConstructor)
 {
-    packet p(24);
+    qpacket p(24);
     EXPECT_EQ(3, p.size());
     EXPECT_EQ(24, p.type());
 }
 
-TEST(PacketTest, RawConstructor)
+TEST(QPacketTest, RawConstructor)
 {
-    packet p({7, 0, 2, 5, 1, 0, 8});
+    qpacket p({7, 0, 2, 5, 1, 0, 8});
     EXPECT_EQ(7, p.size());
     EXPECT_EQ(2, p.type());
 }
 
-TEST(PacketTest, ChangeType)
+TEST(QPacketTest, ChangeType)
 {
-    packet p(2);
+    qpacket p(2);
     EXPECT_EQ(2, p.type());
     p.change_type(3);
     EXPECT_EQ(3, p.type());
@@ -29,9 +29,9 @@ TEST(PacketTest, ChangeType)
     EXPECT_EQ(6, p.type());
 }
 
-TEST(PacketTest, GenericPushPop)
+TEST(QPacketTest, GenericPushPop)
 {
-    packet p;
+    qpacket p;
     p.push<char>(124);
     p.push<short>(30200);
     p.push<int>(2100200400);
@@ -50,9 +50,9 @@ TEST(PacketTest, GenericPushPop)
     EXPECT_EQ(4, value.d);
 }
 
-TEST(PacketTest, StringPushPop)
+TEST(QPacketTest, StringPushPop)
 {
-    packet p;
+    qpacket p;
     p.push_str("Hello World!");
     p.push_str("");
     p.push_str("Second Message");
@@ -62,9 +62,9 @@ TEST(PacketTest, StringPushPop)
     EXPECT_EQ("Second Message", p.pop_str());
 }
 
-TEST(PacketTest, StreamOperators)
+TEST(QPacketTest, StreamOperators)
 {
-    packet p;
+    qpacket p;
     p.push<short>(3);
     p.push<int>(5);
     p.push<char>('@');
@@ -91,13 +91,13 @@ TEST(PacketTest, StreamOperators)
     EXPECT_EQ(4, value.d);
 }
 
-TEST(PacketTest, Merge)
+TEST(QPacketTest, Merge)
 {
-    packet p(3);
+    qpacket p(3);
     p.push_str("First Packet");
-    packet r(5);
+    qpacket r(5);
     r.push_str("Second Packet");
-    packet s(10);
+    qpacket s(10);
     s.push_str("Third Packet");
 
     p.merge(r);
@@ -109,11 +109,18 @@ TEST(PacketTest, Merge)
     EXPECT_EQ("Third Packet", p.pop_str());
 }
 
-TEST(PacketTest, Valid)
-{
-    packet p({4, 0, 1});
-    EXPECT_FALSE(p.valid());
 
-    packet r({3, 0, 1});
-    EXPECT_TRUE(r.valid());
+TEST(QPacketTest, InOutExceptions)
+{
+    qpacket p;
+
+    for (unsigned short i = 3; i < MAX_PACKET_LENGTH; i++)
+        EXPECT_NO_THROW(p.push<char>(7));
+    
+    EXPECT_THROW(p.push<char>(13), std::runtime_error);
+
+    for (unsigned short i = MAX_PACKET_LENGTH-1; i >= 3; i--)
+        EXPECT_NO_THROW(p.pop<char>());
+
+    EXPECT_THROW(p.pop<char>(), std::runtime_error);
 }
