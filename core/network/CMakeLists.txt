@@ -23,3 +23,8 @@ IF(USE_GTEST)
   add_executable(bangonetwork_test test/main.cpp)
   target_link_libraries(bangonetwork_test ${GTEST_LIBRARIES} bangonetwork pthread)
 ENDIF()
+
+IF(USE_BENCHMARK)
+  add_executable(bangonetwork_benchmark benchmark/main.cpp)
+  target_link_libraries(bangonetwork_benchmark benchmark bangonetwork pthread)
+ENDIF()
