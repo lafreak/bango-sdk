@@ -112,3 +112,13 @@ static void BM_PacketMerge(benchmark::State &state)
         p.pop<char>();
     }
 }
+
+static void BM_PacketToVector(benchmark::State &state)
+{
+    bango::network::packet p({6, 0, 5, 1, 9, 4});
+
+    for (auto _ : state) 
+    {
+        p.buffer();
+    }
+}

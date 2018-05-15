@@ -124,3 +124,23 @@ TEST(QPacketTest, InOutExceptions)
 
     EXPECT_THROW(p.pop<char>(), std::runtime_error);
 }
+
+
+TEST(QPacketTest, ToVector)
+{
+    qpacket p(4);
+
+    p.push<char>(1);
+    p.push<char>(2);
+    p.push<char>(3);
+    p.push<char>(4);
+
+    auto buffer = p.buffer();
+    EXPECT_EQ(7, buffer[0]);
+    EXPECT_EQ(0, buffer[1]);
+    EXPECT_EQ(4, buffer[2]);
+    EXPECT_EQ(1, buffer[3]);
+    EXPECT_EQ(2, buffer[4]);
+    EXPECT_EQ(3, buffer[5]);
+    EXPECT_EQ(4, buffer[6]);
+}

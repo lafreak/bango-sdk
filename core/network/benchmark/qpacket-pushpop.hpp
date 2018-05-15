@@ -109,3 +109,13 @@ static void BM_QPacketMerge(benchmark::State &state)
         }
     }
 }
+
+static void BM_QPacketToVector(benchmark::State &state)
+{
+    bango::network::qpacket p({6, 0, 5, 1, 9, 4});
+
+    for (auto _ : state) 
+    {
+        p.buffer();
+    }
+}

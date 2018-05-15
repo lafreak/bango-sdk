@@ -40,4 +40,7 @@ BENCHMARK(BM_PacketPushPopStructOnLarge);
 BENCHMARK(BM_PacketPushPopStructOnLargePacked);
 
 
+BENCHMARK(BM_PacketToVector);
+BENCHMARK(BM_QPacketToVector);
+
 BENCHMARK_MAIN();

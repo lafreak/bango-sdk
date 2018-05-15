@@ -71,6 +71,8 @@ namespace bango { namespace network {
         char* begin() const { return m_begin; }
         char* end() const { return m_end; }
 
+        const std::vector<char> buffer() const { return std::vector<char>(header(), end()); }
+
         qpacket& change_type(unsigned char type) { m_header[2] = (char)type; return *this; }
 
         template<typename T>
