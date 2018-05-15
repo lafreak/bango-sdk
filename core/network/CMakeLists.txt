@@ -21,3 +21,6 @@ find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 add_executable(bangonetwork_test test/main.cpp)
 target_link_libraries(bangonetwork_test ${GTEST_LIBRARIES} bangonetwork pthread)
+
+add_executable(bangopacket_benchmark benchmark/main.cpp)
+target_link_libraries(bangopacket_benchmark benchmark bangonetwork pthread)
