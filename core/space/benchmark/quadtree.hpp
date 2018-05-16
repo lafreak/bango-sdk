@@ -59,10 +59,11 @@ static void BM_QuadTree_Query(benchmark::State &state)
     {
         q.query(center, distance, [&](const my_container* container) {
             container->for_each([&](const quad_entity* e) {
-                k=e;
+                if (e->distance(center) < distance)
+                    k=e;
             });
         });
     }
 }
 
-BENCHMARK(BM_QuadTree_Query)->Arg(64)->Arg(32)->Arg(16)->Arg(8)->Arg(4)->Arg(2)->Arg(1);
+BENCHMARK(BM_QuadTree_Query)->Arg(64)->Arg(32)->Arg(16)->Arg(8)->Arg(4)->Arg(2);
