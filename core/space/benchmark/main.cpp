@@ -1,10 +1,15 @@
 #include <benchmark/benchmark.h>
-#include <bango/space.h>
+#include <bango/space/map.h>
+#include <bango/space/quadtree.h>
+
+using namespace bango::space;
+
+#include "quadtree.hpp"
 
 static void BM_MakeCircleInTile(benchmark::State &state)
 {
-    bango::space::map m(400, 400, 1024, 1024);
-    bango::space::dynamic_entity e{1023, 1023, ""};
+    map m(400, 400, 1024, 1024);
+    dynamic_entity e{1023, 1023, ""};
 
     m.insert(&e);
 
@@ -26,8 +31,8 @@ static void BM_MakeCircleInTile(benchmark::State &state)
 
 static void BM_MakeCircleAroundTiles(benchmark::State &state)
 {
-    bango::space::map m(400, 400, 1024, 1024);
-    bango::space::dynamic_entity e{1023, 1023, ""};
+    map m(400, 400, 1024, 1024);
+    dynamic_entity e{1023, 1023, ""};
 
     m.insert(&e);
 
@@ -47,7 +52,7 @@ static void BM_MakeCircleAroundTiles(benchmark::State &state)
     */
 }
 
-BENCHMARK(BM_MakeCircleInTile);
-BENCHMARK(BM_MakeCircleAroundTiles);
+//BENCHMARK(BM_MakeCircleInTile);
+//BENCHMARK(BM_MakeCircleAroundTiles);
 
 BENCHMARK_MAIN();
