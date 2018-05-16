@@ -8,7 +8,6 @@ $ sudo apt-get install libmysqlclient-dev
 ```
 ### Run CMake
 ```
-$ mkdir -p build
 $ cd build
 $ cmake ..
 $ make
