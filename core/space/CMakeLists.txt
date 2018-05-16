@@ -8,6 +8,7 @@ include_directories(include)
 
 set(SOURCES
   src/map.cpp
+  src/quadtree.cpp
   )
 
 add_library(bangospace ${SOURCES})
