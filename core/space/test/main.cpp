@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
 //#include <bango/space.h>
-#include <bango/space/quadtree.h> // includes map for now
+#include <bango/space/map.h>
+#include <bango/space/quadtree.h>
 
 #include <exception>
 #include <list>
 #include <memory>
+#include <algorithm>
 
 using namespace bango::space;
 
