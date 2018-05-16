@@ -6,7 +6,7 @@
 #include <math.h>
 #include <algorithm>
 
-#define QUADTREE_MAX_NODES 2
+#define QUADTREE_MAX_NODES 8
 
 namespace bango { namespace space {
 
