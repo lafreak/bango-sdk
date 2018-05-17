@@ -1,8 +1,6 @@
 class my_container : public quad_entity_container<my_container>
 {
     std::list<const quad_entity*> m_entities;
-public:
-    const std::list<const quad_entity*>& entities() const { return m_entities; }
 
 public:
     void insert(const quad_entity* entity) override
@@ -68,40 +66,4 @@ static void BM_QuadTree_Query(benchmark::State &state)
     }
 }
 
-static void BM_QuadTree_QueryAwayFromLure(benchmark::State &state)
-{
-    quad<my_container> q({
-        {0,0}, {128,128}
-    });
-
-    std::vector<quad_entity> entities;
-
-    for (int i = 0; i < 64; i+=1)
-    {
-        for (int j = 0; j < 64; j+=1)
-        {
-            entities.push_back(quad_entity{i,j});
-        }
-    }
-
-    for (auto& qe : entities)
-        q.insert(&qe);
-
-    int distance=1;
-    point center{127,127};
-
-    const quad_entity* k=nullptr;
-
-    for (auto _ : state)
-    {
-        q.query(center, distance, [&](const my_container* container) {
-            for (auto& e : container->entities()) {
-                if (e->distance(center) < distance)
-                    k=e;
-            }
-        });
-    }
-}
-
 BENCHMARK(BM_QuadTree_Query)->Arg(64)->Arg(32)->Arg(16)->Arg(8)->Arg(4)->Arg(2);
-BENCHMARK(BM_QuadTree_QueryAwayFromLure);
