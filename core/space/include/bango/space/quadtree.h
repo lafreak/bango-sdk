@@ -7,7 +7,7 @@
 #include <algorithm>
 
 //! Limits amount of elements in container.
-//! After this amount is exceeded quad division occurs.
+//! When this amount is exceeded quad division occurs.
 //! Affects performance!
 #define QUADTREE_MAX_NODES 8
 
@@ -23,24 +23,32 @@ namespace bango { namespace space {
     struct quad_entity
     {
         int m_x, m_y;
-        //! \return Distance between entity and 2D point.
+        //! \return Distance between self and 2D point given as parameter.
         int distance(point p) const { return distance(p.x, p.y); }
         //! \param x Coordinate X
         //! \param y Coordinate Y
-        //! \return Distance between entity and pair of numbers representing 2D point.
+        //! \return Distance between self and pair of numbers representing 2D point given as paramter.
         int distance(int x, int y) const { return (int) sqrt(pow(m_x-x, 2)+pow(m_y-y, 2)); }
         //! \return Distance between self and entity given as parameter.
         int distance(const quad_entity* qe) const { return distance(qe->m_x, qe->m_y); }
     };
 
+    //! Container interface for quad leafs. 
+    //! This structure manages group of objects for each smallest sugdivided part of space.
     template<class T>
     struct quad_entity_container
     {
+        //! Should implement entity insertion operation.
         virtual void                insert          (const quad_entity* entity)                             =0;
+        //! Should implement entity removal operation.
         virtual void                remove          (const quad_entity* entity)                             =0;
+        //! Should move all entities from container given as parameter to self.
         virtual void                merge           (const T* container)                                    =0;
+        //! Should calculate number of all elements in this container.
         virtual size_t              size            () const                                                =0;
+        //! Should calculate total memory reserved by this container.
         virtual long long           total_memory    () const                                                =0;
+        //! Should iterate for each entity in this container and run callback given as parameter.
         virtual void                for_each        (const std::function<void(const quad_entity*)>&&) const =0;
     };
 
