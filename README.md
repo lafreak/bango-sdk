@@ -69,11 +69,13 @@ public:
 };
 ```
 
-This is the simplest implementation that uses single list as container for all inserted entities to 2D space.  
+This is the simplest implementation that uses single list as container.
 It is possible to use this container as follows:
 
 ```cpp
 #include <bango/space/quadtree.h>
+
+using namespace bango::space;
 
 // my_custom_container implementation
 
