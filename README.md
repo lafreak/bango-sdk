@@ -69,7 +69,7 @@ public:
 };
 ```
 
-This is the simplest implementation that uses single list as container.
+This is the simplest implementation of `quad_entity_container` that uses single list as container.
 It is possible to use this container as follows:
 
 ```cpp
