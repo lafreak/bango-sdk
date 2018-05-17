@@ -6,18 +6,30 @@
 #include <math.h>
 #include <algorithm>
 
+//! Limits amount of elements in container.
+//! After this amount is exceeded quad division occurs.
+//! Affects performance!
 #define QUADTREE_MAX_NODES 8
 
 namespace bango { namespace space {
 
+    //! Position on 2D space.
     struct point { int x, y; };
+    //! Rectangle on 2D space represented by 2 corner points - bottom left & top right.
     struct square { point bottom_left, top_right; };
 
+    //! Base entity managed by Quadtree represented by single point in space. 
+    //! Knows how to calculate distance between self and objects in 2D space.
     struct quad_entity
     {
         int m_x, m_y;
+        //! \return Distance between entity and 2D point.
         int distance(point p) const { return distance(p.x, p.y); }
+        //! \param x Coordinate X
+        //! \param y Coordinate Y
+        //! \return Distance between entity and pair of numbers representing 2D point.
         int distance(int x, int y) const { return (int) sqrt(pow(m_x-x, 2)+pow(m_y-y, 2)); }
+        //! \return Distance between self and entity given as parameter.
         int distance(const quad_entity* qe) const { return distance(qe->m_x, qe->m_y); }
     };
 

@@ -2,12 +2,14 @@
 
  Members                        | Descriptions                                
 --------------------------------|---------------------------------------------
-`define `[`QUADTREE_MAX_NODES`](#quadtree_8h_1a2f110c5dada605918e987d3f740f2edb)            | 
+`define `[`QUADTREE_MAX_NODES`](#quadtree_8h_1a2f110c5dada605918e987d3f740f2edb)            | Limits amount of elements in container. After this amount is exceeded quad division occurs. Affects performance!
 `namespace `[`bango::space`](#namespacebango_1_1space) | 
 
 ## Members
 
 #### `define `[`QUADTREE_MAX_NODES`](#quadtree_8h_1a2f110c5dada605918e987d3f740f2edb) 
+
+Limits amount of elements in container. After this amount is exceeded quad division occurs. Affects performance!
 
 # namespace `bango::space` 
 
@@ -16,10 +18,10 @@
  Members                        | Descriptions                                
 --------------------------------|---------------------------------------------
 `class `[`bango::space::quad`](#classbango_1_1space_1_1quad) | 
-`struct `[`bango::space::point`](#structbango_1_1space_1_1point) | 
-`struct `[`bango::space::quad_entity`](#structbango_1_1space_1_1quad__entity) | 
+`struct `[`bango::space::point`](#structbango_1_1space_1_1point) | Position on 2D space.
+`struct `[`bango::space::quad_entity`](#structbango_1_1space_1_1quad__entity) | Base entity managed by Quadtree represented by single point in space. Knows how to calculate distance to objects on 2D space.
 `struct `[`bango::space::quad_entity_container`](#structbango_1_1space_1_1quad__entity__container) | 
-`struct `[`bango::space::square`](#structbango_1_1space_1_1square) | 
+`struct `[`bango::space::square`](#structbango_1_1space_1_1square) | Rectangle on 2D space represented by 2 corner points - bottom left & top right.
 
 # class `bango::space::quad` 
 
@@ -98,6 +100,8 @@
 
 # struct `bango::space::point` 
 
+Position on 2D space.
+
 ## Summary
 
  Members                        | Descriptions                                
@@ -113,15 +117,17 @@
 
 # struct `bango::space::quad_entity` 
 
+Base entity managed by Quadtree represented by single point in space. Knows how to calculate distance to objects on 2D space.
+
 ## Summary
 
  Members                        | Descriptions                                
 --------------------------------|---------------------------------------------
 `public int `[`m_x`](#structbango_1_1space_1_1quad__entity_1acc2bfb8d7d954b6007eb6faba899353e) | 
 `public int `[`m_y`](#structbango_1_1space_1_1quad__entity_1a72834ea1910a7935b0d31c436ce93214) | 
-`public inline int `[`distance`](#structbango_1_1space_1_1quad__entity_1af4cca60fce39389dbe4e247f23535502)`(`[`point`](#structbango_1_1space_1_1point)` p) const` | 
-`public inline int `[`distance`](#structbango_1_1space_1_1quad__entity_1a85750b7f2e239d8485dda580274ec91d)`(int x,int y) const` | 
-`public inline int `[`distance`](#structbango_1_1space_1_1quad__entity_1adb108e7b2ea82fb020bf673803e89c3a)`(const `[`quad_entity`](#structbango_1_1space_1_1quad__entity)` * qe) const` | 
+`public inline int `[`distance`](#structbango_1_1space_1_1quad__entity_1af4cca60fce39389dbe4e247f23535502)`(`[`point`](#structbango_1_1space_1_1point)` p) const` | #### Returns
+`public inline int `[`distance`](#structbango_1_1space_1_1quad__entity_1a85750b7f2e239d8485dda580274ec91d)`(int x,int y) const` | #### Parameters
+`public inline int `[`distance`](#structbango_1_1space_1_1quad__entity_1adb108e7b2ea82fb020bf673803e89c3a)`(const `[`quad_entity`](#structbango_1_1space_1_1quad__entity)` * qe) const` | #### Returns
 
 ## Members
 
@@ -131,9 +137,23 @@
 
 #### `public inline int `[`distance`](#structbango_1_1space_1_1quad__entity_1af4cca60fce39389dbe4e247f23535502)`(`[`point`](#structbango_1_1space_1_1point)` p) const` 
 
+#### Returns
+Distance between entity and 2D point.
+
 #### `public inline int `[`distance`](#structbango_1_1space_1_1quad__entity_1a85750b7f2e239d8485dda580274ec91d)`(int x,int y) const` 
 
+#### Parameters
+* `x` Coordinate X 
+
+* `y` Coordinate Y 
+
+#### Returns
+Distance between entity and pair of numbers representing 2D point.
+
 #### `public inline int `[`distance`](#structbango_1_1space_1_1quad__entity_1adb108e7b2ea82fb020bf673803e89c3a)`(const `[`quad_entity`](#structbango_1_1space_1_1quad__entity)` * qe) const` 
+
+#### Returns
+Distance between self and entity given as parameter.
 
 # struct `bango::space::quad_entity_container` 
 
@@ -163,6 +183,8 @@
 #### `public void `[`for_each`](#structbango_1_1space_1_1quad__entity__container_1a5239a547fa58805651fe3b9f77089ae5)`(const std::function< void(const `[`quad_entity`](#structbango_1_1space_1_1quad__entity) *)`> &&) const` 
 
 # struct `bango::space::square` 
+
+Rectangle on 2D space represented by 2 corner points - bottom left & top right.
 
 ## Summary
 
