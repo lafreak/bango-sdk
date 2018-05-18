@@ -108,8 +108,6 @@ namespace bango { namespace space {
 
         void insert(const quad_entity*);
         const quad_entity* search(point p) const;
-        void search(square, std::list<const quad_entity*>&) const;
-        void search(point, int, std::list<const quad_entity*>&) const;
         void query(point, int, const std::function<void(const T*)>&);
         void remove(const quad_entity*);
         void merge();
@@ -263,92 +261,6 @@ namespace bango { namespace space {
 
         if (!is_root())
             m_parent->merge();
-    }
-
-    template<class T>
-    const quad_entity* quad<T>::search(point p) const
-    {
-        if (!in_boundary(p))
-            return nullptr;
-            
-        if (!is_leaf())
-            return inner(p)->search(p);
-
-        const quad_entity* q = nullptr;
-
-        m_container->for_each([&](const quad_entity* qe) {
-            if (qe->m_x == p.x && qe->m_y == p.y)
-                q = qe;
-        });
-
-        return q;
-    }
-
-    template<class T>
-    void quad<T>::search(square b, std::list<const quad_entity*>& entities) const
-    {
-        if (!in_boundary(b))
-            return;
-
-        if (!is_leaf())
-        {
-            m_top_left      ->search(b, entities);
-            m_top_right     ->search(b, entities);
-            m_bottom_left   ->search(b, entities);
-            m_bottom_right  ->search(b, entities);
-            return;
-        }
-
-        //!!!
-        // for (auto& e : m_tile->m_statics)
-        // {
-        //     if (e->m_x >= b.bottom_left.x &&
-        //         e->m_x <= b.top_right.x &&
-        //         e->m_y >= b.bottom_left.y &&
-        //         e->m_y <= b.top_right.y)
-        //     entities.push_back(e);
-        // }
-        m_container->for_each([&](const quad_entity* qe) {
-            if (qe->m_x >= b.left() &&
-                qe->m_x <= b.right() &&
-                qe->m_y >= b.bottom() &&
-                qe->m_y <= b.top())
-                entities.push_back(qe);
-        });
-    }
-
-    template<class T>
-    void quad<T>::search(point p, int radius, std::list<const quad_entity*>& entities) const
-    {
-        if (radius <= 0)
-        {
-            auto result = search(p);
-            if (result) entities.push_back(result);
-            return;
-        }
-
-        if (!in_boundary(p, radius))
-            return;
-
-        if (!is_leaf())
-        {
-            m_top_left      ->search(p, radius, entities);
-            m_top_right     ->search(p, radius, entities);
-            m_bottom_left   ->search(p, radius, entities);
-            m_bottom_right  ->search(p, radius, entities);
-            return;
-        }
-
-        //!!!
-        // for (auto& e : m_tile->m_statics)
-        // {
-        //     if (e->distance(p.x, p.y) <= radius)
-        //         entities.push_back(e);
-        // }
-        m_container->for_each([&](const quad_entity* qe) {
-            if (qe->distance(p.x, p.y) <= radius)
-                entities.push_back(qe);
-        });        
     }
 
     template<class T>
