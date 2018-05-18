@@ -83,8 +83,8 @@ void main()
 {
     quad<my_custom_container> q({
         // space boundaries
-        {0,0},      // bottom left corner of 2D space
-        {128,128}   // top right corner of 2D space
+        {0,0},      // bottom left corner of square space
+        128         // square width
     });
 
     // declare entities with its coordinates

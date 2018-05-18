@@ -16,7 +16,14 @@ namespace bango { namespace space {
     //! Position on 2D space.
     struct point { int x, y; };
     //! Rectangle on 2D space represented by 2 corner points - bottom left & top right.
-    struct square { point bottom_left, top_right; };
+    struct square { 
+        point bottom_left; int width;
+        
+        int left() const    { return bottom_left.x; }
+        int right() const   { return bottom_left.x+width; }
+        int bottom() const  { return bottom_left.y; }
+        int top() const     { return bottom_left.y+width; }
+    };
 
     //! Base entity managed by Quadtree represented by single point in space. 
     //! Knows how to calculate distance between self and objects in 2D space.
@@ -110,30 +117,30 @@ namespace bango { namespace space {
         bool is_root() const { return m_parent == nullptr; }
         bool in_boundary(point p) const {
             return 
-                p.x >= m_boundary.bottom_left.x &&
-                p.x <= m_boundary.top_right.x && // [x, y]? should be [x,y)
-                p.y >= m_boundary.bottom_left.y &&
-                p.y <= m_boundary.top_right.y;
+                p.x >= m_boundary.left() &&
+                p.x <= m_boundary.right() && // [x, y]? should be [x,y)
+                p.y >= m_boundary.bottom() &&
+                p.y <= m_boundary.top();
         }
         bool in_boundary(square b) const {
             return
-                b.bottom_left.x <= m_boundary.top_right.x &&
-                b.top_right.x >= m_boundary.bottom_left.x &&
-                b.top_right.y >= m_boundary.bottom_left.y &&
-                b.bottom_left.y <= m_boundary.top_right.y;
+                b.left()    <= m_boundary.right() &&
+                b.right()   >= m_boundary.left() &&
+                b.top()     >= m_boundary.bottom() &&
+                b.bottom()  <= m_boundary.top();
         }
         bool in_boundary(point p, int radius) const {
             return
-                p.x-radius <= m_boundary.top_right.x &&
-                p.x+radius >= m_boundary.bottom_left.x &&
-                p.y+radius >= m_boundary.bottom_left.y &&
-                p.y-radius <= m_boundary.top_right.y;
+                p.x-radius <= m_boundary.right() &&
+                p.x+radius >= m_boundary.left() &&
+                p.y+radius >= m_boundary.bottom() &&
+                p.y-radius <= m_boundary.top();
         }
         bool in_boundary(const quad_entity* p) const { 
             return in_boundary(point{p->m_x, p->m_y});
         }
         bool can_subdivide() const { 
-            return m_boundary.top_right.x-m_boundary.bottom_left.x > 1;
+            return m_boundary.right()-m_boundary.left() > 1;
         }
         quad* inner(point p) const {
             if (m_top_left->in_boundary(p))     return m_top_left;
@@ -173,37 +180,28 @@ namespace bango { namespace space {
         // TODO: Fix overlapping [0, 6], [6, 12] -> [0, 5], [6, 11]?
         m_top_left = new quad({
             point {
-                m_boundary.bottom_left.x,
-                (m_boundary.top_right.y-m_boundary.bottom_left.y)/2+m_boundary.bottom_left.y
-            }, 
-            point {
-                (m_boundary.top_right.x-m_boundary.bottom_left.x)/2+m_boundary.bottom_left.x,
-                m_boundary.top_right.y
-            }
+                m_boundary.left(),
+                (m_boundary.top()-m_boundary.bottom())/2+m_boundary.bottom()
+            },
+            m_boundary.width/2
         }, this);
         m_top_right = new quad({
             point {
-                (m_boundary.top_right.x-m_boundary.bottom_left.x)/2+m_boundary.bottom_left.x,
-                (m_boundary.top_right.y-m_boundary.bottom_left.y)/2+m_boundary.bottom_left.y
+                (m_boundary.right()-m_boundary.left())/2+m_boundary.left(),
+                (m_boundary.top()-m_boundary.bottom())/2+m_boundary.bottom()
             }, 
-            m_boundary.top_right
+            m_boundary.width/2, 
         }, this);
         m_bottom_left = new quad({
             m_boundary.bottom_left, 
-            point {
-                (m_boundary.top_right.x-m_boundary.bottom_left.x)/2+m_boundary.bottom_left.x,
-                (m_boundary.top_right.y-m_boundary.bottom_left.y)/2+m_boundary.bottom_left.y
-            }
+            m_boundary.width/2
         }, this);
         m_bottom_right = new quad({
             point {
-                (m_boundary.top_right.x-m_boundary.bottom_left.x)/2+m_boundary.bottom_left.x,
-                m_boundary.bottom_left.y
+                (m_boundary.right()-m_boundary.left())/2+m_boundary.left(),
+                m_boundary.bottom()
             }, 
-            point {
-                m_boundary.top_right.x,
-                (m_boundary.top_right.y-m_boundary.bottom_left.y)/2+m_boundary.bottom_left.y
-            }
+            m_boundary.width/2
         }, this);
 
         //!!!
@@ -309,10 +307,10 @@ namespace bango { namespace space {
         //     entities.push_back(e);
         // }
         m_container->for_each([&](const quad_entity* qe) {
-            if (qe->m_x >= b.bottom_left.x &&
-                qe->m_x <= b.top_right.x &&
-                qe->m_y >= b.bottom_left.y &&
-                qe->m_y <= b.top_right.y)
+            if (qe->m_x >= b.left() &&
+                qe->m_x <= b.right() &&
+                qe->m_y >= b.bottom() &&
+                qe->m_y <= b.top())
                 entities.push_back(qe);
         });
     }
@@ -383,10 +381,10 @@ namespace bango { namespace space {
 
         if (m_container->size() > 0)
             printf("(%d;%d)->(%d;%d) - size(%d)\n", 
-                m_boundary.bottom_left.x,
-                m_boundary.bottom_left.y,
-                m_boundary.top_right.x,
-                m_boundary.top_right.y,
+                m_boundary.left(),
+                m_boundary.bottom(),
+                m_boundary.right(),
+                m_boundary.top(),
                 (int) m_container->size());
     }
 

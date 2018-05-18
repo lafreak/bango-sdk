@@ -33,7 +33,8 @@ public:
 static void BM_QuadTree_Query(benchmark::State &state)
 {
     quad<my_container> q({
-        {0,0}, {128,128}
+        //{0,0}, {128,128}
+        {0,0}, 128
     });
 
     std::vector<quad_entity> entities;

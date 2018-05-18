@@ -33,7 +33,8 @@ public:
 TEST(QuadTree, Insert)
 {
     quad<my_container> q({
-        {0,0}, {128,128}
+        //{0,0}, {128,128}
+        {0,0}, 128
     });
 
     std::vector<quad_entity> entities {
