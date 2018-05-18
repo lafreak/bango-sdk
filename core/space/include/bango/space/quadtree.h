@@ -130,11 +130,13 @@ namespace bango { namespace space {
                 b.bottom()  <= m_boundary.top();
         }
         bool in_boundary(point p, int radius) const {
-            return
-                p.x-radius <= m_boundary.right() &&
-                p.x+radius >= m_boundary.left() &&
-                p.y+radius >= m_boundary.bottom() &&
-                p.y-radius <= m_boundary.top();
+            // TODO: Circle->Square is bad idea, fix?
+            return in_boundary({{p.x-radius, p.y-radius}, radius*2});
+            // return
+            //     p.x-radius <= m_boundary.right() &&
+            //     p.x+radius >= m_boundary.left() &&
+            //     p.y+radius >= m_boundary.bottom() &&
+            //     p.y-radius <= m_boundary.top();
         }
         bool in_boundary(const quad_entity* p) const { 
             return in_boundary(point{p->m_x, p->m_y});
