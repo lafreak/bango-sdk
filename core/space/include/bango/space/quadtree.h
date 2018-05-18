@@ -100,9 +100,9 @@ namespace bango { namespace space {
             }
         }
 
-        quad* root() const {
+        const quad* root() const {
             if (is_root())
-                return (quad*) this;
+                return this;
             return m_parent->root();
         }
 
