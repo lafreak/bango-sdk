@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-//#include <bango/space.h>
+#include <gmock/gmock.h>
 #include <bango/space/map.h>
 #include <bango/space/quadtree.h>
 

@@ -30,35 +30,93 @@ public:
     }
 };
 
-TEST(QuadTree, Insert)
-{
-    quad<my_container> q({
-        //{0,0}, {128,128}
-        {0,0}, 128
-    });
+namespace {
+    class QuadTreeQuery : public ::testing::Test
+    {
+    protected:
+        quad<my_container> *q;
+        std::vector<quad_entity> entities;
 
-    std::vector<quad_entity> entities {
-        {21,32},//12
-        {37,35},//28
-        {37,34},//27
+        std::list<int> results;
+        std::vector<std::pair<int,int>> expected;
+
+        point center{11,24};
+
+        virtual void SetUp()
+        {
+            q = new quad<my_container>({
+                {0,0}, 
+                128
+            });
+
+            entities = std::vector<quad_entity> {
+                {21 ,32 },//12
+                {1  ,32 },//12
+                {37 ,34 },//27
+                {37 ,35 },//28
+                {41 ,0  },//38
+                {23 ,99 },//75
+                {99 ,23 },//88
+                {102,9  },//92
+                {128,0  },//119
+                {100,124},//133
+                {128,128},//156
+            };
+
+            expected = std::vector<std::pair<int,int>>{
+                // (distance, size)
+                std::make_pair(0, 0),
+                std::make_pair(11, 0),
+                std::make_pair(12, 2),
+                std::make_pair(26, 2),
+                std::make_pair(27, 3),
+                std::make_pair(28, 4),
+                std::make_pair(37, 4),
+                std::make_pair(38, 5),
+                std::make_pair(74, 5),
+                std::make_pair(75, 6),
+                std::make_pair(87, 6),
+                std::make_pair(88, 7),
+                std::make_pair(91, 7),
+                std::make_pair(92, 8),
+                std::make_pair(118, 8),
+                std::make_pair(119, 9),
+                std::make_pair(132, 9),
+                std::make_pair(133, 10),
+                std::make_pair(155, 10),
+                std::make_pair(156, 11),
+                std::make_pair(9999, 11),
+            };
+
+            for (auto& e : entities)
+                q->insert(&e);
+        }
+
+        virtual void TearDown()
+        {
+            delete q;
+        }
+
+        void Query(point center, int distance) 
+        {
+            q->query(center, distance, [&](const my_container* container) {
+                container->for_each([&](const quad_entity* e) {
+                    if (e->distance(center) <= distance)
+                        results.push_back(e->distance(center));
+                });
+            });
+        }
+
     };
 
-    q.insert(&entities[0]);
-    q.insert(&entities[1]);
-    q.insert(&entities[2]);
+    TEST_F(QuadTreeQuery, Query)
+    {
+        for (auto &pair : expected)
+        {
+            Query(center, pair.first);
+            ASSERT_THAT(results, ::testing::SizeIs(pair.second));
+            results.clear();
+        }
+    }
 
-    // Query all containers in circle range
-    int distance=28;
-    point center{11,24};
-
-    q.query(center, distance, [&](const my_container* container) {
-        container->for_each([&](const quad_entity* e) {
-            //if (e->distance(center) <= distance) 
-            //    printf("(%d;%d)[%d]\n", e->m_x, e->m_y, e->distance(11,24));
-        });
-    });
-
-    q.remove(&entities[2]);
-    q.remove(&entities[1]);
-    q.remove(&entities[0]);
 }
