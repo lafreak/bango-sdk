@@ -33,8 +33,8 @@ public:
 static void BM_QuadTree_Query(benchmark::State &state)
 {
     quad<my_container> q({
-        //{0,0}, {128,128}
-        {0,0}, 128
+        {0,0}, 
+        128
     });
 
     std::vector<quad_entity> entities;
@@ -50,7 +50,6 @@ static void BM_QuadTree_Query(benchmark::State &state)
     for (auto& qe : entities)
         q.insert(&qe);
 
-    // Query all containers in circle range
     int distance=5;
     point center{11,24};
 
@@ -61,10 +60,10 @@ static void BM_QuadTree_Query(benchmark::State &state)
         q.query(center, distance, [&](const my_container* container) {
             container->for_each([&](const quad_entity* e) {
                 if (e->distance(center) < distance)
-                    k=e;
+                    benchmark::DoNotOptimize(k=e);
             });
         });
     }
 }
 
-BENCHMARK(BM_QuadTree_Query)->Arg(64)->Arg(32)->Arg(16)->Arg(8)->Arg(4)->Arg(2);
+BENCHMARK(BM_QuadTree_Query)->Arg(16)->Arg(8)->Arg(4)->Arg(2)->Arg(1);
