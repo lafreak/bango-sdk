@@ -97,5 +97,39 @@ static void BM_QuadTree_Move(benchmark::State &state)
     }
 }
 
-BENCHMARK(BM_QuadTree_Query)->Arg(16)->Arg(8)->Arg(4)->Arg(2)->Arg(1);
-BENCHMARK(BM_QuadTree_Move)->Arg(16)->Arg(8)->Arg(4)->Arg(2)->Arg(1);
+static void BM_QuadTree_QueryWithMaxEntityAmount(benchmark::State &state)
+{
+    quad<my_container> q(square{
+        {0,0}, 
+        128
+    }, state.range(0));
+
+    std::vector<quad_entity> entities;
+
+    for (int i = 0; i < 128; i++)
+        for (int j = 0; j < 128; j++)
+            entities.push_back(quad_entity{i,j});
+
+    for (auto& qe : entities)
+        q.insert(&qe);
+
+    int distance=5;
+    point center{11,24};
+
+    const quad_entity* k=nullptr;
+
+    for (auto _ : state)
+    {
+        q.query(center, distance, [&](const my_container* container) {
+            container->for_each([&](const quad_entity* e) {
+                if (e->distance(center) < distance)
+                    benchmark::DoNotOptimize(k=e);
+            });
+        });
+    }
+}
+
+BENCHMARK(BM_QuadTree_QueryWithMaxEntityAmount)
+    ->RangeMultiplier(2)->Range(1, 128*128);
+//BENCHMARK(BM_QuadTree_Query)->Arg(16)->Arg(8)->Arg(4)->Arg(2)->Arg(1);
+//BENCHMARK(BM_QuadTree_Move)->Arg(16)->Arg(8)->Arg(4)->Arg(2)->Arg(1);

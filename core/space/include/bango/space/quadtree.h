@@ -10,7 +10,7 @@
 //! Limits amount of elements in container.
 //! When this amount is exceeded quad division occurs.
 //! Affects performance!
-#define QUADTREE_MAX_NODES 8
+#define QUADTREE_MAX_NODES 8 // 32 might be optimum: http://prntscr.com/jk95a7
 
 #define DUPLICATES_SAFE
 
