@@ -10,7 +10,7 @@
 //! Limits amount of elements in container.
 //! When this amount is exceeded quad division occurs.
 //! Affects performance!
-#define QUADTREE_MAX_NODES 8 // 32 might be optimum: http://prntscr.com/jk95a7
+#define QUADTREE_MAX_NODES 32 // http://prntscr.com/jk95a7
 
 #define DUPLICATES_SAFE
 
@@ -44,7 +44,7 @@ namespace bango { namespace space {
     };
 
     //! Container interface for quad leafs. 
-    //! This structure manages group of objects for each smallest sugdivided part of space.
+    //! This structure manages group of objects for each smallest subdivided part of space.
     template<class T>
     struct quad_entity_container
     {
