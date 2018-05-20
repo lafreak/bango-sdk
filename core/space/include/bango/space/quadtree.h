@@ -33,6 +33,7 @@ namespace bango { namespace space {
     struct quad_entity
     {
         int m_x, m_y;
+        unsigned char m_type;
         //! \return Distance between self and 2D point given as parameter.
         int distance(point p) const { return distance(p.x, p.y); }
         //! \param x Coordinate X
