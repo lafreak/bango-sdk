@@ -5,11 +5,14 @@
 #include <stdio.h>
 #include <math.h>
 #include <algorithm>
+#include <map>
 
 //! Limits amount of elements in container.
 //! When this amount is exceeded quad division occurs.
 //! Affects performance!
 #define QUADTREE_MAX_NODES 8
+
+//#define DUPLICATES_SAFE
 
 namespace bango { namespace space {
 
@@ -57,6 +60,34 @@ namespace bango { namespace space {
         virtual long long           total_memory    () const                                                =0;
         //! Should iterate for each entity in this container and run callback given as parameter.
         virtual void                for_each        (const std::function<void(const quad_entity*)>&&) const =0;
+
+#ifdef DUPLICATES_SAFE
+    private:
+        std::map<std::pair<int,int>,size_t> m_distinct_sizes;
+    public:
+        void _insert(const quad_entity* entity)
+        {
+            m_distinct_sizes[std::make_pair(entity->m_x, entity->m_y)]++;
+            insert(entity);
+        }
+        void _remove(const quad_entity* entity)
+        {
+            auto it = m_distinct_sizes.find(std::make_pair(entity->m_x, entity->m_y));
+            if (it == m_distinct_sizes.end())
+                throw std::runtime_error("entity doesnt exist in distinct_sizes counter");
+            if (--it->second == 0)
+                m_distinct_sizes.erase(it);
+            remove(entity);
+        }
+        void _merge(const T* container)
+        {
+            container->for_each([&](const quad_entity* entity) {
+                m_distinct_sizes[std::make_pair(entity->m_x, entity->m_y)]++;
+            });
+            merge(container);
+        }
+        size_t distinct_size() const { return m_distinct_sizes.size(); }
+#endif
     };
 
     template<class T>
@@ -100,6 +131,16 @@ namespace bango { namespace space {
             }
         }
 
+#ifdef DUPLICATES_SAFE
+        size_t distinct_size() const {
+            if (!is_leaf()) {
+                return m_top_left->distinct_size()+m_top_right->distinct_size()+m_bottom_left->distinct_size()+m_bottom_right->distinct_size();
+            } else {
+                return m_container->distinct_size();
+            }
+        }
+#endif
+
         const quad* root() const {
             if (is_root())
                 return this;
@@ -130,11 +171,6 @@ namespace bango { namespace space {
         bool in_boundary(point p, int radius) const {
             // TODO: Circle->Square is bad idea, fix?
             return in_boundary({{p.x-radius, p.y-radius}, radius*2});
-            // return
-            //     p.x-radius <= m_boundary.right() &&
-            //     p.x+radius >= m_boundary.left() &&
-            //     p.y+radius >= m_boundary.bottom() &&
-            //     p.y-radius <= m_boundary.top();
         }
         bool in_boundary(const quad_entity* p) const { 
             return in_boundary(point{p->m_x, p->m_y});
@@ -166,15 +202,27 @@ namespace bango { namespace space {
         }
 
         // do not need to subdivide
+#ifdef DUPLICATES_SAFE
+        if (m_container->distinct_size() < QUADTREE_MAX_NODES) // constant
+        {
+            m_container->_insert(entity);
+#else
         if (m_container->size() < QUADTREE_MAX_NODES) // constant
         {
             m_container->insert(entity);
+#endif
             return;
         }
 
-        // BUG: duplicate 2D position cause endless recursion
         if (!can_subdivide())
+#ifdef DUPLICATES_SAFE
+        {
+            m_container->_insert(entity);
+            return;
+        }
+#else
             throw std::runtime_error("cannot subdivide anymore");
+#endif
 
         // subdivision
         // TODO: Fix overlapping [0, 6], [6, 12] -> [0, 5], [6, 11]?
@@ -229,7 +277,11 @@ namespace bango { namespace space {
             return;
         }
 
+#ifdef DUPLICATES_SAFE
+        m_container->_remove(entity);
+#else
         m_container->remove(entity);
+#endif
         
         if (!is_root())
             m_parent->merge();
@@ -242,14 +294,25 @@ namespace bango { namespace space {
             throw std::runtime_error("merge logic error");
         if (!m_top_left->is_leaf())
             throw std::runtime_error("merge logic error");
+#ifdef DUPLICATES_SAFE
+        if (distinct_size() > QUADTREE_MAX_NODES)
+#else
         if (size() > QUADTREE_MAX_NODES)
+#endif
             return;
 
         m_container = new T;
+#ifdef DUPLICATES_SAFE
+        m_container->_merge(m_top_left       ->m_container);
+        m_container->_merge(m_top_right      ->m_container);
+        m_container->_merge(m_bottom_left    ->m_container);
+        m_container->_merge(m_bottom_right   ->m_container);
+#else
         m_container->merge(m_top_left       ->m_container);
         m_container->merge(m_top_right      ->m_container);
         m_container->merge(m_bottom_left    ->m_container);
         m_container->merge(m_bottom_right   ->m_container);
+#endif
         
         
         delete m_top_left;

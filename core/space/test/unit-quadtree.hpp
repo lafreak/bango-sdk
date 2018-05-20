@@ -118,5 +118,28 @@ namespace {
             results.clear();
         }
     }
+}
 
+TEST(QuadTreeQuery_, DuplicatesSafe)
+{
+    quad<my_container> q({
+        {0,0}, 
+        128
+    });
+
+    std::vector<quad_entity> duplicates;
+    for (int i = 0; i < QUADTREE_MAX_NODES+1; i++)
+        duplicates.push_back(quad_entity{0,0}); 
+
+    for (int i = 0; i < QUADTREE_MAX_NODES; i++)
+        EXPECT_NO_THROW(q.insert(&duplicates[i]));
+    
+#ifdef DUPLICATES_SAFE
+    EXPECT_NO_THROW(q.insert(&duplicates[QUADTREE_MAX_NODES]));
+    EXPECT_EQ(QUADTREE_MAX_NODES+1, q.size());
+    EXPECT_EQ(1, q.distinct_size());
+#else
+    EXPECT_EQ(QUADTREE_MAX_NODES, q.size());
+    EXPECT_THROW(q.insert(&duplicates[QUADTREE_MAX_NODES]), std::runtime_error);
+#endif
 }
