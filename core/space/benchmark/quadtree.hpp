@@ -66,4 +66,36 @@ static void BM_QuadTree_Query(benchmark::State &state)
     }
 }
 
+static void BM_QuadTree_Move(benchmark::State &state)
+{
+    quad<my_container> q(square{
+        {0,0}, 
+        128
+    });
+
+    std::vector<quad_entity> entities;
+
+    for (int i = 0; i < 128; i+=state.range(0))
+        for (int j = 0; j < 128; j+=state.range(0))
+            entities.push_back(quad_entity{i,j});
+
+    for (auto& qe : entities)
+        q.insert(&qe);
+
+    quad_entity actor{0,0};
+    q.insert(&actor);
+
+    for (auto _ : state)
+    {
+        q.remove(&actor);
+
+        if (actor.m_x==127)
+            actor.m_y = (actor.m_y+1)%128;
+        actor.m_x = (actor.m_x+1)%128;
+
+        q.insert(&actor);
+    }
+}
+
 BENCHMARK(BM_QuadTree_Query)->Arg(16)->Arg(8)->Arg(4)->Arg(2)->Arg(1);
+BENCHMARK(BM_QuadTree_Move)->Arg(16)->Arg(8)->Arg(4)->Arg(2)->Arg(1);
