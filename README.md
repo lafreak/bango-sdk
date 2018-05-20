@@ -82,11 +82,12 @@ using namespace bango::space;
 void main()
 {
     quad<my_custom_container> q(square{
-        // space boundaries
-        {0,0},      // bottom left corner of square space
-        128         // square width
+            // space boundaries
+            {0,0},      // bottom left corner of square space
+            128         // square width
+        }
         //8         // optional max entity amount in leaf - default 8
-    });
+    );
 
     // declare entities with its coordinates
     quad_entity e1{25,41};
