@@ -12,7 +12,7 @@
 //! Affects performance!
 #define QUADTREE_MAX_NODES 8
 
-//#define DUPLICATES_SAFE
+#define DUPLICATES_SAFE
 
 namespace bango { namespace space {
 
@@ -86,6 +86,7 @@ namespace bango { namespace space {
             });
             merge(container);
         }
+        size_t _total_memory() const { return sizeof(m_distinct_sizes)+m_distinct_sizes.size()*(sizeof(std::pair<int,int>)+sizeof(size_t))+total_memory(); }
         size_t distinct_size() const { return m_distinct_sizes.size(); }
 #endif
     };
@@ -380,7 +381,11 @@ namespace bango { namespace space {
         if (!is_leaf())
             return result+m_top_left->total_memory()+m_top_right->total_memory()+m_bottom_left->total_memory()+m_bottom_right->total_memory();
 
+#ifdef DUPLICATES_SAFE
+        return result+m_container->_total_memory();   
+#else
         return result+m_container->total_memory();   
+#endif
     }
 
 }}
