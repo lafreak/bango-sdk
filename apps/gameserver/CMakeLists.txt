@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5.2 FATAL_ERROR)
 
 project(gameserver)
 
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 14)
 
 include_directories(include)
 include_directories(../shared)
@@ -16,6 +16,7 @@ set(SOURCES
   src/Inventory.cpp
   src/Item.cpp
   src/Player.cpp
+  src/WorldMap.cpp
   src/main.cpp
   )
 
