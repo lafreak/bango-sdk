@@ -44,7 +44,7 @@ namespace {
 
         virtual void SetUp()
         {
-            q = new quad<my_container>({
+            q = new quad<my_container>(square{
                 {0,0}, 
                 128
             });
@@ -122,7 +122,7 @@ namespace {
 
 TEST(QuadTreeQuery_, DuplicatesSafe)
 {
-    quad<my_container> q({
+    quad<my_container> q(square{
         {0,0}, 
         128
     });

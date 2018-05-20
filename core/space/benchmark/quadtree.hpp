@@ -32,7 +32,7 @@ public:
 
 static void BM_QuadTree_Query(benchmark::State &state)
 {
-    quad<my_container> q({
+    quad<my_container> q(square{
         {0,0}, 
         128
     });

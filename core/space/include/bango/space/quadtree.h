@@ -104,8 +104,11 @@ namespace bango { namespace space {
         quad* m_bottom_left     = nullptr;
         quad* m_bottom_right    = nullptr;
 
+        const size_t m_max_container_entities;
+
     public:
-        quad(square boundary, quad* parent=nullptr)
+        quad(square boundary, const size_t max_container_entities=QUADTREE_MAX_NODES, quad* parent=nullptr)
+            : m_max_container_entities(max_container_entities)
         {
             m_boundary = boundary; // so much copy
             m_container = new T;
@@ -204,11 +207,11 @@ namespace bango { namespace space {
 
         // do not need to subdivide
 #ifdef DUPLICATES_SAFE
-        if (m_container->distinct_size() < QUADTREE_MAX_NODES) // constant
+        if (m_container->distinct_size() < m_max_container_entities)//QUADTREE_MAX_NODES) // constant
         {
             m_container->_insert(entity);
 #else
-        if (m_container->size() < QUADTREE_MAX_NODES) // constant
+        if (m_container->size() < m_max_container_entities)//QUADTREE_MAX_NODES) // constant
         {
             m_container->insert(entity);
 #endif
@@ -233,25 +236,25 @@ namespace bango { namespace space {
                 (m_boundary.top()-m_boundary.bottom())/2+m_boundary.bottom()
             },
             m_boundary.width/2
-        }, this);
+        }, m_max_container_entities, this);
         m_top_right = new quad({
             point {
                 (m_boundary.right()-m_boundary.left())/2+m_boundary.left(),
                 (m_boundary.top()-m_boundary.bottom())/2+m_boundary.bottom()
             }, 
             m_boundary.width/2, 
-        }, this);
+        }, m_max_container_entities, this);
         m_bottom_left = new quad({
             m_boundary.bottom_left, 
             m_boundary.width/2
-        }, this);
+        }, m_max_container_entities, this);
         m_bottom_right = new quad({
             point {
                 (m_boundary.right()-m_boundary.left())/2+m_boundary.left(),
                 m_boundary.bottom()
             }, 
             m_boundary.width/2
-        }, this);
+        }, m_max_container_entities, this);
 
         //!!!
         //for (auto& en : m_tile->m_statics)
@@ -296,9 +299,9 @@ namespace bango { namespace space {
         if (!m_top_left->is_leaf())
             throw std::runtime_error("merge logic error");
 #ifdef DUPLICATES_SAFE
-        if (distinct_size() > QUADTREE_MAX_NODES)
+        if (distinct_size() > m_max_container_entities)//QUADTREE_MAX_NODES)
 #else
-        if (size() > QUADTREE_MAX_NODES)
+        if (size() > m_max_container_entities)//QUADTREE_MAX_NODES)
 #endif
             return;
 
@@ -376,7 +379,8 @@ namespace bango { namespace space {
         long long result =
                 sizeof(m_boundary)+sizeof(m_container)+
                 sizeof(m_parent)+
-                sizeof(m_top_left)+sizeof(m_top_right)+sizeof(m_bottom_left)+sizeof(m_bottom_right);
+                sizeof(m_top_left)+sizeof(m_top_right)+sizeof(m_bottom_left)+sizeof(m_bottom_right)+
+                sizeof(m_max_container_entities);
 
         if (!is_leaf())
             return result+m_top_left->total_memory()+m_top_right->total_memory()+m_bottom_left->total_memory()+m_bottom_right->total_memory();
