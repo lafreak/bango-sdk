@@ -28,9 +28,10 @@
             "intelliSenseMode": "clang-x64",
             "includePath": [
                 "${workspaceRoot}/core/network/include",
+                "${workspaceRoot}/core/anetwork/include",
                 "${workspaceRoot}/core/persistence/include",
                 "${workspaceRoot}/core/persistence/include/zdb",
-                "${workspaceRoot}/core/network/space",
+                "${workspaceRoot}/core/space/include",
                 "${workspaceRoot}/apps/shared",
                 "${workspaceRoot}/apps/dbserver/include",
                 "${workspaceRoot}/apps/gameserver/include",
@@ -41,8 +42,7 @@
                 "${localappdata}/lxss/rootfs/usr/local/include",
                 "${localappdata}/lxss/rootfs/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed",
                 "${localappdata}/lxss/rootfs/usr/include/x86_64-linux-gnu",
-                "${localappdata}/lxss/rootfs/usr/include",
-                "${workspaceFolder}/core/space/include"
+                "${localappdata}/lxss/rootfs/usr/include"
             ],
             "defines": [
                 "__linux__",

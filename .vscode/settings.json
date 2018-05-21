@@ -56,7 +56,8 @@
     "memory": "cpp",
     "mutex": "cpp",
     "ratio": "cpp",
-    "thread": "cpp"
+    "thread": "cpp",
+    "tacopie": "cpp"
   },
   "C_Cpp.errorSquiggles": "Disabled"
 }
