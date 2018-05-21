@@ -18,11 +18,7 @@ private:
     tcp_server m_gameserver;
     tcp_client m_dbclient;
 
-    map *m_map;
-
-
 public:
-    ~GameManager();
 
     void Initialize();
     bool ConnectToDatabase(const std::string& host, const std::int32_t port);
