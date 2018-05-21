@@ -5,7 +5,12 @@
 #include <memory>
 #include <functional>
 
-class Player : public bango::space::quad_entity {};
+struct Player : public bango::space::quad_entity
+{
+    Player(int x, int y)
+        : bango::space::quad_entity{x,y} {}
+};
+
 class Container : public bango::space::quad_entity_container<Container>
 {
     std::list<const Player*> m_players;
@@ -49,16 +54,14 @@ class WorldMap
 {
     const int m_sight;
 
-    enum { PLAYER };
-
-    typedef std::function<void(const Player*, const bango::space::quad_entity*)>            PlayerAppearanceEvent;
-    typedef std::function<void(const Player*, const bango::space::quad_entity*, int, int)>  PlayerMoveEvent;
+    typedef std::function<void(const Player*, const bango::space::quad_entity*)>            AppearanceEvent;
+    typedef std::function<void(const Player*, const bango::space::quad_entity*, int, int)>  MoveEvent;
 
     std::unique_ptr<bango::space::quad<Container>> m_quad;
 
-    PlayerAppearanceEvent   m_on_appear    =[](const Player*, const bango::space::quad_entity*){};
-    PlayerAppearanceEvent   m_on_disappear =[](const Player*, const bango::space::quad_entity*){};
-    PlayerMoveEvent         m_on_move      =[](const Player*, const bango::space::quad_entity*, int, int){};
+    AppearanceEvent   m_on_appear    =[](const Player*, const bango::space::quad_entity*){};
+    AppearanceEvent   m_on_disappear =[](const Player*, const bango::space::quad_entity*){};
+    MoveEvent         m_on_move      =[](const Player*, const bango::space::quad_entity*, int, int){};
 
 public:
     WorldMap(const int width, const int sight, const size_t max_container_entity=QUADTREE_MAX_NODES)
@@ -138,7 +141,7 @@ public:
         m_quad->insert(entity);
     }
 
-    void OnAppear       (const PlayerAppearanceEvent&& callback){ m_on_appear       = callback; }
-    void OnDisappear    (const PlayerAppearanceEvent&& callback){ m_on_disappear    = callback; }
-    void OnMove         (const PlayerMoveEvent&& callback)      { m_on_move         = callback; }
+    void OnAppear       (const AppearanceEvent&& callback){ m_on_appear       = callback; }
+    void OnDisappear    (const AppearanceEvent&& callback){ m_on_disappear    = callback; }
+    void OnMove         (const MoveEvent&& callback)      { m_on_move         = callback; }
 };
