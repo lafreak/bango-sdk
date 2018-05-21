@@ -6,7 +6,6 @@ option(USE_GTEST "GTEST" OFF)
 option(USE_BENCHMARK "BENCHMARK" OFF)
 
 add_subdirectory(core/network)
-add_subdirectory(core/anetwork)
 add_subdirectory(core/persistence)
 add_subdirectory(core/space)
 add_subdirectory(apps/dbserver)

@@ -1,26 +1,10 @@
-#pragma once
+#include <bango/network/writable.h>
 
-#include <bango/anetwork/packet.h>
-
-#include <tacopie/tacopie>
-#include <cstdarg>
-
-namespace bango { namespace anetwork {
-
-    class writable
-    {
-    protected:
-        tacopie::tcp_client m_client;
-
-    public:
-        void write(unsigned char type);
-        void write(const packet& p);
-        void write(unsigned char type, char* format, ...);
-    };
+namespace bango { namespace network {
 
     void writable::write(const packet& p)
     {
-        m_client.async_write({p.buffer(), nullptr});
+        m_client->async_write({p.buffer(), nullptr});
     }
 
     void writable::write(unsigned char type)
@@ -28,7 +12,7 @@ namespace bango { namespace anetwork {
         write(packet(type));
     }
 
-    void writable::write(unsigned char type, char* format, ...)
+    void writable::write(unsigned char type, const char* format, ...)
     {
         packet p(type);
 

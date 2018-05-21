@@ -1,6 +1,6 @@
 #pragma once
 
-#include <bango/anetwork/writable.h>
+#include <bango/network/writable.h>
 
 #include <functional>
 #include <map>
@@ -8,7 +8,7 @@
 #include <iostream>
 #include <algorithm>
 
-namespace bango { namespace anetwork {
+namespace bango { namespace network {
 
     // template<class T>
     // class session : public writable
@@ -24,7 +24,7 @@ namespace bango { namespace anetwork {
 
         tacopie::tcp_server m_server;
 
-        std::map<int, const std::unique_ptr<T>> m_sessions;
+        std::map<int*, const std::unique_ptr<T>> m_sessions;
         std::recursive_mutex m_sessions_rmtx;
 
         std::function<void(const std::unique_ptr<T>&)> m_on_connected;
@@ -46,7 +46,9 @@ namespace bango { namespace anetwork {
         void when(unsigned char type, const std::function<void(const std::unique_ptr<T>&, packet&)>&& callback);
         void on_connected(const std::function<void(const std::unique_ptr<T>&)>&& callback);
         void on_disconnected(const std::function<void(const std::unique_ptr<T>&)>&& callback);
-        void for_each(const std::function<bool(const std::unique_ptr<T>&)>&& callback);
+        void for_each(const std::function<void(const std::unique_ptr<T>&)>&& callback);
+
+        const std::map<int*, const std::unique_ptr<T>>& sessions() const { return m_sessions; }
     };
 
     template<class T>
@@ -57,7 +59,7 @@ namespace bango { namespace anetwork {
                 on_new_message(client, res);
             }});
 
-            auto session = insert(client);
+            auto& session = insert(client);
 
             if (m_on_connected)
                 m_on_connected(session);
@@ -69,7 +71,7 @@ namespace bango { namespace anetwork {
     template<class T>
     void server<T>::on_new_message(const taco_client_t& client, const taco_read_result_t& res)
     {
-        auto session = find(client);
+        auto& session = find(client);
 
         if (res.success)
         {
@@ -104,9 +106,14 @@ namespace bango { namespace anetwork {
         std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
 
         auto result = m_sessions.insert(std::make_pair(
-            (int) client->get_socket().get_fd(),
-            std::make_unique<T>()
+            (int*) client.get(),
+            std::make_unique<T>(client)
         ));
+
+        if (!result.second)
+            throw std::runtime_error("duplicate session");
+
+        return result.first->second;
     }
 
     template<class T>
@@ -114,8 +121,8 @@ namespace bango { namespace anetwork {
     {
         std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
 
-        if (m_sessions.erase((int) client->get_socket().get_fd()) == 0)
-            throw std::runtime_error(__PRETTY_FUNCTION__);
+        if (m_sessions.erase((int*) client.get()) == 0)
+            throw std::runtime_error("session removal of non existing client");
     }
 
     template<class T>
@@ -124,7 +131,7 @@ namespace bango { namespace anetwork {
         std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
 
         // BUG: returned value may be deleted from server later on
-        return m_sessions[(int) client->get_socket().get_fd()];
+        return m_sessions[(int*) client.get()];
     }
 
     template<class T>
@@ -152,16 +159,17 @@ namespace bango { namespace anetwork {
     template<class T>
     void server<T>::when(unsigned char type, const std::function<void(const std::unique_ptr<T>&, packet&)>&& callback)
     {
-        m_callbacks[type] = callback;
+        //m_callbacks[type] = callback;
+        m_callbacks.insert(std::make_pair(type, callback));
     }
 
     template<class T>
-    void server<T>::for_each(const std::function<bool(const std::unique_ptr<T>&)>&& callback)
+    void server<T>::for_each(const std::function<void(const std::unique_ptr<T>&)>&& callback)
     {
         std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
 
         for (auto& session : m_sessions)
-            callback(session);
+            callback(session.second);
     }
     
 }}

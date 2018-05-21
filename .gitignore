@@ -1,2 +1,4 @@
 core/network/build
 core/persistence/build
+apps/gameserver.1
+core/bnetwork

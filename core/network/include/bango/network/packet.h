@@ -1,32 +1,79 @@
 #pragma once
 
 #include <vector>
-#include <iostream>
+#include <cstring>
+#include <cassert>
+#include <stdexcept>
 
-//#define MAX_PACKET_LENGTH 1024
+//#define NDEBUG // removes assertions
 #define MAX_PACKET_LENGTH 32768
 
 namespace bango { namespace network {
 
     class packet
     {
-        std::vector<char> m_buffer;
+        char* m_buffer;
 
-        void reset_size() { ((unsigned short*)(m_buffer.data()))[0] = size(); }
+        char* m_header;
+        char* m_begin;
+        char* m_end;
 
-        unsigned short size_ex() const { return ((unsigned short*)(m_buffer.data()))[0]; }
+        void reset_size()
+        {
+            unsigned short size = (unsigned short)(m_end - m_begin) + 3;
+            (m_begin-3)[0] = ((char*)&size)[0];
+            (m_begin-3)[1] = ((char*)&size)[1];
+            (m_begin-3)[2] = m_header[2];
+            m_header = m_begin-3;
+        }
 
     public:
-        packet() { m_buffer = {3, 0, 0}; }
-        packet(unsigned char type) { m_buffer = {3, 0, (char)type}; }
-        packet(const std::vector<char>& buffer);
+        packet(unsigned char type) : packet()
+        {
+            m_header[2] = type;
+        }
 
-        const std::vector<char>& buffer() const { return m_buffer; }
+        packet()
+        {
+            // That's hell lot of data to send just 1 byte!
+            // TODO: Come up with solution
+            m_buffer = new char[MAX_PACKET_LENGTH];
+            m_header = m_buffer;
+            m_end = m_begin = m_buffer+3;
+            m_header[0]=3;
+            m_header[1]=0;
+            m_header[2]=0;
+        }
 
-        unsigned char type() const { return (unsigned char) m_buffer[2]; }
-        unsigned short size() const { return (unsigned short) m_buffer.size(); }
+        // This constructor copies data. Maybe work on vector data?
+        packet(const std::vector<char>& buffer) : packet()
+        {
+            std::memcpy(m_buffer, buffer.data(), buffer.size());
+            m_end = m_buffer+buffer.size();
+            assert(size() == buffer.size());
+        }
 
-        packet& change_type(unsigned char type) { m_buffer[2] = (char)type; return *this; }
+        ~packet()
+        {
+            delete[] m_buffer;
+        }
+
+        unsigned short size() const 
+        {
+            assert(((unsigned short*)m_header)[0] == m_end-m_header);
+            return ((unsigned short*)m_header)[0]; 
+        }
+
+        unsigned char type() const { return (unsigned char)(m_header[2]);}
+        bool empty() const { return m_begin == m_end; }
+
+        char* header() const { return m_header; }
+        char* begin() const { return m_begin; }
+        char* end() const { return m_end; }
+
+        const std::vector<char> buffer() const { return std::vector<char>(header(), end()); }
+
+        packet& change_type(unsigned char type) { m_header[2] = (char)type; return *this; }
 
         template<typename T>
         void push(const T& value);
@@ -34,7 +81,7 @@ namespace bango { namespace network {
         template<typename T>
         T pop();
 
-        void push_str(const std::string& str);
+        void push_str(const std::string& str) { push_str(str.c_str()); }
         void push_str(const char* str);
         std::string pop_str();
 
@@ -45,44 +92,35 @@ namespace bango { namespace network {
         friend packet& operator<< (packet& lhs, std::string& rhs) { lhs.push_str(rhs); return lhs; }
         friend packet& operator<< (packet& lhs, const char* rhs) { lhs.push_str(rhs); return lhs; }
 
-        void dump() const;
-
         void merge(const packet& p);
         friend packet& operator<< (packet& lhs, const packet& rhs) { lhs.merge(rhs); return lhs; }
-
-        bool valid() const { return size_ex() == size(); }
     };
 
     template<typename T>
     inline void packet::push(const T& value)
     {
-        if (size() + sizeof(T) > MAX_PACKET_LENGTH)
-        {
-            std::cerr << __FUNCTION__ << ": Packet overflow" << std::endl;
-            return;
-        }
+        if ((m_end-m_buffer) + sizeof(T) > MAX_PACKET_LENGTH)
+            throw std::runtime_error("packet overflow");
 
-        m_buffer.insert(m_buffer.end(), (char*)&value, ((char*)&value)+sizeof(T));
-        
+        memcpy(m_end, (char*)&value, sizeof(T));
+        m_end += sizeof(T);
+
         reset_size();
     }
 
     template<typename T>
     inline T packet::pop()
     {
-        if (size() < sizeof(T) + 3)
-        {
-            std::cerr << __FUNCTION__ << ": Packet is empty [" << (int)type() << "]" << size() << "/" << sizeof(T) << std::endl;
-            return T();
-        }
+        if (m_end-m_begin < sizeof(T))
+            throw std::runtime_error("packet no more data");
 
-        T result = *(T*)(m_buffer.data() + 3);
-
-        m_buffer.erase(m_buffer.begin() + 3, m_buffer.begin() + 3 + sizeof(T));
+        T result;
+        memcpy(&result, m_begin, sizeof(T));
+        m_begin += sizeof(T);
 
         reset_size();
 
         return result;
     }
-
+    
 }}

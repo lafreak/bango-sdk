@@ -57,7 +57,8 @@
     "mutex": "cpp",
     "ratio": "cpp",
     "thread": "cpp",
-    "tacopie": "cpp"
+    "tacopie": "cpp",
+    "cstdarg": "cpp"
   },
   "C_Cpp.errorSquiggles": "Disabled"
 }

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <bango/anetwork/writable.h>
+#include <bango/network/writable.h>
 
 #include <functional>
 #include <map>
 #include <iostream>
 
-namespace bango { namespace anetwork {
+namespace bango { namespace network {
 
     class client : public writable
     {
@@ -25,8 +25,8 @@ namespace bango { namespace anetwork {
 
     void client::connect(const std::string& host, std::int32_t port)
     {
-        m_client.connect(host, port);
-        m_client.async_read({MAX_PACKET_LENGTH, [=](const taco_read_result_t& res) {
+        m_client->connect(host, port);
+        m_client->async_read({MAX_PACKET_LENGTH, [=](const taco_read_result_t& res) {
             on_new_message(res);
         }});
     }
@@ -35,7 +35,7 @@ namespace bango { namespace anetwork {
     {
         if (res.success)
         {
-            m_client.async_read({MAX_PACKET_LENGTH, [=](const taco_read_result_t& res) {
+            m_client->async_read({MAX_PACKET_LENGTH, [=](const taco_read_result_t& res) {
                 on_new_message(res);
             }});
 
@@ -54,7 +54,7 @@ namespace bango { namespace anetwork {
         else
         {
             std::cerr << "disconnected\n";
-            m_client.disconnect();
+            m_client->disconnect();
         }
     }
 
@@ -65,5 +65,10 @@ namespace bango { namespace anetwork {
             std::cerr << "unknown packet " << (int)p.type() << std::endl;
         else
             result->second(p);            
+    }
+
+    void client::when(unsigned char type, const std::function<void(packet&)>&& callback)
+    {
+        m_callbacks.insert(std::make_pair(type, callback));
     }
 }}
