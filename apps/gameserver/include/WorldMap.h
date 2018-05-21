@@ -125,6 +125,7 @@ public:
             }
         });
 
+        // BUG: Move action pushes entity with chnaged (x,y) and same (new_x, new_y) so delta is lost.
         m_quad->query(new_center, m_sight, [&](const Container* container) {
             for (auto& player : container->players())
             {
