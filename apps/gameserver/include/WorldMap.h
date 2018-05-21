@@ -5,11 +5,7 @@
 #include <memory>
 #include <functional>
 
-struct Player : public bango::space::quad_entity
-{
-    Player(int x, int y)
-        : bango::space::quad_entity{x,y} {}
-};
+#include "Player.h"
 
 class Container : public bango::space::quad_entity_container<Container>
 {

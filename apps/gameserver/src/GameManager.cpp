@@ -160,6 +160,18 @@ void GameManager::Initialize()
         m_dbclient.write(S2D_DISCONNECT, "d", s->get<Player>()->GetAccountID());
         std::cout << "::< " << s->get_host() << " has disconnected" << std::endl; 
     });
+
+    m_worldmap->OnAppear([&](const Player* player, const bango::space::quad_entity* entity) {
+
+    });
+
+    m_worldmap->OnDisappear([&](const Player* player, const bango::space::quad_entity* entity) {
+
+    });
+
+    m_worldmap->OnMove([&](const Player* player, const bango::space::quad_entity* entity, int new_x, int new_y) {
+
+    });
 }
 
 bool GameManager::ConnectToDatabase(const std::string& host, const std::int32_t port)

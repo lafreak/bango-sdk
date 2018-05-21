@@ -3,9 +3,9 @@
 
 #include <list>
 
-#include "../include/WorldMap.h"
+//#include "../include/WorldMap.h"
 
-#include "unit-worldmap.hpp"
+//#include "unit-worldmap.hpp"
 
 int main(int argc, char **argv)
 {

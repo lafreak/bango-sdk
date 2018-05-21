@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bango/network.h>
+#include <bango/space/quadtree.h>
 
 #include <inix/protocol.h>
 #include <inix/common.h>
@@ -10,13 +11,12 @@
 
 using namespace bango::network;
 
-class Player : public component
+class Player : public component, public bango::space::quad_entity
 {
     PLAYERINFO m_data;
     Inventory m_inventory;
 
     std::string m_name;
-    int m_x, m_y;
 
 public:
 
