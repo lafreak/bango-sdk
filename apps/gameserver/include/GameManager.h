@@ -1,7 +1,6 @@
 #pragma once
 
 #include <bango/network.h>
-#include <bango/space.h>
 
 #include <inix/protocol.h>
 #include <inix/common.h>
@@ -10,7 +9,6 @@
 #include "Player.h"
 
 using namespace bango::network;
-using namespace bango::space;
 
 class GameManager
 {
