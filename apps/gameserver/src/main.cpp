@@ -17,24 +17,29 @@ class User : public writable
 {
     bool m_ingame=false;
 
-    unsigned int    m_uid;
-    int             m_aid;
 public:
     explicit User(const taco_client_t& client) : writable(client)
     {
         static unsigned int g_max_uid=0;
-        m_uid = g_max_uid++;
+        m_credentials.UID = g_max_uid++;
     }
+
+    struct CREDENTIALS 
+    {
+        std::int32_t    AID; // AccountID   - Player DB Table Index
+        std::uint32_t   UID; // UserID      - DB/Game Server Unique User Identifier
+    } m_credentials;
 
     bool InGame() const { return m_ingame; }
 
     void InitPlayer()           { m_ingame = true; } 
     void DestroyPlayer()        { m_ingame = false; }
 
-    unsigned int    GetUID() const { return m_uid; }
-    int             GetAID() const { return m_aid; }
+    unsigned int        GetUID()        const { return m_credentials.UID; }
+    int                 GetAID()        const { return m_credentials.AID; }
+    const CREDENTIALS&  GetCredentials()const { return m_credentials; }
 
-    void            SetAID(int value)   { m_aid = value; }
+    void            SetAID(int value)   { m_credentials.AID = value; }
 };
 
 class Player : public quad_entity, public User
@@ -237,7 +242,7 @@ public:
                     return;
                 }
 
-                // BUG: Player might log out by the time packet arrived.
+                // BUG: Player might log in by the time packet arrived?
                 assert(!user->InGame());
                 user->InitPlayer();
                 user->OnLoadPlayer(p);
@@ -261,14 +266,13 @@ public:
 
         m_gameserver.when(C2S_LOGIN, [&](const std::unique_ptr<Player>& user, packet& p) {
             if (user->InGame()) return;
-            p.push<unsigned int>(user->GetUID());
+            p << user->GetUID();
             m_dbclient.write(p.change_type(S2D_LOGIN));
         });
 
         m_gameserver.when(C2S_SECOND_LOGIN, [&](const std::unique_ptr<Player>& user, packet& p) {
             if (user->InGame()) return;
-            p.push<int>(user->GetAID());
-            p.push<unsigned int>(user->GetUID());
+            p << user->GetCredentials();
             m_dbclient.write(p.change_type(S2D_SECONDARY_LOGIN));
         });
 
@@ -311,33 +315,28 @@ public:
                 return;
             }
 
-            // TODO: Merge both into one struct.
-            copy.push<int>(user->GetAID());
-            copy.push<unsigned int>(user->GetUID());
+            copy << user->GetCredentials();
 
             m_dbclient.write(copy.change_type(S2D_NEWPLAYER));
         });
 
         m_gameserver.when(C2S_DELPLAYER, [&](const std::unique_ptr<Player>& user, packet& p) {
             if (user->InGame()) return;
-            p.push<int>(user->GetAID());
-            p.push<unsigned int>(user->GetUID());
+            p << user->GetCredentials();
 
             m_dbclient.write(p.change_type(S2D_DELPLAYER));
         });
 
         m_gameserver.when(C2S_RESTOREPLAYER, [&](const std::unique_ptr<Player>& user, packet& p) {
             if (user->InGame()) return;
-            p.push<int>(user->GetAID());
-            p.push<unsigned int>(user->GetUID());
+            p << user->GetCredentials();
 
             m_dbclient.write(p.change_type(S2D_RESTOREPLAYER));
         });
 
         m_gameserver.when(C2S_LOADPLAYER, [&](const std::unique_ptr<Player>& user, packet& p) {
             if (user->InGame()) return;
-            p.push<int>(user->GetAID());
-            p.push<unsigned int>(user->GetUID());
+            p << user->GetCredentials();
 
             m_dbclient.write(p.change_type(S2D_LOADPLAYER));
         });

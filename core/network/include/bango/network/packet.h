@@ -55,6 +55,15 @@ namespace bango { namespace network {
             assert(size() == buffer.size());
         }
 
+        packet(const packet& p)
+        {
+            m_buffer = new char[MAX_PACKET_LENGTH];
+            memcpy(m_buffer, p.m_buffer, MAX_PACKET_LENGTH);
+            m_header = m_buffer+(p.m_header-p.m_buffer);
+            m_begin = m_buffer+(p.m_begin-p.m_buffer);
+            m_end = m_buffer+(p.m_end-p.m_buffer);
+        }
+
         ~packet()
         {
             delete[] m_buffer;
