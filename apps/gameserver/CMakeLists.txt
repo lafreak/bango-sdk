@@ -27,10 +27,3 @@ target_link_libraries(gameserver
   tacopie 
   pthread
   )
-
-IF(USE_GTEST)
-  find_package(GTest REQUIRED)
-  include_directories(${GTEST_INCLUDE_DIRS})
-  add_executable(gameserver_test test/main.cpp)
-  target_link_libraries(gameserver_test ${GTEST_LIBRARIES} bangospace pthread)
-ENDIF()

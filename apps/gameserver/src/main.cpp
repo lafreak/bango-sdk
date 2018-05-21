@@ -15,7 +15,7 @@ using namespace bango::space;
 
 class User : public writable
 {
-    bool m_in_game=false;
+    bool m_ingame=false;
 
     unsigned int    m_uid;
     int             m_aid;
@@ -26,10 +26,10 @@ public:
         m_uid = g_max_uid++;
     }
 
-    bool InGame() const { return m_in_game; }
+    bool InGame() const { return m_ingame; }
 
-    void InitPlayer()       { m_in_game = true; } 
-    void DestroyPlayer()  { m_in_game = false; }
+    void InitPlayer()           { m_ingame = true; } 
+    void DestroyPlayer()        { m_ingame = false; }
 
     unsigned int    GetUID() const { return m_uid; }
     int             GetAID() const { return m_aid; }
@@ -60,21 +60,21 @@ public:
             GetInteligence(),
             GetWisdom(),
             GetDexterity(),
-            GetCurHP(),             //!
-            GetCurHP(), //MaxHP     //!
+            GetCurHP(),
+            GetCurHP(), //MaxHP
             GetCurMP(),
             GetCurMP(), //MaxMP
             1, //Hit
             2, //Dodge
-            3, //Defense            //!
-            4, //Absorb             //!
-            GetExp(),               //!
+            3, //Defense
+            4, //Absorb
+            GetExp(),
             5, //MinAttack
             6, //MaxAttack
             7, //MinMagic
             8, //MaxMagic
             GetPUPoint(),
-            GetSUPoint(),           //!
+            GetSUPoint(),
             9, //ResistFire
             10, //ResistIce
             11, //ResistLitning
@@ -95,69 +95,81 @@ public:
         auto unknown = p.pop<char>();
         auto height = p.pop<int>();
 
-        // Map thing
-        write(S2C_CREATEPLAYER, "dsbdddwIwwwwwwwwbbIssdbdddIIbddb",
-            GetUID(), // CharacterID!
-            GetName().c_str(),
-            GetClass() | GAME_HERO,
-            GetX(),
-            GetY(),
-            GetZ(),
-            0, //Dir
-            0, //GState
-            0, //GI Weapon
-            0, //GI Shield
-            0, //GI Helmet
-            0, //GI Upper
-            0, //GI Lower
-            0, //GI Gauntlet
-            0, //GI Boots
-            0, //GI Costume
-            GetFace(),
-            GetHair(),
-            0, //MState
-            "\0", //GuildClass
-            "\0", //GuildName
-            0, //GID
-            0, //Flag
-            0, //FlagItem
-            0, //HonorGrade
-            0, //HonorOption
-            0, //GStateEx
-            0, //MStateEx
-
-            0, //Unk
-            0, //Unk
-            0, //Unk
-            0  //Unk
-            );
+        write(BuildAppearPacket(true));
     }
 
     void GameRestart() {}
 
     bool CanLogout() const { return true; }
 
-    const std::string&  GetName()       const { return m_name; }
-    unsigned char       GetClass()      const { return m_data.Class; }
-    unsigned char       GetJob()        const { return m_data.Job; }
-    unsigned char       GetLevel()      const { return m_data.Level; }
-    unsigned short      GetStrength()   const { return m_data.Strength; }
-    unsigned short      GetHealth()     const { return m_data.Health; }
-    unsigned short      GetInteligence()const { return m_data.Inteligence; }
-    unsigned short      GetWisdom()     const { return m_data.Wisdom; }
-    unsigned short      GetDexterity()  const { return m_data.Dexterity; }
-    unsigned int        GetCurHP()      const { return m_data.CurHP; }
-    unsigned int        GetCurMP()      const { return m_data.CurMP; }
-    unsigned long       GetExp()        const { return m_data.Exp; }
-    unsigned short      GetPUPoint()    const { return m_data.PUPoint; }
-    unsigned short      GetSUPoint()    const { return m_data.SUPoint; }
-    unsigned short      GetContribute() const { return m_data.Contribute; }
-    unsigned int        GetRage()       const { return m_data.Rage; }
-    unsigned int        GetX()          const { return m_x; }
-    unsigned int        GetY()          const { return m_y; }
-    unsigned int        GetZ()          const { return m_data.Z; }
-    unsigned char       GetFace()       const { return m_data.Face; }
-    unsigned char       GetHair()       const { return m_data.Hair; }
+    packet BuildAppearPacket(bool hero=false)
+    {
+        packet p(S2C_CREATEPLAYER);
+
+        p   << GetUID() // TODO: UID->CharacterID
+            << m_name
+            << GetClass(hero) 
+            << GetX() 
+            << GetY() 
+            << GetZ() 
+            << GetDir() 
+            << GetGState();
+        
+        // Equipment Indexes
+        p << (std::int16_t)0 << (std::int16_t)0 << (std::int16_t)0 << (std::int16_t)0;
+        p << (std::int16_t)0 << (std::int16_t)0 << (std::int16_t)0 << (std::int16_t)0;
+
+        p   << GetFace() 
+            << GetHair() 
+            << GetMState() 
+            << "\0" << "\0" // GuildClass & GuildName
+            << GetGID() 
+            << GetFlag() 
+            << GetFlagItem()
+            << GetHonorGrade() 
+            << GetHonorOption() 
+            << GetGStateEx() 
+            << GetMStateEx();
+
+        // Unknown
+        p << (std::int8_t)0 << (std::int32_t)0 << (std::int32_t)0 << (std::int8_t)0;
+
+        return p;
+    }
+
+    const std::string&  GetName()                   const { return m_name; }
+    std::uint8_t        GetClass(bool hero=false)   const { return hero ? (m_data.Class | GAME_HERO) : m_data.Class; }
+    std::uint8_t        GetJob()                    const { return m_data.Job; }
+    std::uint8_t        GetLevel()                  const { return m_data.Level; }
+    std::uint16_t       GetStrength()               const { return m_data.Strength; }
+    std::uint16_t       GetHealth()                 const { return m_data.Health; }
+    std::uint16_t       GetInteligence()            const { return m_data.Inteligence; }
+    std::uint16_t       GetWisdom()                 const { return m_data.Wisdom; }
+    std::uint16_t       GetDexterity()              const { return m_data.Dexterity; }
+    std::uint32_t       GetCurHP()                  const { return m_data.CurHP; }
+    std::uint32_t       GetCurMP()                  const { return m_data.CurMP; }
+    std::uint64_t       GetExp()                    const { return m_data.Exp; }
+    std::uint16_t       GetPUPoint()                const { return m_data.PUPoint; }
+    std::uint16_t       GetSUPoint()                const { return m_data.SUPoint; }
+    std::uint16_t       GetContribute()             const { return m_data.Contribute; }
+    std::uint32_t       GetRage()                   const { return m_data.Rage; }
+    std::int32_t        GetX()                      const { return m_x; }
+    std::int32_t        GetY()                      const { return m_y; }
+    std::int32_t        GetZ()                      const { return m_data.Z; }
+    std::uint8_t        GetFace()                   const { return m_data.Face; }
+    std::uint8_t        GetHair()                   const { return m_data.Hair; }
+
+    // Not implemented
+    std::uint16_t       GetDir()        const { return 0; }
+    std::uint64_t       GetGState()     const { return 0; }
+    std::uint64_t       GetMState()     const { return 0; }
+    std::uint32_t       GetGID()        const { return 0; }
+    std::uint8_t        GetFlag()       const { return 0; }
+    std::uint32_t       GetFlagItem()   const { return 0; }
+    std::uint32_t       GetHonorGrade() const { return 0; }
+    std::uint32_t       GetHonorOption()const { return 0; }
+    std::uint64_t       GetGStateEx()   const { return 0; }
+    std::uint64_t       GetMStateEx()   const { return 0; }
 };
 
 class GameManager
@@ -353,6 +365,7 @@ public:
         });
 
         m_gameserver.on_disconnected([&](const std::unique_ptr<Player>& user) {
+            m_dbclient.write(S2D_DISCONNECT, "d", user->GetAID());
             std::cout << "disconnection: " << user->GetUID() << std::endl;
         });
     }

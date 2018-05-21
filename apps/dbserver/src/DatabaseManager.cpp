@@ -2,6 +2,8 @@
 
 void DatabaseManager::Initialize()
 {
+    // BUG: When GameServer disconnects, accounts stay logged in.
+    
     m_dbserver.when(S2D_DISCONNECT, [&](const std::unique_ptr<GameServer>& s, packet& p) {
         FlagDisconnected(p.pop<int>());
     });

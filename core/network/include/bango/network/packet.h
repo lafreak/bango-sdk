@@ -4,6 +4,7 @@
 #include <cstring>
 #include <cassert>
 #include <stdexcept>
+#include <type_traits>
 
 //#define NDEBUG // removes assertions
 #define MAX_PACKET_LENGTH 32768
@@ -28,6 +29,7 @@ namespace bango { namespace network {
         }
 
     public:
+        explicit
         packet(unsigned char type) : packet()
         {
             m_header[2] = type;
@@ -89,10 +91,13 @@ namespace bango { namespace network {
         friend packet& operator>> (packet& lhs, T& rhs) { rhs = lhs.pop<T>(); return lhs; }
         friend packet& operator>> (packet& lhs, std::string& rhs) { rhs = lhs.pop_str(); return lhs; }
 
+        template<typename T>
+        friend packet& operator<< (packet& lhs, T rhs) { lhs.push<T>(rhs); return lhs; }
         friend packet& operator<< (packet& lhs, std::string& rhs) { lhs.push_str(rhs); return lhs; }
         friend packet& operator<< (packet& lhs, const char* rhs) { lhs.push_str(rhs); return lhs; }
 
         void merge(const packet& p);
+
         friend packet& operator<< (packet& lhs, const packet& rhs) { lhs.merge(rhs); return lhs; }
     };
 
