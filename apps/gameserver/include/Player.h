@@ -1,7 +1,6 @@
 #pragma once
 
 #include <bango/network.h>
-#include <bango/space.h>
 
 #include <inix/protocol.h>
 #include <inix/common.h>
@@ -10,17 +9,19 @@
 #include "Inventory.h"
 
 using namespace bango::network;
-using namespace bango::space;
 
-class Player : public component, public notifable_entity
+class Player : public component
 {
     PLAYERINFO m_data;
     Inventory m_inventory;
 
+    std::string m_name;
+    int m_x, m_y;
+
 public:
 
     Player(session* sess)
-        : component(sess), notifable_entity(0, 0, "")
+        : component(sess)
     {
     }
 
