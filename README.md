@@ -44,7 +44,6 @@ struct User : public writable {
 int main()
 {
     server<User> serv;
-    serv.start("localhost", 3000);
 
     const unsigned char SOME_EVENT=30; // [0-255]
 
@@ -89,9 +88,46 @@ int main()
         //user->write()...
     });
 
+    serv.start("localhost", 3000);
+
+    // Don't close the app.
+    std::cin.get();
     return 0;
 }
+```
 
+### 2. Client
+Sample application:
+
+```cpp
+#include <bango/network/client.h>
+#include <iostream>
+
+using namespace bango::network;
+
+int main()
+{
+    client my_client;
+
+    // [0-255]
+    const unsigned char SOME_EVENT=30; 
+    const unsigned char OUTGOING_EVENT=40;
+
+    // When server sends SOME_EVENT, lambda function will execute.
+    my_client.when(SOME_EVENT, [&](packet& p) {
+
+        // Print message on console.
+        std::cout << p.pop_str() << std::endl;
+
+        my_client.write(OUTGOING_EVENT, "s", "I message back!");
+    });
+
+    my_client.connect("localhost", 3000);
+
+    // Don't close the app.
+    std::cin.get();
+    return 0;
+}
 ```
 
 ## `bango::space`
