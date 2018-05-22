@@ -58,7 +58,8 @@
     "ratio": "cpp",
     "thread": "cpp",
     "tacopie": "cpp",
-    "cstdarg": "cpp"
+    "cstdarg": "cpp",
+    "cassert": "cpp"
   },
   "C_Cpp.errorSquiggles": "Disabled"
 }

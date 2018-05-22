@@ -25,6 +25,75 @@ $ ../bin/bangospace_benchmark
 ```
 
 # Core API
+## `bango::network`
+### 1. Server
+Sample usage:
+
+```cpp
+#include <bango/network/server.h>
+#include <iostream>
+
+using namespace bango::network;
+
+// Class that will be created when new client is connected.
+// Must inherit from wrtiable.
+struct User : public writable {
+    using writable::writable;
+}
+
+int main()
+{
+    server<User> serv;
+    serv.start("localhost", 3000);
+
+    const unsigned char SOME_EVENT=30; // [0-255]
+
+    // When User sends SOME_EVENT, lambda function will execute.
+    serv.when(SOME_EVENT, [&](const std::unique_ptr<User>& user, packet& p) {
+
+        // Get data out of incoming packet in few different ways.
+        auto number = p.pop<int>();
+
+        char byte;
+        p >> byte;
+
+        std::string message = p.pop_str();
+
+        // Pack outgoing data in few different ways.
+        const unsigned char OUTGOING_EVENT=40; // [0-255]
+        packet out(OUTGOING_EVENT);
+
+        out << (char) 45 << (int) 1000 << "Hello World!";
+
+        out.push<short>(25);
+        out.push_str("This is test message.");
+
+        // Send data
+        user->write(out);
+
+        // Or send it all at once
+        user->write(OUTGOING_EVENT, "bwdsI", 2, 30000, 400000, "Hey!", 100000000);
+        // where b=1byte, w=2byte, d=4byte, s=string, I=8byte
+
+        // Or send empty event
+        user->write(OUTGOING_EVENT);
+    });
+
+    serv.on_connected([&](const std::unique_ptr<User>& user) {
+        std::cout "Connected\n";
+        //user->write()...
+    });
+
+    serv.on_disconnected([&](const std::unique_ptr<User>& user) {
+        std::cout "Disconnected\n";
+        //user->write()...
+    });
+
+    return 0;
+}
+
+```
+
 ## `bango::space`
 ### 1. Quadtree
 Implementation of data structure used to partition a two-dimensional space by recursively subdividing it into four quadrants or regions each of them called `quad`. Each `quad` leaf contains data structure associated with it correspondaing to a specific subregion called `quad_entity_container`. This is base template class and needs to be implemented in order to make use of it.  
