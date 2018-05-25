@@ -450,10 +450,6 @@ public:
             });
         });
 
-        m_dbclient.on_disconnected([]() {
-            std::cout << "dbserver has disconnected" << std::endl;
-        });
-
         m_gameserver.when(C2S_CONNECT, [&](const std::unique_ptr<Player>& user, packet& p) {
             if (user->InGame()) return;
             user->write(S2C_CODE, "dbdddIbbb", 0, 0, 604800, 0, 0, 0, 0, 0, 2);
