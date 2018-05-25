@@ -14,7 +14,7 @@ using namespace bango::network;
 using namespace bango::space;
 
 #define MAP_WIDTH 50*8192
-#define MAP_SIGHT 512
+#define MAP_SIGHT 40
 
 class User : public writable
 {
@@ -50,6 +50,10 @@ class Character : public quad_entity
 {
     std::uint32_t   m_id;
     std::uint8_t    m_type;
+    std::uint16_t   m_dir;
+
+public:
+    int             m_z;
 
 public:
     Character(std::uint8_t type) : m_type(type)
@@ -66,10 +70,32 @@ public:
 
     std::uint32_t   GetID()     const { return m_id; }
     std::uint8_t    GetType()   const { return m_type; }
+    int             GetZ()      const { return m_z; }
+    std::uint16_t   GetDir()    const { return m_dir; }
 
     virtual packet BuildAppearPacket(bool hero=false)   const = 0;
     virtual packet BuildDisappearPacket()               const = 0;
     virtual packet BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const = 0;
+
+    void SetDirection(std::int8_t delta_x, std::int8_t delta_y)
+    {
+        if (delta_x == 0 && delta_y == 0) return;
+
+        float absolute_x = abs(delta_x);
+        float absolute_y = abs(delta_y);
+
+        if (absolute_x >= absolute_y && absolute_x > 127) {
+            delta_y = 127 * delta_y / absolute_x;
+            delta_x = (((delta_x <= 0) - 1) & 0xFE) - 127;
+        }
+        else if (absolute_x < absolute_y && absolute_y > 127) {
+            delta_x = 127 * delta_x / absolute_y;
+            delta_y = (((delta_y <= 0) - 1) & 0xFE) - 127;
+        }
+
+        m_dir = delta_y + ((delta_x << 8) & 0xFF00);
+        std::cout << m_dir << std::endl;
+    }
 };
 
 class Player : public Character, public User
@@ -85,6 +111,7 @@ public:
         p >> m_data >> m_name;
         m_x = p.pop<int>();
         m_y = p.pop<int>();
+        m_z = m_data.Z;
 
         write(S2C_PROPERTY, "bsbwwwwwwddwwwwwbIwwwwwwbbbbbd",
             0, //Grade
@@ -205,12 +232,11 @@ public:
     std::uint32_t       GetRage()                   const { return m_data.Rage; }
     std::int32_t        GetX()                      const { return m_x; }
     std::int32_t        GetY()                      const { return m_y; }
-    std::int32_t        GetZ()                      const { return m_data.Z; }
+    std::int32_t        GetZ()                      const { return m_z; }
     std::uint8_t        GetFace()                   const { return m_data.Face; }
     std::uint8_t        GetHair()                   const { return m_data.Hair; }
 
     // Not implemented
-    std::uint16_t       GetDir()        const { return 0; }
     std::uint64_t       GetGState()     const { return 0; }
     std::uint64_t       GetMState()     const { return 0; }
     std::uint32_t       GetGID()        const { return 0; }
@@ -334,6 +360,9 @@ public:
 
         entity->m_x = new_center.x;
         entity->m_y = new_center.y;
+        entity->m_z += delta_z;
+
+        entity->SetDirection(delta_x, delta_y);
 
         // TODO: Add some margin.
         m_quad.query(old_center, m_sight, [&](const Container* container) {
