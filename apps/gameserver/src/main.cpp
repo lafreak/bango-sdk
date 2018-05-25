@@ -329,8 +329,6 @@ public:
     {
         m_quad.remove(entity);
 
-        std::cout << "DeltaX[" << (int) delta_x << "]DeltaY[" << (int) delta_y << "]DetlaZ[" << (int) delta_z << "]stop[" << stop << "]" << std::endl;
-
         auto old_center = point{entity->m_x, entity->m_y};
         auto new_center = point{entity->m_x+delta_x, entity->m_y+delta_y};
 
@@ -450,6 +448,10 @@ public:
             UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
                 user->OnLoadItems(p);
             });
+        });
+
+        m_dbclient.on_disconnected([]() {
+            std::cout << "dbserver has disconnected" << std::endl;
         });
 
         m_gameserver.when(C2S_CONNECT, [&](const std::unique_ptr<Player>& user, packet& p) {

@@ -17,18 +17,28 @@ namespace bango { namespace network {
 
         void execute(packet&& p) const;
 
+        std::function<void()> m_on_disconnected;
+
     public:
 
         void connect(const std::string& host, std::int32_t port);
         void when(unsigned char type, const std::function<void(packet&)>&& callback);
+        void on_disconnected(const std::function<void()>&& callback);
     };
 
     void client::connect(const std::string& host, std::int32_t port)
     {
-        m_client->connect(host, port);
-        m_client->async_read({MAX_PACKET_LENGTH, [=](const taco_read_result_t& res) {
-            on_new_message(res);
-        }});
+        try
+        {
+            m_client->connect(host, port);
+            m_client->async_read({MAX_PACKET_LENGTH, [=](const taco_read_result_t& res) {
+                on_new_message(res);
+            }});
+        }
+        catch (const tacopie::tacopie_error& error)
+        {
+            std::cerr << "could not connect to " << host << ":" << port << std::endl;
+        }
     }
 
     void client::on_new_message(const taco_read_result_t& res)
@@ -53,7 +63,9 @@ namespace bango { namespace network {
         }
         else
         {
-            std::cerr << "disconnected\n";
+            if (m_on_disconnected) 
+                m_on_disconnected();
+            //std::cerr << "disconnected from " << m_client->get_host() << ":" << m_client->get_port() << std::endl;
             m_client->disconnect();
         }
     }
@@ -70,5 +82,10 @@ namespace bango { namespace network {
     void client::when(unsigned char type, const std::function<void(packet&)>&& callback)
     {
         m_callbacks.insert(std::make_pair(type, callback));
+    }
+
+    void client::on_disconnected(const std::function<void()>&& callback)
+    {
+        m_on_disconnected = callback;
     }
 }}
