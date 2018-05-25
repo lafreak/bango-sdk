@@ -20,7 +20,7 @@ class User : public writable
 public:
     User(const taco_client_t& client) : writable(client)
     {
-        //BUG: Not thread safe.
+        // BUG: Not thread safe.
         static unsigned int g_max_uid=0;
         m_credentials.UID = g_max_uid++;
     }
@@ -64,8 +64,9 @@ public:
     std::uint32_t   GetID()     const { return m_id; }
     std::uint8_t    GetType()   const { return m_type; }
 
-    virtual packet BuildAppearPacket(bool hero=false) const = 0;
-    virtual packet BuildDisappearPacket() const = 0;
+    virtual packet BuildAppearPacket(bool hero=false)   const = 0;
+    virtual packet BuildDisappearPacket()               const = 0;
+    virtual packet BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const = 0;
 };
 
 class Player : public Character, public User
@@ -176,6 +177,13 @@ public:
         return p;
     }
 
+    packet BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const override
+    {
+        packet p(stop ? S2C_MOVEPLAYER_END : S2C_MOVEPLAYER_ON);
+        p << GetID() << delta_x << delta_y << delta_z;
+        return p;
+    }
+
     const std::string&  GetName()                   const { return m_name; }
     std::uint8_t        GetClass(bool hero=false)   const { return hero ? (m_data.Class | GAME_HERO) : m_data.Class; }
     std::uint8_t        GetJob()                    const { return m_data.Job; }
@@ -266,14 +274,15 @@ public:
 private:
     const int m_sight;
 
-    typedef std::function<void(const Player*, const Character*)>            AppearanceEvent;
-    typedef std::function<void(const Player*, const Character*, int, int)>  MoveEvent;
+    typedef std::function<void(const Player*, const Character*)>    AppearanceEvent;
+    typedef std::function<void(const Player*, const Character*, 
+        std::int8_t, std::int8_t, std::int8_t, bool)>               MoveEvent;
 
     quad<Container> m_quad;
 
     AppearanceEvent   m_on_appear    =[](const Player*, const Character*){};
     AppearanceEvent   m_on_disappear =[](const Player*, const Character*){};
-    MoveEvent         m_on_move      =[](const Player*, const Character*, int, int){};
+    MoveEvent         m_on_move      =[](const Player*, const Character*, std::int8_t, std::int8_t, std::int8_t, bool){};
 
 public:
     WorldMap(const int width, const int sight, const size_t max_container_entity=QUADTREE_MAX_NODES)
@@ -313,15 +322,17 @@ public:
         });
     }
 
-    void Move(Character* entity, int new_x, int new_y)
+    void Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z=0, bool stop=false)
     {
         m_quad.remove(entity);
 
-        auto old_center = point{entity->m_x, entity->m_y};
-        auto new_center = point{new_x, new_y};
+        std::cout << "DeltaX[" << (int) delta_x << "]DeltaY[" << (int) delta_y << "]DetlaZ[" << (int) delta_z << "]stop[" << stop << "]" << std::endl;
 
-        entity->m_x = new_x;
-        entity->m_y = new_y;
+        auto old_center = point{entity->m_x, entity->m_y};
+        auto new_center = point{entity->m_x+delta_x, entity->m_y+delta_y};
+
+        entity->m_x = new_center.x;
+        entity->m_y = new_center.y;
 
         // TODO: Add some margin.
         m_quad.query(old_center, m_sight, [&](const Container* container) {
@@ -336,12 +347,11 @@ public:
             }
         });
 
-        // BUG: Move action pushes entity with chnaged (x,y) and same (new_x, new_y) so delta is lost.
         m_quad.query(new_center, m_sight, [&](const Container* container) {
             for (auto& player : container->players())
             {
                 if (player->distance(old_center) <= m_sight && player->distance(new_center) <= m_sight) 
-                    m_on_move(player, entity, new_x, new_y);
+                    m_on_move(player, entity, delta_x, delta_y, delta_z, stop);
                 else if (player->distance(old_center) > m_sight && player->distance(new_center) <= m_sight) 
                 {
                     m_on_appear(player, entity);
@@ -354,9 +364,9 @@ public:
         m_quad.insert(entity);
     }
 
-    void OnAppear       (const AppearanceEvent&& callback){ m_on_appear       = callback; }
-    void OnDisappear    (const AppearanceEvent&& callback){ m_on_disappear    = callback; }
-    void OnMove         (const MoveEvent&& callback)      { m_on_move         = callback; }
+    void OnAppear       (const AppearanceEvent&&    callback){ m_on_appear       = callback; }
+    void OnDisappear    (const AppearanceEvent&&    callback){ m_on_disappear    = callback; }
+    void OnMove         (const MoveEvent&&          callback){ m_on_move         = callback; }
 };
 
 class GameManager
@@ -545,6 +555,18 @@ public:
             }
         });
 
+        m_gameserver.when(C2S_MOVE_ON, [&](const std::unique_ptr<Player>& user, packet& p) {
+            std::int8_t x, y, z;
+            p >> x >> y >> z;
+            m_map.Move(user.get(), x, y, z);
+        });
+
+        m_gameserver.when(C2S_MOVE_END, [&](const std::unique_ptr<Player>& user, packet& p) {
+            std::int8_t x, y, z;
+            p >> x >> y >> z;
+            m_map.Move(user.get(), x, y, z, true);
+        });
+
         m_gameserver.on_connected([&](const std::unique_ptr<Player>& user) {
             std::cout << "connection: " << user->GetUID() << std::endl;
         });
@@ -557,6 +579,7 @@ public:
         });
 
         m_map.OnAppear([](const Player* receiver, const Character* subject) {
+            // TODO: If it gets created for the first time (mob spawn) add true to param list.
             receiver->write(subject->BuildAppearPacket());
         });
 
@@ -564,9 +587,10 @@ public:
             receiver->write(subject->BuildDisappearPacket());
         });
 
-        // m_map.OnMove([&](const Player* receiver, const quad_entity* subject, int new_x, int new_y) {
-
-        // });
+        m_map.OnMove([&](const Player* receiver, const Character* subject, 
+            std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) {
+            receiver->write(subject->BuildMovePacket(delta_x, delta_y, delta_z, stop));
+        });
     }
 };
 

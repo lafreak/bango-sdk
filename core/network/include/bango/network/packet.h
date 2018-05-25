@@ -5,6 +5,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <type_traits>
+#include <iostream>
 
 //#define NDEBUG // removes assertions
 #define MAX_PACKET_LENGTH 32768
@@ -107,6 +108,13 @@ namespace bango { namespace network {
         friend packet& operator<< (packet& lhs, const char* rhs) { lhs.push_str(rhs); return lhs; }
 
         void merge(const packet& p);
+
+        void dump() const
+        {
+            for (char* m_pos = m_header; m_pos < m_end; m_pos++)
+                printf("%d ", *m_pos);
+            printf("\n");
+        }
 
         friend packet& operator<< (packet& lhs, const packet& rhs) { lhs.merge(rhs); return lhs; }
     };
