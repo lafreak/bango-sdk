@@ -13,6 +13,9 @@
 using namespace bango::network;
 using namespace bango::space;
 
+#define MAP_WIDTH 50*8192
+#define MAP_SIGHT 512
+
 class User : public writable
 {
     bool m_ingame=false;
@@ -390,7 +393,7 @@ public:
     void ConnectToDatabase  (const std::string& host, const std::int32_t port) { m_dbclient.connect(host, port); }
     void StartGameServer    (const std::string& host, const std::int32_t port) { m_gameserver.start(host, port); }
 
-    GameManager() : m_map(50*8192, 30)
+    GameManager() : m_map(MAP_WIDTH, MAP_SIGHT)
     {
         m_dbclient.when(D2S_LOGIN, [&](packet& p) {
             UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
