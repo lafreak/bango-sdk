@@ -2,17 +2,17 @@
 
 namespace bango { namespace network {
 
-    void writable::write(const packet& p)
+    void writable::write(const packet& p) const
     {
         m_client->async_write({p.buffer(), nullptr});
     }
 
-    void writable::write(unsigned char type)
+    void writable::write(unsigned char type) const
     {
         write(packet(type));
     }
 
-    void writable::write(unsigned char type, const char* format, ...)
+    void writable::write(unsigned char type, const char* format, ...) const
     {
         packet p(type);
 

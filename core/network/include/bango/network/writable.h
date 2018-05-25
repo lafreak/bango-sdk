@@ -22,9 +22,9 @@ namespace bango { namespace network {
         writable(const std::shared_ptr<tacopie::tcp_client>& client) 
             : m_client(client) {}
 
-        void write(unsigned char type);
-        void write(const packet& p);
-        void write(unsigned char type, const char* format, ...);
+        void write(unsigned char type) const;
+        void write(const packet& p) const;
+        void write(unsigned char type, const char* format, ...) const;
     };
 
 }}

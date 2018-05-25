@@ -107,7 +107,7 @@ public:
 
     bool CanLogout() const { return true; }
 
-    packet BuildAppearPacket(bool hero=false)
+    packet BuildAppearPacket(bool hero=false) const
     {
         packet p(S2C_CREATEPLAYER);
 
@@ -177,10 +177,149 @@ public:
     std::uint64_t       GetMStateEx()   const { return 0; }
 };
 
+class WorldMap
+{
+public:
+    class Container : public quad_entity_container<Container>
+    {
+        std::list<const Player*> m_players;
+
+    public:
+        const std::list<const Player*>& players() const { return m_players; }
+
+        void insert(const quad_entity* entity) override
+        {
+            m_players.push_back((const Player*) entity);
+        }
+
+        void remove(const quad_entity* entity) override
+        {
+            m_players.remove((const Player*) entity);
+        }
+
+        void merge(const Container* container) override
+        {
+            m_players.insert(m_players.end(), container->m_players.begin(), container->m_players.end());
+        }
+
+        size_t size() const override
+        {
+            return m_players.size();
+        }
+
+        long long total_memory() const override
+        {
+            return sizeof(m_players)+m_players.size()*sizeof(const Player*);
+        }
+        
+        void for_each(const std::function<void(const quad_entity*)>&& callback) const override
+        {
+            for (auto& qe : m_players)
+                callback(qe);
+        }
+    };
+
+private:
+    const int m_sight;
+
+    typedef std::function<void(const Player*, const quad_entity*)>            AppearanceEvent;
+    typedef std::function<void(const Player*, const quad_entity*, int, int)>  MoveEvent;
+
+    quad<Container> m_quad;
+
+    AppearanceEvent   m_on_appear    =[](const Player*, const quad_entity*){};
+    AppearanceEvent   m_on_disappear =[](const Player*, const quad_entity*){};
+    MoveEvent         m_on_move      =[](const Player*, const quad_entity*, int, int){};
+
+public:
+    WorldMap(const int width, const int sight, const size_t max_container_entity=QUADTREE_MAX_NODES)
+        : m_sight(sight), m_quad(square{{0,0}, width}, max_container_entity)
+    {
+    }
+
+    void Add(const quad_entity* entity)
+    {
+        auto center = point{entity->m_x, entity->m_y};
+        m_quad.query(center, m_sight, [&](const Container* container) {
+            for (auto& player : container->players())
+            {
+                if (player->distance(center) <= m_sight)
+                {
+                    m_on_appear(player, entity);
+                    m_on_appear((const Player*) entity, player);
+                }
+            }
+        });
+        
+        m_quad.insert(entity);
+    }
+
+    void Remove(const quad_entity* entity)
+    {
+        m_quad.remove(entity);
+
+        auto center = point{entity->m_x, entity->m_y}; // TODO: Dont convert to point each time.
+        m_quad.query(center, m_sight, [&](const Container* container) {
+            for (auto& player : container->players())
+            {
+                if (player->distance(center) <= m_sight)
+                {
+                    m_on_disappear(player, entity);
+                }
+            }
+        });
+    }
+
+    void Move(quad_entity* entity, int new_x, int new_y)
+    {
+        m_quad.remove(entity);
+
+        auto old_center = point{entity->m_x, entity->m_y};
+        auto new_center = point{new_x, new_y};
+
+        entity->m_x = new_x;
+        entity->m_y = new_y;
+
+        // TODO: Add some margin.
+        m_quad.query(old_center, m_sight, [&](const Container* container) {
+            for (auto& player : container->players())
+            {
+                if (player->distance(old_center) <= m_sight && player->distance(new_center) > m_sight) 
+                {
+                    m_on_disappear(player, entity);
+                    m_on_disappear((const Player*) entity, player);
+                }
+            }
+        });
+
+        // BUG: Move action pushes entity with chnaged (x,y) and same (new_x, new_y) so delta is lost.
+        m_quad.query(new_center, m_sight, [&](const Container* container) {
+            for (auto& player : container->players())
+            {
+                if (player->distance(old_center) <= m_sight && player->distance(new_center) <= m_sight) 
+                    m_on_move(player, entity, new_x, new_y);
+                else if (player->distance(old_center) > m_sight && player->distance(new_center) <= m_sight) 
+                {
+                    m_on_appear(player, entity);
+                    m_on_appear((const Player*) entity, player);
+                }
+            }
+        });
+
+        m_quad.insert(entity);
+    }
+
+    void OnAppear       (const AppearanceEvent&& callback){ m_on_appear       = callback; }
+    void OnDisappear    (const AppearanceEvent&& callback){ m_on_disappear    = callback; }
+    void OnMove         (const MoveEvent&& callback)      { m_on_move         = callback; }
+};
+
 class GameManager
 {
     client          m_dbclient;
     server<Player>  m_gameserver;
+
+    WorldMap        m_map;
 
     // BUG: Very inefficient.
     void UserByUID(unsigned int uid, const std::function<void(const std::unique_ptr<Player>&)>&& callback) const
@@ -196,7 +335,7 @@ public:
     void ConnectToDatabase  (const std::string& host, const std::int32_t port) { m_dbclient.connect(host, port); }
     void StartGameServer    (const std::string& host, const std::int32_t port) { m_gameserver.start(host, port); }
 
-    GameManager()
+    GameManager() : m_map(50*8192, 30)
     {
         m_dbclient.when(D2S_LOGIN, [&](packet& p) {
             UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
@@ -345,6 +484,7 @@ public:
             // TODO: Add check if already loaded.
             if (!user->InGame()) return;
             user->GameStart(p);
+            //m_map.Add(user.get());
         });
 
         m_gameserver.when(C2S_RESTART, [&](const std::unique_ptr<Player>& user, packet& p) {
@@ -354,6 +494,7 @@ public:
             else
             {
                 user->GameRestart();
+                m_map.Remove(user.get());
                 user->DestroyPlayer();
                 m_dbclient.write(S2D_RESTART, "dd", user->GetUID(), user->GetAID());
             }
@@ -364,8 +505,23 @@ public:
         });
 
         m_gameserver.on_disconnected([&](const std::unique_ptr<Player>& user) {
+            if (user->InGame())
+                m_map.Remove(user.get());
             m_dbclient.write(S2D_DISCONNECT, "d", user->GetAID());
             std::cout << "disconnection: " << user->GetUID() << std::endl;
+        });
+
+        m_map.OnAppear([&](const Player* receiver, const quad_entity* subject) {
+            std::cout << receiver->GetName() << std::endl;
+            receiver->write(((const Player*) subject)->BuildAppearPacket());
+        });
+
+        m_map.OnDisappear([&](const Player* receiver, const quad_entity* subject) {
+
+        });
+
+        m_map.OnMove([&](const Player* receiver, const quad_entity* subject, int new_x, int new_y) {
+
         });
     }
 };
