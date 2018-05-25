@@ -94,7 +94,6 @@ public:
         }
 
         m_dir = delta_y + ((delta_x << 8) & 0xFF00);
-        std::cout << m_dir << std::endl;
     }
 };
 
