@@ -18,8 +18,9 @@ class User : public writable
     bool m_ingame=false;
 
 public:
-    explicit User(const taco_client_t& client) : writable(client)
+    User(const taco_client_t& client) : writable(client)
     {
+        //BUG: Not thread safe.
         static unsigned int g_max_uid=0;
         m_credentials.UID = g_max_uid++;
     }
@@ -42,12 +43,38 @@ public:
     void            SetAID(int value)   { m_credentials.AID = value; }
 };
 
-class Player : public quad_entity, public User
+class Character : public quad_entity
+{
+    std::uint32_t   m_id;
+    std::uint8_t    m_type;
+
+public:
+    Character(std::uint8_t type) : m_type(type)
+    {
+        //BUG: Not thread safe.
+        static std::uint32_t g_max_id=0;
+        m_id = g_max_id++;
+    }
+
+    constexpr static std::uint8_t PLAYER    =0;
+    constexpr static std::uint8_t MONSTER   =1;
+    constexpr static std::uint8_t NPC       =2;
+    constexpr static std::uint8_t LOOT      =3;
+
+    std::uint32_t   GetID()     const { return m_id; }
+    std::uint8_t    GetType()   const { return m_type; }
+
+    virtual packet BuildAppearPacket(bool hero=false) const = 0;
+    virtual packet BuildDisappearPacket() const = 0;
+};
+
+class Player : public Character, public User
 {
     PLAYERINFO m_data;
     std::string m_name;
 public:
-    using User::User;
+    Player(const taco_client_t& client)
+        : User(client), Character(Character::PLAYER) {}
 
     void OnLoadPlayer(packet& p)
     {
@@ -107,11 +134,11 @@ public:
 
     bool CanLogout() const { return true; }
 
-    packet BuildAppearPacket(bool hero=false) const
+    packet BuildAppearPacket(bool hero=false) const override
     {
         packet p(S2C_CREATEPLAYER);
 
-        p   << GetUID() // TODO: UID->CharacterID
+        p   << GetID()
             << GetName()
             << GetClass(hero) 
             << GetX() 
@@ -139,6 +166,13 @@ public:
         // Unknown
         p << (std::int8_t)0 << (std::int32_t)0 << (std::int32_t)0 << (std::int8_t)0;
 
+        return p;
+    }
+    
+    packet BuildDisappearPacket() const override
+    {
+        packet p(S2C_REMOVEPLAYER);
+        p << GetID();
         return p;
     }
 
@@ -189,12 +223,22 @@ public:
 
         void insert(const quad_entity* entity) override
         {
-            m_players.push_back((const Player*) entity);
+            switch (((Character*)entity)->GetType())
+            {
+                case Character::PLAYER: 
+                    m_players.push_back((const Player*) entity);
+                    break;
+            }
         }
 
         void remove(const quad_entity* entity) override
         {
-            m_players.remove((const Player*) entity);
+            switch (((Character*)entity)->GetType())
+            {
+                case Character::PLAYER: 
+                    m_players.remove((const Player*) entity);
+                    break;
+            }
         }
 
         void merge(const Container* container) override
@@ -222,14 +266,14 @@ public:
 private:
     const int m_sight;
 
-    typedef std::function<void(const Player*, const quad_entity*)>            AppearanceEvent;
-    typedef std::function<void(const Player*, const quad_entity*, int, int)>  MoveEvent;
+    typedef std::function<void(const Player*, const Character*)>            AppearanceEvent;
+    typedef std::function<void(const Player*, const Character*, int, int)>  MoveEvent;
 
     quad<Container> m_quad;
 
-    AppearanceEvent   m_on_appear    =[](const Player*, const quad_entity*){};
-    AppearanceEvent   m_on_disappear =[](const Player*, const quad_entity*){};
-    MoveEvent         m_on_move      =[](const Player*, const quad_entity*, int, int){};
+    AppearanceEvent   m_on_appear    =[](const Player*, const Character*){};
+    AppearanceEvent   m_on_disappear =[](const Player*, const Character*){};
+    MoveEvent         m_on_move      =[](const Player*, const Character*, int, int){};
 
 public:
     WorldMap(const int width, const int sight, const size_t max_container_entity=QUADTREE_MAX_NODES)
@@ -237,7 +281,7 @@ public:
     {
     }
 
-    void Add(const quad_entity* entity)
+    void Add(const Character* entity)
     {
         auto center = point{entity->m_x, entity->m_y};
         m_quad.query(center, m_sight, [&](const Container* container) {
@@ -246,7 +290,8 @@ public:
                 if (player->distance(center) <= m_sight)
                 {
                     m_on_appear(player, entity);
-                    m_on_appear((const Player*) entity, player);
+                    if (entity->GetType() == Character::PLAYER)
+                        m_on_appear((const Player*) entity, player);
                 }
             }
         });
@@ -254,7 +299,7 @@ public:
         m_quad.insert(entity);
     }
 
-    void Remove(const quad_entity* entity)
+    void Remove(const Character* entity)
     {
         m_quad.remove(entity);
 
@@ -263,14 +308,12 @@ public:
             for (auto& player : container->players())
             {
                 if (player->distance(center) <= m_sight)
-                {
                     m_on_disappear(player, entity);
-                }
             }
         });
     }
 
-    void Move(quad_entity* entity, int new_x, int new_y)
+    void Move(Character* entity, int new_x, int new_y)
     {
         m_quad.remove(entity);
 
@@ -287,7 +330,8 @@ public:
                 if (player->distance(old_center) <= m_sight && player->distance(new_center) > m_sight) 
                 {
                     m_on_disappear(player, entity);
-                    m_on_disappear((const Player*) entity, player);
+                    if (entity->GetType() == Character::PLAYER)
+                        m_on_disappear((const Player*) entity, player);
                 }
             }
         });
@@ -301,7 +345,8 @@ public:
                 else if (player->distance(old_center) > m_sight && player->distance(new_center) <= m_sight) 
                 {
                     m_on_appear(player, entity);
-                    m_on_appear((const Player*) entity, player);
+                    if (entity->GetType() == Character::PLAYER)
+                        m_on_appear((const Player*) entity, player);
                 }
             }
         });
@@ -484,6 +529,7 @@ public:
             // TODO: Add check if already loaded.
             if (!user->InGame()) return;
             user->GameStart(p);
+            m_map.Add(user.get());
         });
 
         m_gameserver.when(C2S_RESTART, [&](const std::unique_ptr<Player>& user, packet& p) {
@@ -493,6 +539,7 @@ public:
             else
             {
                 user->GameRestart();
+                m_map.Remove(user.get());
                 user->DestroyPlayer();
                 m_dbclient.write(S2D_RESTART, "dd", user->GetUID(), user->GetAID());
             }
@@ -503,18 +550,19 @@ public:
         });
 
         m_gameserver.on_disconnected([&](const std::unique_ptr<Player>& user) {
+            if (user->InGame())
+                m_map.Remove(user.get());
             m_dbclient.write(S2D_DISCONNECT, "d", user->GetAID());
             std::cout << "disconnection: " << user->GetUID() << std::endl;
         });
 
-        // m_map.OnAppear([&](const Player* receiver, const quad_entity* subject) {
-        //     std::cout << receiver->GetName() << std::endl;
-        //     receiver->write(((const Player*) subject)->BuildAppearPacket());
-        // });
+        m_map.OnAppear([](const Player* receiver, const Character* subject) {
+            receiver->write(subject->BuildAppearPacket());
+        });
 
-        // m_map.OnDisappear([&](const Player* receiver, const quad_entity* subject) {
-
-        // });
+        m_map.OnDisappear([](const Player* receiver, const Character* subject) {
+            receiver->write(subject->BuildDisappearPacket());
+        });
 
         // m_map.OnMove([&](const Player* receiver, const quad_entity* subject, int new_x, int new_y) {
 
