@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <bango/space/map.h>
 #include <bango/space/quadtree.h>
 
 #include <exception>
@@ -10,7 +9,7 @@
 
 using namespace bango::space;
 
-#include "unit-map.hpp"
+//#include "unit-map.hpp"
 #include "unit-quadtree.hpp"
 
 int main(int argc, char **argv)

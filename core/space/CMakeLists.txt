@@ -7,7 +7,6 @@ set (CMAKE_CXX_STANDARD 11)
 include_directories(include)
 
 set(SOURCES
-  src/map.cpp
   src/quadtree.cpp
   )
 
