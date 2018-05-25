@@ -103,6 +103,7 @@ namespace bango { namespace network {
         template<typename T>
         friend packet& operator<< (packet& lhs, T rhs) { lhs.push<T>(rhs); return lhs; }
         friend packet& operator<< (packet& lhs, std::string& rhs) { lhs.push_str(rhs); return lhs; }
+        friend packet& operator<< (packet& lhs, const std::string& rhs) { lhs.push_str(rhs); return lhs; }
         friend packet& operator<< (packet& lhs, const char* rhs) { lhs.push_str(rhs); return lhs; }
 
         void merge(const packet& p);

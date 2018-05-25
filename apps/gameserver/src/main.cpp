@@ -112,7 +112,7 @@ public:
         packet p(S2C_CREATEPLAYER);
 
         p   << GetUID() // TODO: UID->CharacterID
-            << m_name
+            << GetName()
             << GetClass(hero) 
             << GetX() 
             << GetY() 
@@ -484,7 +484,6 @@ public:
             // TODO: Add check if already loaded.
             if (!user->InGame()) return;
             user->GameStart(p);
-            //m_map.Add(user.get());
         });
 
         m_gameserver.when(C2S_RESTART, [&](const std::unique_ptr<Player>& user, packet& p) {
@@ -494,7 +493,6 @@ public:
             else
             {
                 user->GameRestart();
-                m_map.Remove(user.get());
                 user->DestroyPlayer();
                 m_dbclient.write(S2D_RESTART, "dd", user->GetUID(), user->GetAID());
             }
@@ -505,24 +503,22 @@ public:
         });
 
         m_gameserver.on_disconnected([&](const std::unique_ptr<Player>& user) {
-            if (user->InGame())
-                m_map.Remove(user.get());
             m_dbclient.write(S2D_DISCONNECT, "d", user->GetAID());
             std::cout << "disconnection: " << user->GetUID() << std::endl;
         });
 
-        m_map.OnAppear([&](const Player* receiver, const quad_entity* subject) {
-            std::cout << receiver->GetName() << std::endl;
-            receiver->write(((const Player*) subject)->BuildAppearPacket());
-        });
+        // m_map.OnAppear([&](const Player* receiver, const quad_entity* subject) {
+        //     std::cout << receiver->GetName() << std::endl;
+        //     receiver->write(((const Player*) subject)->BuildAppearPacket());
+        // });
 
-        m_map.OnDisappear([&](const Player* receiver, const quad_entity* subject) {
+        // m_map.OnDisappear([&](const Player* receiver, const quad_entity* subject) {
 
-        });
+        // });
 
-        m_map.OnMove([&](const Player* receiver, const quad_entity* subject, int new_x, int new_y) {
+        // m_map.OnMove([&](const Player* receiver, const quad_entity* subject, int new_x, int new_y) {
 
-        });
+        // });
     }
 };
 
