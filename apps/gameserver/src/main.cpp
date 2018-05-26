@@ -160,8 +160,6 @@ public:
         write(BuildAppearPacket(true));
     }
 
-    void GameRestart() {}
-
     bool CanLogout() const { return true; }
 
     packet BuildAppearPacket(bool hero=false) const override
@@ -577,11 +575,14 @@ public:
                 user->write(S2C_ANS_RESTART, "b", user->CanLogout() ? 1 : 0); // 1=Yes, 0=No -> In Fight? PVP? Etc
             else
             {
-                user->GameRestart();
                 m_map.Remove(user.get());
                 user->DestroyPlayer();
                 m_dbclient.write(S2D_RESTART, "dd", user->GetUID(), user->GetAID());
             }
+        });
+
+        m_gameserver.when(C2S_GAMEEXIT, [&](const std::unique_ptr<Player>& user, packet& p) {
+            user->write(S2C_ANS_GAMEEXIT, "b", user->CanLogout() ? 1 : 0);
         });
 
         m_gameserver.when(C2S_MOVE_ON, [&](const std::unique_ptr<Player>& user, packet& p) {
@@ -601,8 +602,12 @@ public:
         });
 
         m_gameserver.on_disconnected([&](const std::unique_ptr<Player>& user) {
-            if (user->InGame())
+            if (user->InGame()) 
+            {
                 m_map.Remove(user.get());
+                user->DestroyPlayer();
+            }
+
             m_dbclient.write(S2D_DISCONNECT, "d", user->GetAID());
             std::cout << "disconnection: " << user->GetUID() << std::endl;
         });
