@@ -19,11 +19,14 @@ using namespace bango::space;
 class User : public writable, public authorizable
 {
 public:
-    constexpr static int CAN_REQUEST_SECONDARY = (1 << 0);
+    constexpr static int CAN_REQUEST_PRIMARY = (1 << 0);
+    constexpr static int CAN_REQUEST_SECONDARY = (1 << 1);
 
-    constexpr static int LOBBY      = (1 << 1);
-    constexpr static int LOADING    = (1 << 2);
-    constexpr static int INGAME     = (1 << 3);
+    constexpr static int LOBBY      = (1 << 2);
+    constexpr static int LOADING    = (1 << 3);
+    constexpr static int INGAME     = (1 << 4);
+
+    constexpr static int AUTHORIZED = (1 << 5);
 
     User(const taco_client_t& client) : writable(client)
     {
@@ -424,6 +427,7 @@ public:
 
         m_dbclient.when(D2S_LOGIN, [&](packet& p) {
             UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
+                user->assign(User::CAN_REQUEST_SECONDARY);
                 user->write(p.change_type(S2C_ANS_LOGIN));
             });
         });
@@ -431,13 +435,14 @@ public:
         // TODO: Bad naming, its not authorized
         m_dbclient.when(D2S_AUTHORIZED, [&](packet& p) {
             UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
+                user->assign(User::AUTHORIZED);
                 user->SetAID(p.pop<int>());
-                user->assign(User::CAN_REQUEST_SECONDARY);
             });
         });
 
         m_dbclient.when(D2S_SEC_LOGIN, [&](packet& p) {
             UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
+                user->assign(User::CAN_REQUEST_SECONDARY);
                 user->write(p.change_type(S2C_SECOND_LOGIN));
             });
         });
@@ -446,7 +451,6 @@ public:
             UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
                 user->write(p.change_type(S2C_PLAYERINFO));
                 user->assign(User::LOBBY);
-                user->deny(User::CAN_REQUEST_SECONDARY);
             });
         });
 
@@ -494,11 +498,13 @@ public:
         });
 
         m_gameserver.when(C2S_LOGIN, [&](const std::unique_ptr<Player>& user, packet& p) {
+            user->deny(User::CAN_REQUEST_PRIMARY);
             p << user->GetUID();
             m_dbclient.write(p.change_type(S2D_LOGIN));
         });
 
         m_gameserver.when(C2S_SECOND_LOGIN, [&](const std::unique_ptr<Player>& user, packet& p) {
+            user->deny(User::CAN_REQUEST_SECONDARY);
             p << user->GetCredentials();
             m_dbclient.write(p.change_type(S2D_SECONDARY_LOGIN));
         });
@@ -580,7 +586,6 @@ public:
             else
             {
                 m_map.Remove(user.get());
-                user->assign(User::LOBBY);
                 user->deny(User::INGAME);
                 m_dbclient.write(S2D_RESTART, "dd", user->GetUID(), user->GetAID());
             }
@@ -603,6 +608,7 @@ public:
         });
 
         m_gameserver.on_connected([&](const std::unique_ptr<Player>& user) {
+            user->assign(User::CAN_REQUEST_PRIMARY);
             std::cout << "connection: " << user->GetUID() << std::endl;
         });
 
@@ -610,13 +616,14 @@ public:
             if (user->authorized(User::INGAME))
                 m_map.Remove(user.get());
 
-            //if (user->authorized(User::))
-            //    m_dbclient.write(S2D_DISCONNECT, "d", user->GetAID());
+            if (user->authorized(User::AUTHORIZED))
+                m_dbclient.write(S2D_DISCONNECT, "d", user->GetAID());
 
             std::cout << "disconnection: " << user->GetUID() << std::endl;
         });
 
         m_gameserver.grant({
+            {C2S_LOGIN,             User::CAN_REQUEST_PRIMARY},
             {C2S_SECOND_LOGIN,      User::CAN_REQUEST_SECONDARY},
 
             {C2S_NEWPLAYER,         User::LOBBY},
@@ -632,7 +639,7 @@ public:
         });
 
         m_gameserver.restrict({
-            {C2S_LOGIN,             User::LOBBY | User::LOADING | User::INGAME},
+            
         });
 
         m_map.OnAppear([](const Player* receiver, const Character* subject) {
