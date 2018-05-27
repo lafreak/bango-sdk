@@ -17,7 +17,7 @@ using namespace bango::persistence;
 class DatabaseManager
 {
 public:
-    struct GameServer : public writable {
+    struct GameServer : public writable, public authorizable {
         using writable::writable;
     };
 

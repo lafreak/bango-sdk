@@ -16,7 +16,7 @@ using namespace bango::space;
 #define MAP_WIDTH 50*8192
 #define MAP_SIGHT 40
 
-class User : public writable
+class User : public writable, public authorizable
 {
     bool m_ingame=false;
 

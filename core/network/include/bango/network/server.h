@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bango/network/writable.h>
+#include <bango/network/authorizable.h>
 
 #include <functional>
 #include <map>
@@ -36,14 +37,14 @@ namespace bango { namespace network {
         void                        remove  (const taco_client_t& client);
         const std::unique_ptr<T>&   find    (const taco_client_t& client);
 
-        std::map<unsigned char, const std::function<void(const std::unique_ptr<T>&, packet&)>> m_callbacks;
+        std::map<unsigned char, std::pair<const std::function<void(const std::unique_ptr<T>&, packet&)>,int>> m_callbacks;
 
         void execute(const std::unique_ptr<T>& session, packet&& p) const;
 
     public:
 
         void start(const std::string& host, std::int32_t port);
-        void when(unsigned char type, const std::function<void(const std::unique_ptr<T>&, packet&)>&& callback);
+        void when(unsigned char type, const std::function<void(const std::unique_ptr<T>&, packet&)>&& callback, int roles=0);
         void on_connected(const std::function<void(const std::unique_ptr<T>&)>&& callback);
         void on_disconnected(const std::function<void(const std::unique_ptr<T>&)>&& callback);
         void for_each(const std::function<void(const std::unique_ptr<T>&)>&& callback);
@@ -140,8 +141,10 @@ namespace bango { namespace network {
         auto result = m_callbacks.find(p.type());
         if (result == m_callbacks.end())
             std::cerr << "unknown packet " << (int)p.type() << std::endl;
+        else if (!session->authorized(result->second.second))
+            std::cerr << "session unauthorized " << (int)p.type() << std::endl;            
         else
-            result->second(session, p);            
+            result->second.first(session, p);            
     }
 
     template<class T>
@@ -157,10 +160,10 @@ namespace bango { namespace network {
     }
 
     template<class T>
-    void server<T>::when(unsigned char type, const std::function<void(const std::unique_ptr<T>&, packet&)>&& callback)
+    void server<T>::when(unsigned char type, const std::function<void(const std::unique_ptr<T>&, packet&)>&& callback, int roles)
     {
         //m_callbacks[type] = callback;
-        m_callbacks.insert(std::make_pair(type, callback));
+        m_callbacks.insert(std::make_pair(type, std::make_pair(callback, roles)));
     }
 
     template<class T>

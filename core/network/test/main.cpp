@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <bango/network/packet.h>
+#include <bango/network/authorizable.h>
 
 using namespace bango::network;
 
@@ -12,6 +13,7 @@ struct t {
 };
 
 #include "unit-packet.hpp"
+#include "unit-authorizable.hpp"
 
 int main(int argc, char **argv)
 {

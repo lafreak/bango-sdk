@@ -7,6 +7,7 @@ set (CMAKE_CXX_STANDARD 14)
 include_directories(include)
 
 set(SOURCES
+  src/authorizable.cpp
   src/packet.cpp
   src/writable.cpp
   src/client.cpp
