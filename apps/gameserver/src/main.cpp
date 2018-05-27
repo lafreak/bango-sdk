@@ -16,8 +16,6 @@ using namespace bango::space;
 #define MAP_WIDTH 50*8192
 #define MAP_SIGHT 40
 
-#define ANY_ROLE 0
-
 class User : public writable, public authorizable
 {
 public:
@@ -607,13 +605,10 @@ public:
         m_gameserver.on_disconnected([&](const std::unique_ptr<Player>& user) {
             if (user->authorized(User::ON_MAP))
                 m_map.Remove(user.get());
-            // if in game
-                //m_map.Remove(user.get());
 
             if (user->authorized(User::WAITS_FOR_SECONDARY | User::AUTHENTICATED))
                 m_dbclient.write(S2D_DISCONNECT, "d", user->GetAID());
-            // if authorized
-            //m_dbclient.write(S2D_DISCONNECT, "d", user->GetAID());
+
             std::cout << "disconnection: " << user->GetUID() << std::endl;
         });
 
