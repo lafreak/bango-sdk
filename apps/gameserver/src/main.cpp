@@ -16,11 +16,14 @@ using namespace bango::space;
 #define MAP_WIDTH 50*8192
 #define MAP_SIGHT 40
 
+#define ANY_ROLE 0
+
 class User : public writable, public authorizable
 {
-    bool m_ingame=false;
-
 public:
+    constexpr static int WAITS_FOR_SECONDARY    = (1 << 0);
+    constexpr static int AUTHENTICATED          = (1 << 1);
+
     User(const taco_client_t& client) : writable(client)
     {
         // BUG: Not thread safe.
@@ -33,11 +36,6 @@ public:
         std::int32_t    AID; // AccountID   - Player DB Table Index
         std::uint32_t   UID; // UserID      - DB/Game Server Unique User Identifier
     } m_credentials;
-
-    bool InGame() const { return m_ingame; }
-
-    void InitPlayer()           { m_ingame = true; } 
-    void DestroyPlayer()        { m_ingame = false; }
 
     unsigned int        GetUID()        const { return m_credentials.UID; }
     int                 GetAID()        const { return m_credentials.AID; }
@@ -419,15 +417,21 @@ public:
 
     GameManager() : m_map(MAP_WIDTH, MAP_SIGHT)
     {
+        //!
+        //! DBServer -> GameServer
+        //!
+
         m_dbclient.when(D2S_LOGIN, [&](packet& p) {
             UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
                 user->write(p.change_type(S2C_ANS_LOGIN));
             });
         });
 
+        // TODO: Bad naming, its not authorized
         m_dbclient.when(D2S_AUTHORIZED, [&](packet& p) {
             UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
                 user->SetAID(p.pop<int>());
+                user->assign(User::WAITS_FOR_SECONDARY);
             });
         });
 
@@ -439,6 +443,7 @@ public:
 
         m_dbclient.when(D2S_PLAYER_INFO, [&](packet& p) {
             UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
+                user->assign(User::AUTHENTICATED);
                 user->write(p.change_type(S2C_PLAYERINFO));
             });
         });
@@ -464,8 +469,6 @@ public:
                 }
 
                 // BUG: Player might log in by the time packet arrived?
-                assert(!user->InGame());
-                user->InitPlayer();
                 user->OnLoadPlayer(p);
             });
         });
@@ -476,8 +479,11 @@ public:
             });
         });
 
+        //!
+        //! GameClient -> GameServer
+        //!
+
         m_gameserver.when(C2S_CONNECT, [&](const std::unique_ptr<Player>& user, packet& p) {
-            if (user->InGame()) return;
             user->write(S2C_CODE, "dbdddIbbb", 0, 0, 604800, 0, 0, 0, 0, 0, 2);
         });
 
@@ -486,19 +492,16 @@ public:
         });
 
         m_gameserver.when(C2S_LOGIN, [&](const std::unique_ptr<Player>& user, packet& p) {
-            if (user->InGame()) return;
             p << user->GetUID();
             m_dbclient.write(p.change_type(S2D_LOGIN));
         });
 
         m_gameserver.when(C2S_SECOND_LOGIN, [&](const std::unique_ptr<Player>& user, packet& p) {
-            if (user->InGame()) return;
             p << user->GetCredentials();
             m_dbclient.write(p.change_type(S2D_SECONDARY_LOGIN));
         });
 
         m_gameserver.when(C2S_NEWPLAYER, [&](const std::unique_ptr<Player>& user, packet& p) {
-            if (user->InGame()) return;
 
             packet copy = p;
             
@@ -542,41 +545,34 @@ public:
         });
 
         m_gameserver.when(C2S_DELPLAYER, [&](const std::unique_ptr<Player>& user, packet& p) {
-            if (user->InGame()) return;
             p << user->GetCredentials();
 
             m_dbclient.write(p.change_type(S2D_DELPLAYER));
         });
 
         m_gameserver.when(C2S_RESTOREPLAYER, [&](const std::unique_ptr<Player>& user, packet& p) {
-            if (user->InGame()) return;
             p << user->GetCredentials();
 
             m_dbclient.write(p.change_type(S2D_RESTOREPLAYER));
         });
 
         m_gameserver.when(C2S_LOADPLAYER, [&](const std::unique_ptr<Player>& user, packet& p) {
-            if (user->InGame()) return;
             p << user->GetCredentials();
 
             m_dbclient.write(p.change_type(S2D_LOADPLAYER));
         });
 
         m_gameserver.when(C2S_START, [&](const std::unique_ptr<Player>& user, packet& p) {
-            // TODO: Add check if already loaded.
-            if (!user->InGame()) return;
             user->GameStart(p);
             m_map.Add(user.get());
         });
 
         m_gameserver.when(C2S_RESTART, [&](const std::unique_ptr<Player>& user, packet& p) {
-            if (!user->InGame()) return;
             if (p.pop<char>() == 1) // Can I logout?
                 user->write(S2C_ANS_RESTART, "b", user->CanLogout() ? 1 : 0); // 1=Yes, 0=No -> In Fight? PVP? Etc
             else
             {
                 m_map.Remove(user.get());
-                user->DestroyPlayer();
                 m_dbclient.write(S2D_RESTART, "dd", user->GetUID(), user->GetAID());
             }
         });
@@ -602,14 +598,20 @@ public:
         });
 
         m_gameserver.on_disconnected([&](const std::unique_ptr<Player>& user) {
-            if (user->InGame()) 
-            {
+            // if in game
                 m_map.Remove(user.get());
-                user->DestroyPlayer();
-            }
 
             m_dbclient.write(S2D_DISCONNECT, "d", user->GetAID());
             std::cout << "disconnection: " << user->GetUID() << std::endl;
+        });
+
+        m_gameserver.grant({
+            {C2S_SECOND_LOGIN, User::WAITS_FOR_SECONDARY}
+        });
+
+        m_gameserver.restrict({
+            {C2S_LOGIN, User::WAITS_FOR_SECONDARY | User::AUTHENTICATED},
+            {C2S_SECOND_LOGIN, User::AUTHENTICATED},
         });
 
         m_map.OnAppear([](const Player* receiver, const Character* subject) {

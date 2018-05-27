@@ -8,11 +8,12 @@ namespace bango { namespace network {
         int m_roles=0;
 
     public:
-        void grant  (int roles) { m_roles |= roles;  }
-        void ban    (int roles) { m_roles &= ~roles; }
+        void assign (int roles) { m_roles |=  roles; }
+        void deny   (int roles) { m_roles &= ~roles; }
 
-        bool authorized(int roles) const { return !((~m_roles) & roles); }
-
+        bool authorized(int required, int restricted=0) const { 
+            return !((~m_roles) & required) && !(m_roles & restricted); 
+        }
     };
 
 }}

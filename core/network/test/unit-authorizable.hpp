@@ -1,10 +1,10 @@
-TEST(AuthorizbleTest, Roles)
+const int ROLE_LISTEN   = 1 << 0;
+const int ROLE_TALK     = 1 << 1;
+const int ROLE_MODERATE = 1 << 2;
+
+TEST(AuthorizbleTest, RequiredRoles)
 {
     authorizable user;
-
-    const int ROLE_LISTEN   = 1 << 0;
-    const int ROLE_TALK     = 1 << 1;
-    const int ROLE_MODERATE = 1 << 2;
 
     EXPECT_EQ(false, user.authorized(ROLE_LISTEN));
     EXPECT_EQ(false, user.authorized(ROLE_TALK));
@@ -14,7 +14,7 @@ TEST(AuthorizbleTest, Roles)
     EXPECT_EQ(false, user.authorized(ROLE_TALK | ROLE_MODERATE));
     EXPECT_EQ(false, user.authorized(ROLE_LISTEN | ROLE_TALK | ROLE_MODERATE));
 
-    user.grant(ROLE_LISTEN);
+    user.assign(ROLE_LISTEN);
 
     EXPECT_EQ(true, user.authorized(ROLE_LISTEN));
     EXPECT_EQ(false, user.authorized(ROLE_TALK));
@@ -24,7 +24,7 @@ TEST(AuthorizbleTest, Roles)
     EXPECT_EQ(false, user.authorized(ROLE_TALK | ROLE_MODERATE));
     EXPECT_EQ(false, user.authorized(ROLE_LISTEN | ROLE_TALK | ROLE_MODERATE));
 
-    user.grant(ROLE_TALK | ROLE_MODERATE);
+    user.assign(ROLE_TALK | ROLE_MODERATE);
 
     EXPECT_EQ(true, user.authorized(ROLE_LISTEN));
     EXPECT_EQ(true, user.authorized(ROLE_TALK));
@@ -34,7 +34,7 @@ TEST(AuthorizbleTest, Roles)
     EXPECT_EQ(true, user.authorized(ROLE_TALK | ROLE_MODERATE));
     EXPECT_EQ(true, user.authorized(ROLE_LISTEN | ROLE_TALK | ROLE_MODERATE));
 
-    user.ban(ROLE_TALK);
+    user.deny(ROLE_TALK);
 
     EXPECT_EQ(true, user.authorized(ROLE_LISTEN));
     EXPECT_EQ(false, user.authorized(ROLE_TALK));
@@ -43,4 +43,47 @@ TEST(AuthorizbleTest, Roles)
     EXPECT_EQ(true, user.authorized(ROLE_LISTEN | ROLE_MODERATE));
     EXPECT_EQ(false, user.authorized(ROLE_TALK | ROLE_MODERATE));
     EXPECT_EQ(false, user.authorized(ROLE_LISTEN | ROLE_TALK | ROLE_MODERATE));
+}
+
+TEST(AuthorizbleTest, RestrictedRoles)
+{
+    authorizable user;
+
+    EXPECT_EQ(true, user.authorized(0, ROLE_LISTEN));
+    EXPECT_EQ(true, user.authorized(0, ROLE_TALK));
+    EXPECT_EQ(true, user.authorized(0, ROLE_MODERATE));
+    EXPECT_EQ(true, user.authorized(0, ROLE_LISTEN | ROLE_TALK));
+    EXPECT_EQ(true, user.authorized(0, ROLE_LISTEN | ROLE_MODERATE));
+    EXPECT_EQ(true, user.authorized(0, ROLE_TALK | ROLE_MODERATE));
+    EXPECT_EQ(true, user.authorized(0, ROLE_LISTEN | ROLE_TALK | ROLE_MODERATE));
+
+    user.assign(ROLE_LISTEN);
+
+    EXPECT_EQ(false, user.authorized(0, ROLE_LISTEN));
+    EXPECT_EQ(true, user.authorized(0, ROLE_TALK));
+    EXPECT_EQ(true, user.authorized(0, ROLE_MODERATE));
+    EXPECT_EQ(false, user.authorized(0, ROLE_LISTEN | ROLE_TALK));
+    EXPECT_EQ(false, user.authorized(0, ROLE_LISTEN | ROLE_MODERATE));
+    EXPECT_EQ(true, user.authorized(0, ROLE_TALK | ROLE_MODERATE));
+    EXPECT_EQ(false, user.authorized(0, ROLE_LISTEN | ROLE_TALK | ROLE_MODERATE));
+
+    user.assign(ROLE_TALK | ROLE_MODERATE);
+
+    EXPECT_EQ(false, user.authorized(0, ROLE_LISTEN));
+    EXPECT_EQ(false, user.authorized(0, ROLE_TALK));
+    EXPECT_EQ(false, user.authorized(0, ROLE_MODERATE));
+    EXPECT_EQ(false, user.authorized(0, ROLE_LISTEN | ROLE_TALK));
+    EXPECT_EQ(false, user.authorized(0, ROLE_LISTEN | ROLE_MODERATE));
+    EXPECT_EQ(false, user.authorized(0, ROLE_TALK | ROLE_MODERATE));
+    EXPECT_EQ(false, user.authorized(0, ROLE_LISTEN | ROLE_TALK | ROLE_MODERATE));
+
+    user.deny(ROLE_TALK);
+
+    EXPECT_EQ(false, user.authorized(0, ROLE_LISTEN));
+    EXPECT_EQ(true, user.authorized(0, ROLE_TALK));
+    EXPECT_EQ(false, user.authorized(0, ROLE_MODERATE));
+    EXPECT_EQ(false, user.authorized(0, ROLE_LISTEN | ROLE_TALK));
+    EXPECT_EQ(false, user.authorized(0, ROLE_LISTEN | ROLE_MODERATE));
+    EXPECT_EQ(false, user.authorized(0, ROLE_TALK | ROLE_MODERATE));
+    EXPECT_EQ(false, user.authorized(0, ROLE_LISTEN | ROLE_TALK | ROLE_MODERATE));
 }

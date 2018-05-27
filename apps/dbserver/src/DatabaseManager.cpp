@@ -113,6 +113,8 @@ void DatabaseManager::Login(const std::unique_ptr<GameServer>& s, packet& p)
         return;
     }
 
+    s->write(D2S_AUTHORIZED, "dd", id, idaccount);
+
     auto secondary = query.get_str();
     if (secondary.empty())
     {
@@ -125,8 +127,6 @@ void DatabaseManager::Login(const std::unique_ptr<GameServer>& s, packet& p)
 #else
         SendPlayerList(s, id, idaccount);
 #endif
-
-    s->write(D2S_AUTHORIZED, "dd", id, idaccount);
 }
 
 void DatabaseManager::SecondaryLogin(const std::unique_ptr<GameServer>& s, packet& p)

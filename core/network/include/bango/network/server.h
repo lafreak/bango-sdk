@@ -37,17 +37,22 @@ namespace bango { namespace network {
         void                        remove  (const taco_client_t& client);
         const std::unique_ptr<T>&   find    (const taco_client_t& client);
 
-        std::map<unsigned char, std::pair<const std::function<void(const std::unique_ptr<T>&, packet&)>,int>> m_callbacks;
+        std::map<unsigned char, std::pair<const std::function<void(const std::unique_ptr<T>&, packet&)>,std::pair<int,int>>> m_callbacks;
+        std::map<unsigned char, int> m_granted_roles;
+        std::map<unsigned char, int> m_restricted_roles;
 
         void execute(const std::unique_ptr<T>& session, packet&& p) const;
 
     public:
 
         void start(const std::string& host, std::int32_t port);
-        void when(unsigned char type, const std::function<void(const std::unique_ptr<T>&, packet&)>&& callback, int roles=0);
+        void when(unsigned char type, const std::function<void(const std::unique_ptr<T>&, packet&)>&& callback);
         void on_connected(const std::function<void(const std::unique_ptr<T>&)>&& callback);
         void on_disconnected(const std::function<void(const std::unique_ptr<T>&)>&& callback);
         void for_each(const std::function<void(const std::unique_ptr<T>&)>&& callback);
+
+        void grant      (const std::map<unsigned char, int>&& roles);
+        void restrict   (const std::map<unsigned char, int>&& roles);
 
         const std::map<int*, const std::unique_ptr<T>>& sessions() const { return m_sessions; }
     };
@@ -141,8 +146,8 @@ namespace bango { namespace network {
         auto result = m_callbacks.find(p.type());
         if (result == m_callbacks.end())
             std::cerr << "unknown packet " << (int)p.type() << std::endl;
-        else if (!session->authorized(result->second.second))
-            std::cerr << "session unauthorized " << (int)p.type() << std::endl;            
+        else if (!session->authorized(result->second.second.first, result->second.second.second))
+            std::cerr << "session unauthorized " << (int)p.type() << std::endl;
         else
             result->second.first(session, p);            
     }
@@ -160,10 +165,10 @@ namespace bango { namespace network {
     }
 
     template<class T>
-    void server<T>::when(unsigned char type, const std::function<void(const std::unique_ptr<T>&, packet&)>&& callback, int roles)
+    void server<T>::when(unsigned char type, const std::function<void(const std::unique_ptr<T>&, packet&)>&& callback)
     {
         //m_callbacks[type] = callback;
-        m_callbacks.insert(std::make_pair(type, std::make_pair(callback, roles)));
+        m_callbacks.insert(std::make_pair(type, std::make_pair(callback, std::make_pair(0,0))));
     }
 
     template<class T>
@@ -175,4 +180,24 @@ namespace bango { namespace network {
             callback(session.second);
     }
     
+    template<class T>
+    void server<T>::grant(const std::map<unsigned char, int>&& roles)
+    {
+        for (auto& pair : roles) {
+            auto event = m_callbacks.find(pair.first);
+            if (event != m_callbacks.end())
+                event->second.second.first = pair.second;
+        }
+    }
+
+    template<class T>
+    void server<T>::restrict(const std::map<unsigned char, int>&& roles)
+    {
+        for (auto& pair : roles) {
+            auto event = m_callbacks.find(pair.first);
+            if (event != m_callbacks.end())
+                event->second.second.second = pair.second;
+        }
+    }
+
 }}
