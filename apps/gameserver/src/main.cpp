@@ -23,6 +23,9 @@ class User : public writable, public authorizable
 public:
     constexpr static int WAITS_FOR_SECONDARY    = (1 << 0);
     constexpr static int AUTHENTICATED          = (1 << 1);
+    constexpr static int HERO_SELECTED          = (1 << 2);
+    constexpr static int HERO_LOADED            = (1 << 3);
+    constexpr static int ON_MAP                 = (1 << 4);
 
     User(const taco_client_t& client) : writable(client)
     {
@@ -470,6 +473,7 @@ public:
 
                 // BUG: Player might log in by the time packet arrived?
                 user->OnLoadPlayer(p);
+                user->assign(User::HERO_LOADED);
             });
         });
 
@@ -559,11 +563,13 @@ public:
         m_gameserver.when(C2S_LOADPLAYER, [&](const std::unique_ptr<Player>& user, packet& p) {
             p << user->GetCredentials();
 
+            user->assign(User::HERO_SELECTED);
             m_dbclient.write(p.change_type(S2D_LOADPLAYER));
         });
 
         m_gameserver.when(C2S_START, [&](const std::unique_ptr<Player>& user, packet& p) {
             user->GameStart(p);
+            user->assign(User::ON_MAP);
             m_map.Add(user.get());
         });
 
@@ -573,6 +579,7 @@ public:
             else
             {
                 m_map.Remove(user.get());
+                user->deny(User::ON_MAP | User::HERO_LOADED | User::HERO_SELECTED);
                 m_dbclient.write(S2D_RESTART, "dd", user->GetUID(), user->GetAID());
             }
         });
@@ -598,20 +605,36 @@ public:
         });
 
         m_gameserver.on_disconnected([&](const std::unique_ptr<Player>& user) {
-            // if in game
+            if (user->authorized(User::ON_MAP))
                 m_map.Remove(user.get());
+            // if in game
+                //m_map.Remove(user.get());
 
-            m_dbclient.write(S2D_DISCONNECT, "d", user->GetAID());
+            if (user->authorized(User::WAITS_FOR_SECONDARY | User::AUTHENTICATED))
+                m_dbclient.write(S2D_DISCONNECT, "d", user->GetAID());
+            // if authorized
+            //m_dbclient.write(S2D_DISCONNECT, "d", user->GetAID());
             std::cout << "disconnection: " << user->GetUID() << std::endl;
         });
 
         m_gameserver.grant({
-            {C2S_SECOND_LOGIN, User::WAITS_FOR_SECONDARY}
+            {C2S_SECOND_LOGIN,      User::WAITS_FOR_SECONDARY},
+            {C2S_NEWPLAYER,         User::AUTHENTICATED},
+            {C2S_DELPLAYER,         User::AUTHENTICATED},
+            {C2S_RESTOREPLAYER,     User::AUTHENTICATED},
+            {C2S_LOADPLAYER,        User::AUTHENTICATED},
+            {C2S_START,             User::HERO_LOADED},
+            {C2S_RESTART,           User::ON_MAP},
+            {C2S_GAMEEXIT,          User::ON_MAP},
+            {C2S_MOVE_ON,           User::ON_MAP},
+            {C2S_MOVE_END,          User::ON_MAP},
         });
 
         m_gameserver.restrict({
-            {C2S_LOGIN, User::WAITS_FOR_SECONDARY | User::AUTHENTICATED},
-            {C2S_SECOND_LOGIN, User::AUTHENTICATED},
+            {C2S_LOGIN,             User::WAITS_FOR_SECONDARY | User::AUTHENTICATED},
+            {C2S_SECOND_LOGIN,      User::AUTHENTICATED},
+            {C2S_LOADPLAYER,        User::HERO_SELECTED},
+            {C2S_START,             User::ON_MAP}
         });
 
         m_map.OnAppear([](const Player* receiver, const Character* subject) {
