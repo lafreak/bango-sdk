@@ -36,8 +36,8 @@ Sample usage:
 using namespace bango::network;
 
 // Class that will be created when new client is connected.
-// Must inherit from wrtiable.
-struct User : public writable {
+// Must inherit from wrtiable and authorizable.
+struct User : public writable, public authorizable {
     using writable::writable;
 }
 
