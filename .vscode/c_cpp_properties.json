@@ -28,10 +28,10 @@
             "intelliSenseMode": "clang-x64",
             "includePath": [
                 "${workspaceRoot}/core/network/include",
-                "${workspaceRoot}/core/anetwork/include",
                 "${workspaceRoot}/core/persistence/include",
                 "${workspaceRoot}/core/persistence/include/zdb",
                 "${workspaceRoot}/core/space/include",
+                "${workspaceRoot}/core/processor/include",
                 "${workspaceRoot}/apps/shared",
                 "${workspaceRoot}/apps/dbserver/include",
                 "${workspaceRoot}/apps/gameserver/include",

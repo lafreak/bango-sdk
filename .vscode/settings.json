@@ -59,7 +59,8 @@
     "thread": "cpp",
     "tacopie": "cpp",
     "cstdarg": "cpp",
-    "cassert": "cpp"
+    "cassert": "cpp",
+    "cinttypes": "cpp"
   },
   "C_Cpp.errorSquiggles": "Disabled"
 }
