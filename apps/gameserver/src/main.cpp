@@ -7,6 +7,7 @@
 #include <inix/protocol.h>
 #include <inix/common.h>
 #include <inix/structures.h>
+#include <inix/attributes.h>
 
 #include <iostream>
 #include <cassert>
@@ -23,8 +24,8 @@ using namespace bango::processor;
 class User : public writable, public authorizable
 {
 public:
-    constexpr static int CAN_REQUEST_PRIMARY = (1 << 0);
-    constexpr static int CAN_REQUEST_SECONDARY = (1 << 1);
+    constexpr static int CAN_REQUEST_PRIMARY    = (1 << 0);
+    constexpr static int CAN_REQUEST_SECONDARY  = (1 << 1);
 
     constexpr static int LOBBY      = (1 << 2);
     constexpr static int LOADING    = (1 << 3);
@@ -662,6 +663,7 @@ public:
 
         if (!InitItem::Load("Config/InitItem.txt"))
             std::cerr << "Could not load InitItem" << std::endl;
+
     }
 };
 

@@ -1,13 +1,13 @@
 ; comment
 ( example)
-( example ( indeX 30)
+( example ( index 30)
 
-    ("TEXT" "HELLO WORLD" 35)(extra (int 2) (STR 3)) (Items
+    ("text" "HELLO WORLD" 35)(extra (int 2) (str 3)) (items
         (100 2 0)
         (101 3 1)
     )
 
-    (VeC 3 3 4 8 8          10)
+    (vec 3 3 4 8 8          10)
 
     ; comment in middle
 

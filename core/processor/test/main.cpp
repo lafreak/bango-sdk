@@ -6,7 +6,38 @@
 
 using namespace bango::processor;
 
-struct Example
+enum ATTRIBUTES
+{
+    A_NONE,
+    A_INDEX,
+    A_TEXT,
+    A_EXTRA,
+    A_INT,
+    A_STR,
+    A_ITEMS,
+    A_VEC,
+};
+
+static std::map<std::string, unsigned int> g_attributes = 
+{
+    {"index",   A_INDEX},
+    {"text",    A_TEXT},
+    {"extra",   A_EXTRA},
+    {"int",     A_INT},
+    {"str",     A_STR},
+    {"items",   A_ITEMS},
+    {"vec",     A_VEC},
+};
+
+static unsigned int FindAttribute(const char* attribute)
+{
+    auto result = g_attributes.find(attribute);
+    if (result != g_attributes.end())
+        return result->second;
+    return 0;
+}
+
+struct Example : public db_object<Example>
 {
     unsigned short  Index;
 
@@ -28,88 +59,56 @@ struct Example
     std::vector<Item> Items;
     std::vector<char> Numbers;
 
-    unsigned int index() const { return Index; }
-
-    struct Container : public db<Example, Container>
+    virtual unsigned int index() const override { return Index; }
+    
+    virtual void set(lisp::var param) override
     {
-        Container() 
-        { 
-            m_attributes = {
-                {"index",   A_INDEX},
-                {"text",    A_TEXT},
-                {"extra",   A_EXTRA},
-                {"int",     A_INT},
-                {"str",     A_STR},
-                {"items",   A_ITEMS},
-                {"vec",     A_VEC},
-            };
-        }
-
-        enum ATTRIBUTES
+        switch (FindAttribute(param.pop()))
         {
-            A_NONE,
-            A_INDEX,
-            A_TEXT,
-            A_EXTRA,
-            A_INT,
-            A_STR,
-            A_ITEMS,
-            A_VEC,
-        };
+            case A_INDEX: Index = (int) param.pop(); break;
+            case A_TEXT:
+                {
+                    Text.Content = (const char*) param.pop();
+                    Text.Length = (int) param.pop();
+                }
+                break;
 
-        virtual void process(Example& e, lisp::var param) override
-        {
-            switch (attribute(param.pop()))
-            {
-                case A_INDEX: e.Index = (int) param.pop(); break;
-                case A_TEXT:
+            case A_EXTRA:
+                {
+                    while (param.consp())
                     {
-                        e.Text.Content = (const char*) param.pop();
-                        e.Text.Length = (int) param.pop();
-                    }
-                    break;
-
-                case A_EXTRA:
-                    {
-                        while (param.consp())
+                        lisp::var p = param.pop();
+                        switch (FindAttribute(p.pop()))
                         {
-                            lisp::var p = param.pop();
-                            switch (attribute(p.pop()))
-                            {
-                                case A_INT: e.Int = (int) p.pop(); break;
-                                case A_STR: e.Str = (int) p.pop(); break;
-                            }
+                            case A_INT: Int = (int) p.pop(); break;
+                            case A_STR: Str = (int) p.pop(); break;
                         }
                     }
-                    break;
+                }
+                break;
 
-                case A_ITEMS:
+            case A_ITEMS:
+                {
+                    while (param.consp())
                     {
-                        while (param.consp())
-                        {
-                            lisp::var p = param.pop();
-                            unsigned short id =       (int) p.pop();
-                            unsigned int amount =   (int) p.pop();
-                            bool bound =    ((int) p.pop()) == 1;
+                        lisp::var p = param.pop();
+                        unsigned short id =       (int) p.pop();
+                        unsigned int amount =   (int) p.pop();
+                        bool bound =    ((int) p.pop()) == 1;
 
-                            e.Items.push_back(Item{id,amount,bound});
-                        }
+                        Items.push_back(Item{id,amount,bound});
                     }
-                    break;
+                }
+                break;
 
-                case A_VEC:
-                    {
-                        while (param.consp())
-                            e.Numbers.push_back( (int) param.pop());
-                    }
-                    break;
-            }
+            case A_VEC:
+                {
+                    while (param.consp())
+                        Numbers.push_back( (int) param.pop());
+                }
+                break;
         }
-
-    };
-
-    static Example*     Find(unsigned int index)    { return Container::find(index); }
-    static bool         Load(const char* name)      { return Container::load(name); }
+    }
 };
 
 TEST(DBExample, LoadAndFind)
