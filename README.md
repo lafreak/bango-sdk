@@ -3,7 +3,6 @@
 ## Build
 ### Install dependencies
 ```
-$ sudo apt-get install libmysqlcppconn-dev # not sure if neccessary
 $ sudo apt-get install libmysqlclient-dev
 ```
 ### Run CMake
