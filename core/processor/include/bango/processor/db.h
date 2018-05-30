@@ -86,7 +86,7 @@ namespace bango { namespace processor {
 
             auto name = (const char*) param.pop();
 
-            T* record = new T;
+            T* record = new T{};
 
             while (param.consp())
                 process(*record, param.pop());
