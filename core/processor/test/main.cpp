@@ -114,7 +114,7 @@ struct Example
 
 TEST(DBExample, LoadAndFind)
 {
-    Example::Load("Test.txt");
+    Example::Load("Test/Test.txt");
     Example* e = Example::Find(30);
 
     EXPECT_EQ(30, e->Index);

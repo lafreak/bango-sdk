@@ -11,17 +11,17 @@ $ sudo apt-get install libmysqlclient-dev
 $ cd build
 $ cmake ..
 $ make
-$ ../bin/dbserver
-$ ../bin/gameserver
+$ ./dbserver
+$ ./gameserver
 ```
 ### Tests & Benchmarks
 ```
 $ cmake .. -DUSE_GTEST=ON -DUSE_BENCHMARK=ON
 $ make
-$ ../bin/bangonetwork_test
-$ ../bin/bangonetwork_benchmark
-$ ../bin/bangospace_test
-$ ../bin/bangospace_benchmark
+$ ./bangonetwork_test
+$ ./bangonetwork_benchmark
+$ ./bangospace_test
+$ ./bangospace_benchmark
 ```
 
 # Core API

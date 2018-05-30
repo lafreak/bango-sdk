@@ -1,0 +1,14 @@
+; comment
+( example)
+( example ( indeX 30)
+
+    ("TEXT" "HELLO WORLD" 35)(extra (int 2) (STR 3)) (Items
+        (100 2 0)
+        (101 3 1)
+    )
+
+    (VeC 3 3 4 8 8          10)
+
+    ; comment in middle
+
+) ;end

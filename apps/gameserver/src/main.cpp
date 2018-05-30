@@ -2,6 +2,7 @@
 #include <bango/network/server.h>
 
 #include <bango/space/quadtree.h>
+#include <bango/processor/db.h>
 
 #include <inix/protocol.h>
 #include <inix/common.h>
@@ -12,9 +13,12 @@
 
 using namespace bango::network;
 using namespace bango::space;
+using namespace bango::processor;
 
 #define MAP_WIDTH 50*8192
 #define MAP_SIGHT 40
+
+#include "InitItem.h"
 
 class User : public writable, public authorizable
 {
@@ -490,7 +494,7 @@ public:
         //!
 
         m_gameserver.when(C2S_CONNECT, [&](const std::unique_ptr<Player>& user, packet& p) {
-            user->write(S2C_CODE, "dbdddIbbb", 0, 0, 604800, 0, 0, 0, 0, 0, 2);
+            user->write(S2C_CODE, "dbdddIbbb", 0, 0, 604800, 0, 0, 0, 0, 0, N_EN);
         });
 
         m_gameserver.when(C2S_ANS_CODE, [&](const std::unique_ptr<Player>& user, packet& p) {
@@ -655,6 +659,9 @@ public:
             std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) {
             receiver->write(subject->BuildMovePacket(delta_x, delta_y, delta_z, stop));
         });
+
+        if (!InitItem::Load("Config/InitItem.txt"))
+            std::cerr << "Could not load InitItem" << std::endl;
     }
 };
 
