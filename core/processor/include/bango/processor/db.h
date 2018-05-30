@@ -14,15 +14,32 @@ namespace bango { namespace processor {
     {
         std::map<unsigned int, T*> m_db;
     protected:
-        std::map<std::string, unsigned int> m_attributes;
-        
-        unsigned int attribute(const char* param) const {
-            std::string str = param;
-            std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-            auto result = m_attributes.find(str);
-            if (result != m_attributes.end()) 
-                return result->second;
-            return 0;
+      struct ci_less
+      {
+          // case-independent (ci) compare_less binary function
+          struct nocase_compare
+          {
+              bool operator()(const unsigned char &c1, const unsigned char &c2) const
+              {
+                  return tolower(c1) < tolower(c2);
+              }
+          };
+          bool operator()(const std::string &s1, const std::string &s2) const
+          {
+              return std::lexicographical_compare(s1.begin(), s1.end(), // source range
+                                                  s2.begin(), s2.end(), // dest range
+                                                  nocase_compare());    // comparison
+          }
+      };
+
+      std::map<std::string, unsigned int, ci_less> m_attributes;
+
+      unsigned int attribute(const char *param) const
+      {
+          auto result = m_attributes.find(param);
+          if (result != m_attributes.end())
+              return result->second;
+          return 0;
         }
 
     public:
