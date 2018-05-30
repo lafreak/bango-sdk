@@ -15,6 +15,7 @@ namespace bango { namespace processor {
         std::map<unsigned int, T*> m_db;
     protected:
         std::map<std::string, unsigned int> m_attributes;
+        
         unsigned int attribute(const char* param) const {
             std::string str = param;
             std::transform(str.begin(), str.end(), str.begin(), ::tolower);

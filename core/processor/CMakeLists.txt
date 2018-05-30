@@ -22,3 +22,8 @@ IF(USE_GTEST)
   add_executable(bangoprocessor_test test/main.cpp)
   target_link_libraries(bangoprocessor_test ${GTEST_LIBRARIES} bangoprocessor pthread)
 ENDIF()
+
+IF(USE_BENCHMARK)
+  add_executable(bangoprocessor_benchmark benchmark/main.cpp)
+  target_link_libraries(bangoprocessor_benchmark benchmark bangoprocessor pthread)
+ENDIF()

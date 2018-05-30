@@ -1,4 +1,5 @@
-#include <gtest/gtest.h>
+#include <benchmark/benchmark.h>
+
 #include <bango/processor/db.h>
 
 #include <string>
@@ -112,39 +113,23 @@ struct Example
     static bool         Load(const char* name)      { return Container::load(name); }
 };
 
-TEST(DBExample, LoadAndFind)
+static void BM_DBLoad(benchmark::State &state)
+{
+    for (auto _ : state)
+        Example::Load("Test.txt");
+}
+
+static void BM_DBFind(benchmark::State &state)
 {
     Example::Load("Test.txt");
-    Example* e = Example::Find(30);
 
-    EXPECT_EQ(30, e->Index);
-    EXPECT_EQ("HELLO WORLD", e->Text.Content);
-    EXPECT_EQ(35, e->Text.Length);
-    EXPECT_EQ(2, e->Int);
-    EXPECT_EQ(3, e->Str);
+    Example *k;
 
-    ASSERT_EQ(2, e->Items.size());
-
-    EXPECT_EQ(100, e->Items[0].Index);
-    EXPECT_EQ(2, e->Items[0].Amount);
-    EXPECT_EQ(false, e->Items[0].Bound);
-
-    EXPECT_EQ(101, e->Items[1].Index);
-    EXPECT_EQ(3, e->Items[1].Amount);
-    EXPECT_EQ(true, e->Items[1].Bound);
-
-    ASSERT_EQ(6, e->Numbers.size());
-
-    EXPECT_EQ(3, e->Numbers[0]);
-    EXPECT_EQ(3, e->Numbers[1]);
-    EXPECT_EQ(4, e->Numbers[2]);
-    EXPECT_EQ(8, e->Numbers[3]);
-    EXPECT_EQ(8, e->Numbers[4]);
-    EXPECT_EQ(10, e->Numbers[5]);
+    for (auto _ : state)
+        benchmark::DoNotOptimize(k = Example::Find(30));
 }
 
-int main(int argc, char **argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+BENCHMARK(BM_DBLoad);
+BENCHMARK(BM_DBFind);
+
+BENCHMARK_MAIN();
