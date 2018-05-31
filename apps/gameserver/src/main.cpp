@@ -721,6 +721,10 @@ public:
 
         InitItem    ::Load("Config/InitItem.txt");
         InitNPC     ::Load("Config/InitNPC.txt");
+
+        InitNPC::ForEach([](const InitNPC* object) {
+            // Create NPC and place it on map.
+        });
     }
 };
 

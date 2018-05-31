@@ -3,6 +3,7 @@
 #include <bango/processor/parser.h>
 
 #include <map>
+#include <functional>
 
 namespace bango { namespace processor {
 
@@ -11,7 +12,12 @@ namespace bango { namespace processor {
     {
     public:
         static bool Load(const char* path) { return container::instance().load(path); }
-        static T*   Find(unsigned int index) { return container::instance().find(index); }
+        static const T* Find(unsigned int index) { return container::instance().find(index); }
+        static void ForEach(const std::function<void(const T*)>&& callback)
+        {
+            for (auto& obj : container::instance().db())
+                callback(obj.second);
+        }
 
     private:
         virtual void set(lisp::var param) = 0;
@@ -26,8 +32,10 @@ namespace bango { namespace processor {
                 return instance;
             }
 
+            const std::map<unsigned int, const T*>& db() const { return m_db; }
+
         private:
-            std::map<unsigned int, T*> m_db;
+            std::map<unsigned int, const T*> m_db;
 
             container() {}
             ~container() 
@@ -37,7 +45,7 @@ namespace bango { namespace processor {
             }
 
         public:
-            T* find(unsigned int index) { return m_db.at(index); }
+            const T* find(unsigned int index) { return m_db.at(index); }
             
             bool load(const char* path)
             {
