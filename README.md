@@ -264,7 +264,7 @@ class Item : public db_object<Item>
 
     // This method must be overriden, index must be unique.
     // It allows to call Item::Find ( index ) to find this item later on.
-    unsigned int index() const { return Index; }
+    unsigned int index() const { return m_index; }
 
     // This method must be overriden, it gets called for each item property on load.
     virtual void set(lisp::var param) override
