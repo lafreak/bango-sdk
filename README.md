@@ -24,6 +24,15 @@ $ ./bangospace_benchmark
 ```
 
 # Core API
+## Table of contents
+- [Network](#bangonetwork)
+    - [Server](#1-server)
+    - [Client](#2-client)
+- [Space](#bangospace)
+    - [Quadtree](#1-quadtree)
+- [Processor](#bangoprocessor)
+    - [DB Object](#1-db-object)
+
 ## `bango::network`
 ### 1. Server
 Sample usage:
