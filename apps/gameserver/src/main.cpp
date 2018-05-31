@@ -721,8 +721,6 @@ public:
 
         InitItem    ::Load("Config/InitItem.txt");
         InitNPC     ::Load("Config/InitNPC.txt");
-
-        std::cout << InitNPC::Find(32)->X << std::endl;
     }
 };
 
