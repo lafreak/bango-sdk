@@ -288,10 +288,11 @@ class Item : public db_object<Item>
 
 int main()
 {
-    // File name as param.
-    Item::Load("Items.txt");
-    // Item index as param.
-    auto pItem = Item::Find(303);
+    const char*         FILE_NAME = "Items.txt";
+    const unsigned int  ITEM_INDEX = 303;
+
+    Item::Load(FILE_NAME);
+    auto pItem = Item::Find(ITEM_INDEX);
 
     assert(pItem->GetName() == "Doggebi Shoes");
 
