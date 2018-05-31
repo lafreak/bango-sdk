@@ -254,6 +254,7 @@ class Item : public db_object<Item>
     const std::string& GetName() const { return m_name; }
 
     // This method must be overriden, index must be unique.
+    // It allows to call Item::Find ( index ) to find this item later on.
     unsigned int index() const { return Index; }
 
     // This method must be overriden, it gets called for each item property on load.
@@ -278,11 +279,13 @@ class Item : public db_object<Item>
 
 int main()
 {
+    // File name as param.
     Item::Load("Items.txt");
+    // Item index as param.
     auto pItem = Item::Find(303);
 
     assert(pItem->GetName() == "Doggebi Shoes");
-    
+
     return 0;
 }
 ```
