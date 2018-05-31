@@ -722,9 +722,10 @@ public:
         InitItem    ::Load("Config/InitItem.txt");
         InitNPC     ::Load("Config/InitNPC.txt");
 
-        InitNPC::ForEach([](const InitNPC* object) {
+        for (auto& object : InitNPC::DB())
+        {
             // Create NPC and place it on map.
-        });
+        }
     }
 };
 

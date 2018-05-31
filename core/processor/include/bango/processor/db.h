@@ -12,12 +12,14 @@ namespace bango { namespace processor {
     {
     public:
         static bool Load(const char* path) { return container::instance().load(path); }
-        static const T* Find(unsigned int index) { return container::instance().find(index); }
-        static void ForEach(const std::function<void(const T*)>&& callback)
-        {
-            for (auto& obj : container::instance().db())
-                callback(obj.second);
-        }
+        // static const T* Find(unsigned int index) { return container::instance().find(index); }
+        // static void ForEach(const std::function<void(const T*)>&& callback)
+        // {
+        //     for (auto& obj : container::instance().db())
+        //         callback(obj.second);
+        // }
+
+        static const std::map<unsigned int, const T*>& DB() { return container::instance().db(); }
 
     private:
         virtual void set(lisp::var param) = 0;
@@ -45,7 +47,7 @@ namespace bango { namespace processor {
             }
 
         public:
-            const T* find(unsigned int index) { return m_db.at(index); }
+            //const T* find(unsigned int index) { return m_db.at(index); }
             
             bool load(const char* path)
             {

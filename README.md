@@ -292,8 +292,10 @@ int main()
     const unsigned int  ITEM_INDEX = 303;
 
     Item::Load(FILE_NAME);
-    auto pItem = Item::Find(ITEM_INDEX);
 
+    // DB() is of type std::map, ::at throws exception when index doesnt exist
+    auto pItem = Item::DB().at(ITEM_INDEX); 
+    
     assert(pItem->GetName() == "Doggebi Shoes");
 
     return 0;

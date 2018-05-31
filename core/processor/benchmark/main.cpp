@@ -125,7 +125,7 @@ static void BM_DBFind(benchmark::State &state)
     const Example *k;
 
     for (auto _ : state)
-        benchmark::DoNotOptimize(k = Example::Find(30));
+        benchmark::DoNotOptimize(k = Example::DB().at(30));//Example::Find(30));
 }
 
 BENCHMARK(BM_DBLoad);
