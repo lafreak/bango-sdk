@@ -44,6 +44,41 @@ struct InitItem : public db_object<InitItem>
     }
 };
 
+struct InitNPC : public db_object<InitNPC>
+{
+    unsigned int
+        Index,
+        Kind,
+        Shape,
+        HTML,
+        Map,
+        X, Y, Z,
+        DirX, DirY;
+
+    unsigned int index() const { return Index; }
+
+    virtual void set(lisp::var param) override
+    {
+        switch (FindAttribute(param.pop()))
+        {
+            case A_INDEX:       Index       = param.pop(); break;
+            case A_KIND:        Kind        = param.pop(); break;
+            case A_SHAPE:       Shape       = param.pop(); break;
+            case A_HTML:        HTML        = param.pop(); break;
+            case A_MAP:         Map         = param.pop(); break;
+
+            case A_XY:          X           = param.pop();
+                                Y           = param.pop();
+                                Z           = param.pop();
+                                break;
+
+            case A_DIR:         DirX        = param.pop();
+                                DirY        = param.pop();
+                                break;
+        }
+    }
+};
+
 class User : public writable, public authorizable
 {
 public:
@@ -684,9 +719,10 @@ public:
             receiver->write(subject->BuildMovePacket(delta_x, delta_y, delta_z, stop));
         });
 
-        if (!InitItem::Load("Config/InitItem.txt"))
-            std::cerr << "Could not load InitItem" << std::endl;
+        InitItem    ::Load("Config/InitItem.txt");
+        InitNPC     ::Load("Config/InitNPC.txt");
 
+        std::cout << InitNPC::Find(32)->X << std::endl;
     }
 };
 

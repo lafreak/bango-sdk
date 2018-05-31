@@ -205,6 +205,14 @@ namespace inix
 		{ "wear", A_WEARABLE},
 		{ "width", A_WIDTH},
 		{ "wis", A_WIS},
+
+        // InitNPC
+        { "kind", A_KIND},
+        { "shape", A_SHAPE},
+        { "html", A_HTML},
+        { "map", A_MAP},
+        { "xy", A_XY},
+        { "dir", A_DIR},
     };
 }
 

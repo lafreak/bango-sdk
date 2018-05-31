@@ -1937,4 +1937,12 @@ enum MSL_SECONDARY_MSG
 
 		// non inix
 		A_ENDURANCE,
+
+		//InitNPC
+		A_KIND,
+		A_SHAPE,
+		A_HTML,
+		A_MAP,
+		A_XY,
+		A_DIR,
 	};
