@@ -223,3 +223,66 @@ void main()
     q.remove(&e2);
 }
 ```
+
+## `bango::processor`
+### 1. DB Object
+
+DB Object represents single record in config file.  
+Loading group of objects is as simple as inheriting from `db_object`.  
+  
+Example config file:
+```
+(item (index 302) (name "Doggebi Armor") (int 30) (str 20))
+(item (index 303) (name "Doggebi Shoes") (hth 10) (wis 5))
+...
+```
+
+Usage: 
+```cpp
+#include <bango/processor/db.h>
+#include <string>
+#include <cstring>
+#include <cassert>
+
+using namespace bango::processor;
+
+class Item : public db_object<Item>
+{
+    unsigned int m_index, m_int, m_str, m_hth, m_wis;
+    std::string m_name;
+
+    const std::string& GetName() const { return m_name; }
+
+    // This method must be overriden, index must be unique.
+    unsigned int index() const { return Index; }
+
+    // This method must be overriden, it gets called for each item property on load.
+    virtual void set(lisp::var param) override
+    {
+        auto attribute = (const char*) param.pop();
+
+        if (std::strcmp(attribute, "index") == 0)
+            m_index = param.pop();
+        if (std::strcmp(attribute, "name") == 0)
+            m_name = (const char*) param.pop();
+        if (std::strcmp(attribute, "int") == 0)
+            m_int = param.pop();
+        if (std::strcmp(attribute, "str") == 0)
+            m_str = param.pop();
+        if (std::strcmp(attribute, "hth") == 0)
+            m_hth = param.pop();
+        if (std::strcmp(attribute, "wis") == 0)
+            m_wis = param.pop();
+    }
+};
+
+int main()
+{
+    Item::Load("Items.txt");
+    auto pItem = Item::Find(303);
+
+    assert(pItem->GetName() == "Doggebi Shoes");
+    
+    return 0;
+}
+```
