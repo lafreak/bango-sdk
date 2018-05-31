@@ -263,7 +263,7 @@ class Item : public db_object<Item>
     const std::string& GetName() const { return m_name; }
 
     // This method must be overriden, index must be unique.
-    // It allows to call Item::Find ( index ) to find this item later on.
+    // It allows to call Item::DB().at ( index ) to find this item later on.
     unsigned int index() const { return m_index; }
 
     // This method must be overriden, it gets called for each item property on load.
