@@ -52,7 +52,7 @@ namespace bango { namespace processor {
                 lisp::var var = parser.Load(&file);
 
                 if (var.errorp())
-                    return false; // if lisp?
+                    return false; // if listp?
 
                 while (var.consp())
                 {
@@ -60,15 +60,17 @@ namespace bango { namespace processor {
 
                     auto name = (const char*) param.pop();
 
-                    T* record = new T{};
+                    T temp = {};
 
                     while (param.consp())
-                        record->set(param.pop());
+                        temp.set(param.pop());
 
                     // BUG: Some configs have multiple types of rows for example InitNPC npc/gennpc. Filter?
-                    //! Prevents duplicate indices.
-                    if (m_db.insert(std::make_pair(record->index(), record)).second == false)
-                        delete record;
+                    if (m_db.find(temp.index()) == m_db.end()) 
+                    {
+                        auto object = new T(temp);
+                        m_db.insert(std::make_pair(object->index(), object));
+                    }
                 }
 
                 return true; 
