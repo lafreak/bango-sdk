@@ -6,6 +6,8 @@
 #include "packet-creation.hpp"
 #include "packet-pushpop.hpp"
 
+#define PACKET_EXCEPTIONS
+
 BENCHMARK(BM_PacketCreationDefault);
 BENCHMARK(BM_PacketCreationWithType);
 BENCHMARK(BM_PacketCreationWithBuffer);

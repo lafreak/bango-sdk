@@ -14,6 +14,7 @@ namespace bango { namespace network {
 
     class packet
     {
+        // That's hell lot of data to send just 1 byte!
         char m_buffer[MAX_PACKET_LENGTH];
 
         char* m_header;
@@ -38,9 +39,6 @@ namespace bango { namespace network {
 
         packet()
         {
-            // That's hell lot of data to send just 1 byte!
-            // TODO: Come up with solution
-            //m_buffer = new char[MAX_PACKET_LENGTH];
             m_header = m_buffer;
             m_end = m_begin = m_buffer+3;
             m_header[0]=3;
@@ -58,16 +56,10 @@ namespace bango { namespace network {
 
         packet(const packet& p)
         {
-            //m_buffer = new char[MAX_PACKET_LENGTH];
             memcpy(m_buffer, p.m_buffer, MAX_PACKET_LENGTH);
             m_header = m_buffer+(p.m_header-p.m_buffer);
             m_begin = m_buffer+(p.m_begin-p.m_buffer);
             m_end = m_buffer+(p.m_end-p.m_buffer);
-        }
-
-        ~packet()
-        {
-            //delete[] m_buffer;
         }
 
         unsigned short size() const 
@@ -123,8 +115,11 @@ namespace bango { namespace network {
     inline void packet::push(const T& value)
     {
         if ((m_end-m_buffer) + sizeof(T) > MAX_PACKET_LENGTH)
+#ifdef PACKET_EXCEPTIONS
             throw std::runtime_error("packet overflow");
-
+#else
+            return;
+#endif
         memcpy(m_end, (char*)&value, sizeof(T));
         m_end += sizeof(T);
 
@@ -135,7 +130,11 @@ namespace bango { namespace network {
     inline T packet::pop()
     {
         if (m_end-m_begin < sizeof(T))
+#ifdef PACKET_EXCEPTIONS
             throw std::runtime_error("packet no more data");
+#else
+            return T();
+#endif
 
         T result;
         memcpy(&result, m_begin, sizeof(T));
