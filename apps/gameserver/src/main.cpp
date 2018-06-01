@@ -775,6 +775,10 @@ public:
             m_map.Move(user.get(), x, y, z, true);
         });
 
+        m_gameserver.when(C2S_CHATTING, [&](const std::unique_ptr<Player>& user, packet& p) {
+            auto message = p.pop_str();
+        });
+
         m_gameserver.on_connected([&](const std::unique_ptr<Player>& user) {
             user->assign(User::CAN_REQUEST_PRIMARY);
             std::cout << "connection: " << user->GetUID() << std::endl;
@@ -804,6 +808,7 @@ public:
             {C2S_RESTART,           User::INGAME},
             {C2S_MOVE_ON,           User::INGAME},
             {C2S_MOVE_END,          User::INGAME},
+            {C2S_CHATTING,          User::INGAME},
         });
 
         m_gameserver.restrict({
