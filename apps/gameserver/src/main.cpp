@@ -320,6 +320,7 @@ public:
     public:
         const std::list<const Player*>& players() const { return m_players; }
 
+        // TODO: Add check if entity already exists. std::list->std::map?
         void insert(const quad_entity* entity) override
         {
             switch (((Character*)entity)->GetType())
@@ -330,6 +331,7 @@ public:
             }
         }
 
+        // TODO: Add check if entity already exists. std::list->std::map?
         void remove(const quad_entity* entity) override
         {
             switch (((Character*)entity)->GetType())
