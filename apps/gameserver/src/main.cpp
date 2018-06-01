@@ -830,8 +830,8 @@ public:
         for (auto& object : InitNPC::DB())
         {
             // Create NPC and place it on map.
-            // Add to global map?
-            // Memory leak
+            // TODO: Add to global map?
+            // BUG: Memory leak
             m_map.Add(new NPC(object.second));
         }
     }
