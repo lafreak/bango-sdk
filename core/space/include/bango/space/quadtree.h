@@ -76,7 +76,7 @@ namespace bango { namespace space {
             auto it = m_distinct_sizes.find(std::make_pair(entity->m_x, entity->m_y));
             if (it == m_distinct_sizes.end())
                 throw std::runtime_error("entity doesnt exist in distinct_sizes counter");
-            if (--it->second == 0)
+            if (--it->second == 0) // BUG: is second a reference?
                 m_distinct_sizes.erase(it);
             remove(entity);
         }
@@ -198,33 +198,23 @@ namespace bango { namespace space {
     void quad<T>::insert(const quad_entity* entity)
     {
         if (!in_boundary(entity))
-            throw std::runtime_error("not in boundary");
+            throw std::out_of_range("not in boundary");
 
         if (!is_leaf())
-        {
-            inner(entity)->insert(entity);
-            return;
-        }
+            return inner(entity)->insert(entity);
 
         // do not need to subdivide
 #ifdef DUPLICATES_SAFE
         if (m_container->distinct_size() < m_max_container_entities)//QUADTREE_MAX_NODES) // constant
-        {
-            m_container->_insert(entity);
+            return m_container->_insert(entity);
 #else
         if (m_container->size() < m_max_container_entities)//QUADTREE_MAX_NODES) // constant
-        {
-            m_container->insert(entity);
+            return m_container->insert(entity);
 #endif
-            return;
-        }
 
         if (!can_subdivide())
 #ifdef DUPLICATES_SAFE
-        {
-            m_container->_insert(entity);
-            return;
-        }
+            return m_container->_insert(entity);
 #else
             throw std::runtime_error("cannot subdivide anymore");
 #endif
@@ -277,10 +267,7 @@ namespace bango { namespace space {
             return;
 
         if (!is_leaf())
-        {
-            inner(entity)->remove(entity);
-            return;
-        }
+            return inner(entity)->remove(entity);
 
 #ifdef DUPLICATES_SAFE
         m_container->_remove(entity);
