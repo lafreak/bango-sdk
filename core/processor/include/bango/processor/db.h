@@ -74,7 +74,6 @@ namespace bango { namespace processor {
                         record->set(param.pop());
 
                     // BUG: Memory leak when already existing index.
-                    // BUG: File stays is in use.
                     // BUG: Some configs have multiple types of rows for example InitNPC npc/gennpc.
                     m_db.insert(std::make_pair(record->index(), record));
                 }

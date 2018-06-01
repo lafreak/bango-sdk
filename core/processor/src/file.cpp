@@ -88,9 +88,9 @@ bool XFileEx::Open(const char* szPath)
 
 	m_size = s.st_size;
 
-	void* mapView = mmap(0, m_size, PROT_READ, MAP_PRIVATE, m_fd, 0);
+	m_mapView = mmap(0, m_size, PROT_READ, MAP_PRIVATE, m_fd, 0);
 
-    XFile::Open(mapView, m_size);
+    XFile::Open(m_mapView, m_size);
     return true;
 }
 

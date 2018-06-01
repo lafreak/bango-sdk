@@ -144,6 +144,7 @@ public:
     virtual packet BuildDisappearPacket()               const { return packet(); };
     virtual packet BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const { return packet(); };
 
+    void LookAt(int x, int y) { SetDirection(x - m_x, y - m_y); }
     void SetDirection(std::int8_t delta_x, std::int8_t delta_y)
     {
         if (delta_x == 0 && delta_y == 0) return;
@@ -175,9 +176,7 @@ public:
         m_y = init->Y;
         m_z = init->Z;
 
-        SetDirection(
-            init->DirX - m_x, 
-            init->DirY - m_y);
+        LookAt(init->DirX, init->DirY);
     }
 
     unsigned short  GetIndex() const { return m_init->Index; }
@@ -813,14 +812,10 @@ public:
 
         m_map.OnAppear([](const Player* receiver, const Character* subject) {
             // TODO: If it gets created for the first time (mob spawn) add true to param list.
-            std::cout << "Appear:" << std::endl;
-            subject->BuildAppearPacket().dump();
             receiver->write(subject->BuildAppearPacket());
         });
 
         m_map.OnDisappear([](const Player* receiver, const Character* subject) {
-            std::cout << "Disppear:" << std::endl;
-            subject->BuildDisappearPacket().dump();
             receiver->write(subject->BuildDisappearPacket());
         });
 
