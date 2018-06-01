@@ -12,7 +12,7 @@
 using namespace bango::network;
 using namespace bango::persistence;
 
-//#define DISABLE_SECONDARY_PASSWORD
+#define DISABLE_SECONDARY_PASSWORD
 
 class DatabaseManager
 {
