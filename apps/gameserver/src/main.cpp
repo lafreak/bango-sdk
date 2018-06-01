@@ -398,14 +398,18 @@ public:
             }
         });
         
-        m_quad.insert(entity);
+        try {
+            m_quad.insert(entity);
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+        }
     }
 
     void Remove(const Character* entity)
     {
         try {
             m_quad.remove(entity);
-        } catch (const std::runtime_error& e) {
+        } catch (const std::exception& e) {
             std::cerr << e.what() << std::endl;
             return;
         }
@@ -424,7 +428,7 @@ public:
     {
         try {
             m_quad.remove(entity);
-        } catch (const std::runtime_error& e) {
+        } catch (const std::exception& e) {
             std::cerr << e.what() << std::endl;
             return;
         }
@@ -465,7 +469,11 @@ public:
             }
         });
 
-        m_quad.insert(entity);
+        try {
+            m_quad.insert(entity);
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+        }
     }
 
     void OnAppear       (const AppearanceEvent&&    callback){ m_on_appear       = callback; }

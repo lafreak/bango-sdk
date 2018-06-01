@@ -283,9 +283,9 @@ namespace bango { namespace space {
     void quad<T>::merge()
     {
         if (is_leaf())
-            throw std::runtime_error("merge logic error");
+            throw std::logic_error("merge quad is leaf");
         if (!m_top_left->is_leaf())
-            throw std::runtime_error("merge logic error");
+            throw std::logic_error("merge quad child is not leaf");
 #ifdef DUPLICATES_SAFE
         if (distinct_size() > m_max_container_entities)//QUADTREE_MAX_NODES)
 #else
