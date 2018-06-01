@@ -12,12 +12,6 @@ namespace bango { namespace processor {
     {
     public:
         static bool Load(const char* path) { return container::instance().load(path); }
-        // static const T* Find(unsigned int index) { return container::instance().find(index); }
-        // static void ForEach(const std::function<void(const T*)>&& callback)
-        // {
-        //     for (auto& obj : container::instance().db())
-        //         callback(obj.second);
-        // }
 
         static const std::map<unsigned int, const T*>& DB() { return container::instance().db(); }
 
@@ -47,8 +41,6 @@ namespace bango { namespace processor {
             }
 
         public:
-            //const T* find(unsigned int index) { return m_db.at(index); }
-            
             bool load(const char* path)
             {
                 XParser parser;
@@ -73,9 +65,10 @@ namespace bango { namespace processor {
                     while (param.consp())
                         record->set(param.pop());
 
-                    // BUG: Memory leak when already existing index.
-                    // BUG: Some configs have multiple types of rows for example InitNPC npc/gennpc.
-                    m_db.insert(std::make_pair(record->index(), record));
+                    // BUG: Some configs have multiple types of rows for example InitNPC npc/gennpc. Filter?
+                    //! Prevents duplicate indices.
+                    if (m_db.insert(std::make_pair(record->index(), record)).second == false)
+                        delete record;
                 }
 
                 return true; 
