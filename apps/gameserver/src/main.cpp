@@ -401,7 +401,12 @@ public:
 
     void Remove(const Character* entity)
     {
-        m_quad.remove(entity);
+        try {
+            m_quad.remove(entity);
+        } catch (const std::runtime_error& e) {
+            std::cerr << e.what() << std::endl;
+            return;
+        }
 
         auto center = point{entity->m_x, entity->m_y}; // TODO: Dont convert to point each time.
         m_quad.query(center, m_sight, [&](const Container* container) {
@@ -415,7 +420,12 @@ public:
 
     void Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z=0, bool stop=false)
     {
-        m_quad.remove(entity);
+        try {
+            m_quad.remove(entity);
+        } catch (const std::runtime_error& e) {
+            std::cerr << e.what() << std::endl;
+            return;
+        }
 
         auto old_center = point{entity->m_x, entity->m_y};
         auto new_center = point{entity->m_x+delta_x, entity->m_y+delta_y};

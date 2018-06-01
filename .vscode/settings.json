@@ -60,7 +60,10 @@
     "tacopie": "cpp",
     "cstdarg": "cpp",
     "cassert": "cpp",
-    "cinttypes": "cpp"
+    "cinttypes": "cpp",
+    "deque": "cpp",
+    "fstream": "cpp",
+    "numeric": "cpp"
   },
   "C_Cpp.errorSquiggles": "Disabled"
 }

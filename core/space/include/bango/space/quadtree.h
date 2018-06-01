@@ -75,7 +75,7 @@ namespace bango { namespace space {
         {
             auto it = m_distinct_sizes.find(std::make_pair(entity->m_x, entity->m_y));
             if (it == m_distinct_sizes.end())
-                throw std::runtime_error("entity doesnt exist in distinct_sizes counter");
+                throw std::runtime_error("no single entity exist on this position");
             if (--it->second == 0) // BUG: is second a reference?
                 m_distinct_sizes.erase(it);
             remove(entity);
