@@ -17,7 +17,7 @@ using namespace bango::space;
 using namespace bango::processor;
 
 #define MAP_WIDTH 50*8192
-#define MAP_SIGHT 40
+#define MAP_SIGHT 1024
 
 struct InitItem : public db_object<InitItem>
 {
@@ -135,12 +135,14 @@ public:
 
     std::uint32_t   GetID()     const { return m_id; }
     std::uint8_t    GetType()   const { return m_type; }
+    int             GetX()      const { return m_x; }
+    int             GetY()      const { return m_y; }
     int             GetZ()      const { return m_z; }
     std::uint16_t   GetDir()    const { return m_dir; }
 
-    virtual packet BuildAppearPacket(bool hero=false)   const = 0;
-    virtual packet BuildDisappearPacket()               const = 0;
-    virtual packet BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const = 0;
+    virtual packet BuildAppearPacket(bool hero=false)   const { return packet(); };
+    virtual packet BuildDisappearPacket()               const { return packet(); };
+    virtual packet BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const { return packet(); };
 
     void SetDirection(std::int8_t delta_x, std::int8_t delta_y)
     {
@@ -162,6 +164,51 @@ public:
     }
 };
 
+class NPC : public Character
+{
+    const InitNPC* m_init;
+public:
+    NPC(const InitNPC* init) 
+        : Character(Character::NPC), m_init(init)
+    {
+        m_x = init->X;
+        m_y = init->Y;
+        m_z = init->Z;
+
+        SetDirection(
+            init->DirX - m_x, 
+            init->DirY - m_y);
+    }
+
+    unsigned short  GetIndex() const { return m_init->Index; }
+    unsigned char   GetShape() const { return m_init->Shape; }
+
+    packet BuildAppearPacket(bool hero=false) const override
+    {
+
+        packet p(S2C_CREATENPC);
+        p   << GetID()
+            << GetIndex()
+            << GetShape()
+            << GetX()
+            << GetY()
+            << GetZ()
+            << GetDir()
+            << (std::int64_t) 0 // GState
+            << (std::uint32_t) 0 // FlagItem
+            << (std::uint32_t) 0 // Unknown
+            ;
+        return p;
+    }
+
+    packet BuildDisappearPacket() const override
+    {
+        packet p(S2C_REMOVENPC);
+        p << GetID();
+        return p;
+    }
+};
+
 class Player : public Character, public User
 {
     PLAYERINFO m_data;
@@ -172,9 +219,7 @@ public:
 
     void OnLoadPlayer(packet& p)
     {
-        p >> m_data >> m_name;
-        m_x = p.pop<int>();
-        m_y = p.pop<int>();
+        p >> m_data >> m_name >> m_x >> m_y;
         m_z = m_data.Z;
 
         write(S2C_PROPERTY, "bsbwwwwwwddwwwwwbIwwwwwwbbbbbd",
@@ -315,10 +360,12 @@ class WorldMap
 public:
     class Container : public quad_entity_container<Container>
     {
-        std::list<const Player*> m_players;
+        std::list<const Player*>    m_players;
+        std::list<const NPC*>       m_npcs;
 
     public:
-        const std::list<const Player*>& players() const { return m_players; }
+        const std::list<const Player*>& players()   const { return m_players;   }
+        const std::list<const NPC*>&    npcs()      const { return m_npcs;      }
 
         // TODO: Add check if entity already exists. std::list->std::map?
         void insert(const quad_entity* entity) override
@@ -327,6 +374,9 @@ public:
             {
                 case Character::PLAYER: 
                     m_players.push_back((const Player*) entity);
+                    break;
+                case Character::NPC:
+                    m_npcs.push_back((const NPC*) entity);
                     break;
             }
         }
@@ -339,27 +389,36 @@ public:
                 case Character::PLAYER: 
                     m_players.remove((const Player*) entity);
                     break;
+                case Character::NPC: 
+                    m_npcs.remove((const NPC*) entity);
+                    break;
             }
         }
 
         void merge(const Container* container) override
         {
-            m_players.insert(m_players.end(), container->m_players.begin(), container->m_players.end());
+            m_players   .insert(m_players.end(),    container->m_players.begin(),   container->m_players.end()  );
+            m_npcs      .insert(m_npcs.end(),       container->m_npcs.begin(),      container->m_npcs.end()     );
         }
 
         size_t size() const override
         {
-            return m_players.size();
+            return m_players.size() + m_npcs.size();
         }
 
         long long total_memory() const override
         {
-            return sizeof(m_players)+m_players.size()*sizeof(const Player*);
+            return 
+                sizeof(m_players)+m_players.size()*sizeof(const Player*) +
+                sizeof(m_npcs)+m_npcs.size()*sizeof(const NPC*);
         }
         
         void for_each(const std::function<void(const quad_entity*)>&& callback) const override
         {
             for (auto& qe : m_players)
+                callback(qe);
+
+            for (auto& qe : m_npcs)
                 callback(qe);
         }
     };
@@ -395,6 +454,15 @@ public:
                     if (entity->GetType() == Character::PLAYER)
                         m_on_appear((const Player*) entity, player);
                 }
+            }
+
+            if (entity->GetType() != Character::PLAYER)
+                return;
+
+            for (auto& npc : container->npcs())
+            {
+                if (npc->distance(center) <= m_sight)
+                    m_on_appear((const Player*) entity, npc);
             }
         });
         
@@ -453,6 +521,15 @@ public:
                         m_on_disappear((const Player*) entity, player);
                 }
             }
+
+            if (entity->GetType() != Character::PLAYER)
+                return;
+
+            for (auto& npc : container->npcs())
+            {
+                if (npc->distance(old_center) <= m_sight && npc->distance(new_center) > m_sight) 
+                    m_on_disappear((const Player*) entity, npc);
+            }
         });
 
         m_quad.query(new_center, m_sight, [&](const Container* container) {
@@ -466,6 +543,15 @@ public:
                     if (entity->GetType() == Character::PLAYER)
                         m_on_appear((const Player*) entity, player);
                 }
+            }
+
+            if (entity->GetType() != Character::PLAYER)
+                return;
+
+            for (auto& npc : container->npcs())
+            {
+                if (npc->distance(old_center) > m_sight && npc->distance(new_center) <= m_sight) 
+                    m_on_appear((const Player*) entity, npc);
             }
         });
 
@@ -727,10 +813,14 @@ public:
 
         m_map.OnAppear([](const Player* receiver, const Character* subject) {
             // TODO: If it gets created for the first time (mob spawn) add true to param list.
+            std::cout << "Appear:" << std::endl;
+            subject->BuildAppearPacket().dump();
             receiver->write(subject->BuildAppearPacket());
         });
 
         m_map.OnDisappear([](const Player* receiver, const Character* subject) {
+            std::cout << "Disppear:" << std::endl;
+            subject->BuildDisappearPacket().dump();
             receiver->write(subject->BuildDisappearPacket());
         });
 
@@ -745,6 +835,9 @@ public:
         for (auto& object : InitNPC::DB())
         {
             // Create NPC and place it on map.
+            // Add to global map?
+            // Memory leak
+            m_map.Add(new NPC(object.second));
         }
     }
 };

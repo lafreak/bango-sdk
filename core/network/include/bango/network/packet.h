@@ -104,7 +104,7 @@ namespace bango { namespace network {
         void dump() const
         {
             for (char* m_pos = m_header; m_pos < m_end; m_pos++)
-                printf("%d ", *m_pos);
+                printf("%d ", (unsigned char) *m_pos);
             printf("\n");
         }
 
