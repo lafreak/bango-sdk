@@ -11,6 +11,8 @@
 
 #include <iostream>
 #include <cassert>
+#include <map>
+#include <sstream>
 
 using namespace bango::network;
 using namespace bango::space;
@@ -584,12 +586,77 @@ public:
     void OnMove         (const MoveEvent&&          callback){ m_on_move         = callback; }
 };
 
+class CommandDispatcher
+{
+public:
+    class Token
+    {
+        constexpr static char DELIMETER = ' ';
+        std::istringstream m_stream;
+
+        std::string token() {
+            std::string tok;
+            m_stream >> std::ws;
+            std::getline(m_stream, tok, DELIMETER);
+            return tok;
+        }
+
+    public:
+        Token(const std::string& str) : m_stream(str) {}
+
+        operator std::string() 
+        {
+            return token();
+        }
+
+        operator int()
+        {
+            try {
+                return std::stoi(token());
+            } catch (const std::exception&) {
+                return 0;
+            }
+        }
+
+        operator float()
+        {
+            try {
+                return std::stof(token());
+            } catch (const std::exception&) {
+                return 0.0;
+            }
+        }
+    };
+
+private:
+    typedef const std::function<void(Player*, Token&)> Task;
+    std::map<std::string, Task> m_commands;
+
+public:
+    void Register(const std::string& command, Task&& task)
+    {
+        m_commands.insert(std::make_pair(command, task));
+    }
+
+    void Dispatch(Player* player, const std::string& message)
+    {
+        Token token(message);
+        std::string lookup = token;
+        
+        auto result = m_commands.find(lookup);
+        if (result != m_commands.end())
+            result->second(player, token);
+    }
+};
+
 class GameManager
 {
     client          m_dbclient;
     server<Player>  m_gameserver;
 
     WorldMap        m_map;
+
+    CommandDispatcher m_command_dispatcher;
 
     // BUG: Very inefficient.
     void UserByUID(unsigned int uid, const std::function<void(const std::unique_ptr<Player>&)>&& callback) const
@@ -796,8 +863,10 @@ public:
         m_gameserver.when(C2S_CHATTING, [&](const std::unique_ptr<Player>& user, packet& p) {
             auto message = p.pop_str(); // BUG: Empty packet will throw an exception.
 
-            // if (message[0] == '/')
+            // if (message[0] == '/') // BUG: Message might be empty.
             //  return m_command_dispatcher.execute(message);
+            if (message[0] == '/')
+                return m_command_dispatcher.Dispatch(user.get(), message);
 
             packet out(S2C_CHATTING);
             out << user->GetName() << message;
@@ -853,6 +922,10 @@ public:
         m_map.OnMove([&](const Player* receiver, const Character* subject, 
             std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) {
             receiver->write(subject->BuildMovePacket(delta_x, delta_y, delta_z, stop));
+        });
+
+        m_command_dispatcher.Register("/test", [&](Player* player, CommandDispatcher::Token& token) {
+            //
         });
 
         InitItem    ::Load("Config/InitItem.txt");
