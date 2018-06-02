@@ -561,6 +561,24 @@ public:
         }
     }
 
+    void ForEachPlayerAround(const quad_entity* qe, unsigned int radius, const std::function<void(const Player*)>&& callback)
+    {
+        auto center = point{qe->m_x, qe->m_y};
+        m_quad.query(center, radius, [&](const Container* container) {
+            for (auto& player : container->players()) {
+                if (player->distance(center) <= radius)
+                    callback(player);
+            }
+        });
+    }
+
+    void WriteInSight(const quad_entity* qe, const packet& p)
+    {
+        ForEachPlayerAround(qe, m_sight, [&](const Player* player) {
+            player->write(p);
+        });
+    }
+
     void OnAppear       (const AppearanceEvent&&    callback){ m_on_appear       = callback; }
     void OnDisappear    (const AppearanceEvent&&    callback){ m_on_disappear    = callback; }
     void OnMove         (const MoveEvent&&          callback){ m_on_move         = callback; }
@@ -777,6 +795,9 @@ public:
 
         m_gameserver.when(C2S_CHATTING, [&](const std::unique_ptr<Player>& user, packet& p) {
             auto message = p.pop_str();
+            packet out(S2C_CHATTING);
+            out << user->GetName() << message;
+            m_map.WriteInSight(user.get(), out);
         });
 
         m_gameserver.on_connected([&](const std::unique_ptr<Player>& user) {
