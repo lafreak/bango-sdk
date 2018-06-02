@@ -437,11 +437,17 @@ private:
     AppearanceEvent   m_on_disappear =[](const Player*, const Character*){};
     MoveEvent         m_on_move      =[](const Player*, const Character*, std::int8_t, std::int8_t, std::int8_t, bool){};
 
+    typedef std::map<unsigned int, const Player*> PlayerMap;
+
+    PlayerMap m_players;
+
 public:
     WorldMap(const int width, const int sight, const size_t max_container_entity=QUADTREE_MAX_NODES)
         : m_sight(sight), m_quad(square{{0,0}, width}, max_container_entity)
     {
     }
+
+    const PlayerMap& Players() const { return m_players; }
 
     void Add(const Character* entity)
     {
@@ -471,6 +477,14 @@ public:
             m_quad.insert(entity);
         } catch (const std::exception& e) {
             std::cerr << e.what() << std::endl;
+            return;
+        }
+
+        switch (entity->GetType())
+        {
+            case Character::PLAYER: 
+                m_players.insert(std::make_pair(entity->GetID(), (const Player*)entity)); 
+                break;
         }
     }
 
@@ -481,6 +495,13 @@ public:
         } catch (const std::exception& e) {
             std::cerr << e.what() << std::endl;
             return;
+        }
+
+        switch (entity->GetType())
+        {
+            case Character::PLAYER: 
+                m_players.erase(entity->GetID()); 
+                break;
         }
 
         auto center = point{entity->m_x, entity->m_y}; // TODO: Dont convert to point each time.
@@ -579,6 +600,12 @@ public:
         ForEachPlayerAround(qe, m_sight, [&](const Player* player) {
             player->write(p);
         });
+    }
+
+    void WriteOnMap(const packet& p)
+    {
+        for (const auto& pair : Players())
+            pair.second->write(p);
     }
 
     void OnAppear       (const AppearanceEvent&&    callback){ m_on_appear       = callback; }
@@ -864,7 +891,6 @@ public:
             auto message = p.pop_str(); // BUG: Empty packet will throw an exception.
 
             // if (message[0] == '/') // BUG: Message might be empty.
-            //  return m_command_dispatcher.execute(message);
             if (message[0] == '/')
                 return m_command_dispatcher.Dispatch(user.get(), message);
 
