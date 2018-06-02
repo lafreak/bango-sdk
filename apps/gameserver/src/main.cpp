@@ -794,9 +794,14 @@ public:
         });
 
         m_gameserver.when(C2S_CHATTING, [&](const std::unique_ptr<Player>& user, packet& p) {
-            auto message = p.pop_str();
+            auto message = p.pop_str(); // BUG: Empty packet will throw an exception.
+
+            // if (message[0] == '/')
+            //  return m_command_dispatcher.execute(message);
+
             packet out(S2C_CHATTING);
             out << user->GetName() << message;
+
             m_map.WriteInSight(user.get(), out);
         });
 

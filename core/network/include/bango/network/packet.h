@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <type_traits>
 #include <iostream>
+#include <cstdarg>
 
 //#define NDEBUG // removes assertions
 #define MAX_PACKET_LENGTH 32768
@@ -60,6 +61,36 @@ namespace bango { namespace network {
             m_header = m_buffer+(p.m_header-p.m_buffer);
             m_begin = m_buffer+(p.m_begin-p.m_buffer);
             m_end = m_buffer+(p.m_end-p.m_buffer);
+        }
+
+        packet(unsigned char type, const char* format, ...) : packet(type)
+        {
+            va_list va;
+            va_start(va, format);
+
+            for (size_t i = 0, n = strlen(format); i < n; i++)
+            {
+                switch (format[i])
+                {
+                case 'b':
+                    push<unsigned char>(va_arg(va, int));
+                    break;
+                case 'w':
+                    push<unsigned short>(va_arg(va, int));
+                    break;
+                case 'd':
+                    push<unsigned int>(va_arg(va, int));
+                    break;
+                case 'I':
+                    push<unsigned long>(va_arg(va, long));
+                    break;
+                case 's':
+                    push_str(va_arg(va, const char*));
+                    break;
+                }
+            }
+
+            va_end(va);
         }
 
         unsigned short size() const 

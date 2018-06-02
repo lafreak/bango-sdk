@@ -14,9 +14,22 @@ TEST(PacketTest, TypeConstructor)
 
 TEST(PacketTest, RawConstructor)
 {
-    packet p({7, 0, 2, 5, 1, 0, 8});
+    packet p(std::vector<char>{7, 0, 2, 5, 1, 0, 8});
     EXPECT_EQ(7, p.size());
     EXPECT_EQ(2, p.type());
+}
+
+TEST(PacketTest, VariadicConstructor)
+{
+    packet p(4, "bwdIs", 11, 12, 13, 14, "Hello");
+
+    ASSERT_EQ(24, p.size());
+    EXPECT_EQ(4, p.type());
+    EXPECT_EQ(11, p.pop<char>());
+    EXPECT_EQ(12, p.pop<short>());
+    EXPECT_EQ(13, p.pop<int>());
+    EXPECT_EQ(14, p.pop<std::int64_t>());
+    EXPECT_EQ("Hello", p.pop_str());
 }
 
 TEST(PacketTest, ChangeType)
