@@ -485,7 +485,7 @@ void DatabaseManager::LoadItems(const std::shared_ptr<GameServer>& s, unsigned i
         info.Info       = query.get_int("info");
         info.Prefix     = query.get_int("prefix");
         info.CurEnd     = query.get_int("curend");
-        info.MaxEnd     = query.get_int("maxend");
+        info.MaxEnd     = 0;//query.get_int("maxend"); // TODO: Move to InitItem
         info.XAttack    = query.get_int("xattack");
         info.XMagic     = query.get_int("xmagic");
         info.XDefense   = query.get_int("xdefense");

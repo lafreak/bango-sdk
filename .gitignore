@@ -4,3 +4,4 @@ apps/gameserver.1
 core/bnetwork
 bin/*
 !bin/Test
+Calls.txt

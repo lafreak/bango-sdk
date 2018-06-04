@@ -81,6 +81,58 @@ struct InitNPC : public db_object<InitNPC>
     }
 };
 
+class Item
+{
+    const InitItem* m_init;
+    ITEMINFO        m_info;
+public:
+    Item(const InitItem* init, const ITEMINFO& info)
+        : m_init(init), m_info(info)
+    {
+        m_info.MaxEnd =  m_init->Endurance;
+    }
+
+    std::uint16_t   GetIndex()      const { return m_info.Index; }
+    std::int32_t    GetIID()        const { return m_info.IID; }
+    std::uint8_t    GetPrefix()     const { return m_info.Prefix; }
+    std::uint32_t   GetInfo()       const { return m_info.Info; }
+    std::uint32_t   GetNum()        const { return m_info.Num; }
+
+    operator ITEMINFO&() { return m_info; }
+};
+
+class Inventory
+{
+    std::map<int, const std::unique_ptr<Item>> m_items;
+
+public:
+    void Insert(const ITEMINFO& info)
+    {
+        try {
+            auto& init = InitItem::DB().at(info.Index);
+            auto result = m_items.insert(std::make_pair(info.IID, std::make_unique<Item>(init.get(), info)));
+            if (! result.second)
+                throw std::runtime_error("Duplicate item IID");
+        } catch (const std::out_of_range&) {
+            std::cerr << "Non existing item index: " << info.Index << std::endl;
+        } catch (const std::runtime_error& e) {
+            std::cerr << e.what() << std::endl;
+        }
+    }
+    //void Insert(unsigned short index, unsigned int num=1) {}
+
+    operator packet() const
+    {
+        packet p(S2C_ITEMINFO);
+        p << (unsigned short) m_items.size();
+
+        for (const auto& pair : m_items)
+            p << (ITEMINFO&) (*pair.second.get());
+        
+        return p;
+    }
+};
+
 class User : public writable, public authorizable
 {
 public:
@@ -214,6 +266,9 @@ class Player : public Character, public User
 {
     PLAYERINFO m_data;
     std::string m_name;
+
+    Inventory m_inventory;
+    
 public:
     Player(const taco_client_t& client)
         : User(client), Character(Character::PLAYER) {}
@@ -261,6 +316,15 @@ public:
 
     void OnLoadItems(packet& p)
     {
+        unsigned short count = p.pop<unsigned short>();
+
+        for (unsigned short i = 0; i < count; i++)
+        {
+            auto info = p.pop<ITEMINFO>();
+            m_inventory.Insert(info);
+        }
+
+        write(m_inventory);
     }
 
     void GameStart(packet& p)
