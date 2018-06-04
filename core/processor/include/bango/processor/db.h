@@ -14,7 +14,16 @@ namespace bango { namespace processor {
     public:
         static bool Load(const char* path) { return container::instance().load(path); }
 
-        static const std::map<unsigned int, const std::shared_ptr<T>>& DB() { return container::instance().db(); }
+        static const std::map<unsigned int, const std::unique_ptr<T>>& DB() { return container::instance().db(); }
+
+        static const T* Find(unsigned int index)
+        {
+            try {
+                return container::instance().db().at(index).get();
+            } catch (const std::out_of_range&) {
+                return nullptr;
+            }
+        }
 
     private:
         virtual void set(lisp::var param) = 0;
@@ -29,10 +38,10 @@ namespace bango { namespace processor {
                 return instance;
             }
 
-            const std::map<unsigned int, const std::shared_ptr<T>>& db() const { return m_db; }
+            const std::map<unsigned int, const std::unique_ptr<T>>& db() const { return m_db; }
 
         private:
-            std::map<unsigned int, const std::shared_ptr<T>> m_db;
+            std::map<unsigned int, const std::unique_ptr<T>> m_db;
 
             container() {}
             ~container() 
@@ -66,7 +75,7 @@ namespace bango { namespace processor {
 
                     // BUG: Some configs have multiple types of rows for example InitNPC npc/gennpc. Filter?
                     if (m_db.find(temp.index()) == m_db.end()) 
-                        m_db.insert(std::make_pair(temp.index(), std::make_shared<T>(temp)));
+                        m_db.insert(std::make_pair(temp.index(), std::unique_ptr<T>(new T(temp) )));
                 }
 
                 return true; 

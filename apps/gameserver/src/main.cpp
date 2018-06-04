@@ -169,9 +169,9 @@ public:
 
 class NPC : public Character
 {
-    const std::shared_ptr<InitNPC> m_init;
+    const InitNPC* m_init;
 public:
-    NPC(const std::shared_ptr<InitNPC> init) 
+    NPC(const InitNPC* init) 
         : Character(Character::NPC), m_init(init)
     {
         m_x = init->X;
@@ -967,7 +967,7 @@ public:
         InitNPC     ::Load("Config/InitNPC.txt");
 
         for (auto& object : InitNPC::DB())
-            m_map.Add(new NPC(object.second));
+            m_map.Add(new NPC(object.second.get()));
     }
 
     void Cleanup()

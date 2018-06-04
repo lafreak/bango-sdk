@@ -114,7 +114,7 @@ struct Example : public db_object<Example>
 TEST(DBExample, LoadAndFind)
 {
     Example::Load("Test/Test.txt");
-    auto e = Example::DB().at(30);//Example::Find(30);
+    auto& e = Example::DB().at(30);//Example::Find(30);
 
     EXPECT_EQ(30, e->Index);
     EXPECT_EQ("HELLO WORLD", e->Text.Content);
