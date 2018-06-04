@@ -38,17 +38,17 @@ public:
 
     void FlagDisconnected(int id) { m_active_users.erase(id); }
 
-    void SendPlayerList (const std::unique_ptr<GameServer>& s, unsigned int id, int idaccount);
-    void SendDeletedList(const std::unique_ptr<GameServer>& s, unsigned int id, int idaccount);
+    void SendPlayerList (const std::shared_ptr<GameServer>& s, unsigned int id, int idaccount);
+    void SendDeletedList(const std::shared_ptr<GameServer>& s, unsigned int id, int idaccount);
 
-    void Login          (const std::unique_ptr<GameServer>& s, packet& p);
-    void SecondaryLogin (const std::unique_ptr<GameServer>& s, packet& p);
-    void SecondaryCreate(const std::unique_ptr<GameServer>& s, packet& p);
-    void SecondaryChange(const std::unique_ptr<GameServer>& s, packet& p);
+    void Login          (const std::shared_ptr<GameServer>& s, packet& p);
+    void SecondaryLogin (const std::shared_ptr<GameServer>& s, packet& p);
+    void SecondaryCreate(const std::shared_ptr<GameServer>& s, packet& p);
+    void SecondaryChange(const std::shared_ptr<GameServer>& s, packet& p);
 
-    void NewPlayer      (const std::unique_ptr<GameServer>& s, packet& p);
-    void DeletePlayer   (const std::unique_ptr<GameServer>& s, packet& p);
-    void RestorePlayer  (const std::unique_ptr<GameServer>& s, packet& p);
-    void LoadPlayer     (const std::unique_ptr<GameServer>& s, packet& p);
-    void LoadItems      (const std::unique_ptr<GameServer>& s, unsigned int id, int idplayer);
+    void NewPlayer      (const std::shared_ptr<GameServer>& s, packet& p);
+    void DeletePlayer   (const std::shared_ptr<GameServer>& s, packet& p);
+    void RestorePlayer  (const std::shared_ptr<GameServer>& s, packet& p);
+    void LoadPlayer     (const std::shared_ptr<GameServer>& s, packet& p);
+    void LoadItems      (const std::shared_ptr<GameServer>& s, unsigned int id, int idplayer);
 };

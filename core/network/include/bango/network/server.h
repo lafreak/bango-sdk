@@ -11,12 +11,6 @@
 
 namespace bango { namespace network {
 
-    // template<class T>
-    // class session : public writable
-    // {
-
-    // };
-
     template<class T>
     class server
     {
@@ -25,36 +19,36 @@ namespace bango { namespace network {
 
         tacopie::tcp_server m_server;
 
-        std::map<int*, const std::unique_ptr<T>> m_sessions;
+        std::map<int*, const std::shared_ptr<T>> m_sessions;
         std::recursive_mutex m_sessions_rmtx;
 
-        std::function<void(const std::unique_ptr<T>&)> m_on_connected;
-        std::function<void(const std::unique_ptr<T>&)> m_on_disconnected;
+        std::function<void(const std::shared_ptr<T>&)> m_on_connected;
+        std::function<void(const std::shared_ptr<T>&)> m_on_disconnected;
 
         void on_new_message(const taco_client_t& client, const taco_read_result_t& res);
 
-        const std::unique_ptr<T>&   insert  (const taco_client_t& client);
+        const std::shared_ptr<T>&   insert  (const taco_client_t& client);
         void                        remove  (const taco_client_t& client);
-        const std::unique_ptr<T>&   find    (const taco_client_t& client);
+        const std::shared_ptr<T>&   find    (const taco_client_t& client);
 
-        std::map<unsigned char, std::pair<const std::function<void(const std::unique_ptr<T>&, packet&)>,std::pair<int,int>>> m_callbacks;
+        std::map<unsigned char, std::pair<const std::function<void(const std::shared_ptr<T>&, packet&)>,std::pair<int,int>>> m_callbacks;
         std::map<unsigned char, int> m_granted_roles;
         std::map<unsigned char, int> m_restricted_roles;
 
-        void execute(const std::unique_ptr<T>& session, packet&& p) const;
+        void execute(const std::shared_ptr<T>& session, packet&& p) const;
 
     public:
 
         void start(const std::string& host, std::int32_t port);
-        void when(unsigned char type, const std::function<void(const std::unique_ptr<T>&, packet&)>&& callback);
-        void on_connected(const std::function<void(const std::unique_ptr<T>&)>&& callback);
-        void on_disconnected(const std::function<void(const std::unique_ptr<T>&)>&& callback);
-        void for_each(const std::function<void(const std::unique_ptr<T>&)>&& callback);
+        void when(unsigned char type, const std::function<void(const std::shared_ptr<T>&, packet&)>&& callback);
+        void on_connected(const std::function<void(const std::shared_ptr<T>&)>&& callback);
+        void on_disconnected(const std::function<void(const std::shared_ptr<T>&)>&& callback);
+        void for_each(const std::function<void(const std::shared_ptr<T>&)>&& callback);
 
         void grant      (const std::map<unsigned char, int>&& roles);
         void restrict   (const std::map<unsigned char, int>&& roles);
 
-        const std::map<int*, const std::unique_ptr<T>>& sessions() const { return m_sessions; }
+        const std::map<int*, const std::shared_ptr<T>>& sessions() const { return m_sessions; }
     };
 
     template<class T>
@@ -107,7 +101,7 @@ namespace bango { namespace network {
     }
 
     template<class T>
-    const std::unique_ptr<T>& server<T>::insert(const taco_client_t& client)
+    const std::shared_ptr<T>& server<T>::insert(const taco_client_t& client)
     {
         std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
 
@@ -132,7 +126,7 @@ namespace bango { namespace network {
     }
 
     template<class T>
-    const std::unique_ptr<T>& server<T>::find(const taco_client_t& client)
+    const std::shared_ptr<T>& server<T>::find(const taco_client_t& client)
     {
         std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
 
@@ -141,7 +135,7 @@ namespace bango { namespace network {
     }
 
     template<class T>
-    void server<T>::execute(const std::unique_ptr<T>& session, packet&& p) const
+    void server<T>::execute(const std::shared_ptr<T>& session, packet&& p) const
     {
         auto result = m_callbacks.find(p.type());
         if (result == m_callbacks.end())
@@ -153,26 +147,26 @@ namespace bango { namespace network {
     }
 
     template<class T>
-    void server<T>::on_connected(const std::function<void(const std::unique_ptr<T>&)>&& callback)
+    void server<T>::on_connected(const std::function<void(const std::shared_ptr<T>&)>&& callback)
     {
         m_on_connected = callback;
     }
 
     template<class T>
-    void server<T>::on_disconnected(const std::function<void(const std::unique_ptr<T>&)>&& callback)
+    void server<T>::on_disconnected(const std::function<void(const std::shared_ptr<T>&)>&& callback)
     {
         m_on_disconnected = callback;
     }
 
     template<class T>
-    void server<T>::when(unsigned char type, const std::function<void(const std::unique_ptr<T>&, packet&)>&& callback)
+    void server<T>::when(unsigned char type, const std::function<void(const std::shared_ptr<T>&, packet&)>&& callback)
     {
         //m_callbacks[type] = callback;
         m_callbacks.insert(std::make_pair(type, std::make_pair(callback, std::make_pair(0,0))));
     }
 
     template<class T>
-    void server<T>::for_each(const std::function<void(const std::unique_ptr<T>&)>&& callback)
+    void server<T>::for_each(const std::function<void(const std::shared_ptr<T>&)>&& callback)
     {
         std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
 

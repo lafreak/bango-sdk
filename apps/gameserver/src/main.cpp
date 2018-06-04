@@ -695,7 +695,7 @@ class GameManager
     CommandDispatcher m_command_dispatcher;
 
     // BUG: Very inefficient.
-    void UserByUID(unsigned int uid, const std::function<void(const std::unique_ptr<Player>&)>&& callback) const
+    void UserByUID(unsigned int uid, const std::function<void(const std::shared_ptr<Player>&)>&& callback) const
     {
         for (auto& session : m_gameserver.sessions())
         {
@@ -715,7 +715,7 @@ public:
         //!
 
         m_dbclient.when(D2S_LOGIN, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
+            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
                 user->assign(User::CAN_REQUEST_SECONDARY);
                 user->write(p.change_type(S2C_ANS_LOGIN));
             });
@@ -723,40 +723,40 @@ public:
 
         // TODO: Bad naming, its not authorized
         m_dbclient.when(D2S_AUTHORIZED, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
+            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
                 user->assign(User::AUTHORIZED);
                 user->SetAID(p.pop<int>());
             });
         });
 
         m_dbclient.when(D2S_SEC_LOGIN, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
+            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
                 user->assign(User::CAN_REQUEST_SECONDARY);
                 user->write(p.change_type(S2C_SECOND_LOGIN));
             });
         });
 
         m_dbclient.when(D2S_PLAYER_INFO, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
+            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
                 user->write(p.change_type(S2C_PLAYERINFO));
                 user->assign(User::LOBBY);
             });
         });
 
         m_dbclient.when(D2S_DELPLAYERINFO, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
+            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
                 user->write(p.change_type(S2C_DELPLAYERINFO));
             });
         });
         
         m_dbclient.when(D2S_ANS_NEWPLAYER, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
+            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
                 user->write(p.change_type(S2C_ANS_NEWPLAYER));
             });
         });
 
         m_dbclient.when(D2S_LOADPLAYER, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
+            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
                 if (p.pop<char>())
                 {
                     user->write(S2C_MESSAGE, "b", MSG_NOTEXISTPLAYER);
@@ -769,7 +769,7 @@ public:
         });
 
         m_dbclient.when(D2S_LOADITEMS, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::unique_ptr<Player>& user) {
+            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
                 user->OnLoadItems(p);
             });
         });
@@ -778,27 +778,27 @@ public:
         //! GameClient -> GameServer
         //!
 
-        m_gameserver.when(C2S_CONNECT, [&](const std::unique_ptr<Player>& user, packet& p) {
+        m_gameserver.when(C2S_CONNECT, [&](const std::shared_ptr<Player>& user, packet& p) {
             user->write(S2C_CODE, "dbdddIbbb", 0, 0, 604800, 0, 0, 0, 0, 0, N_EN);
         });
 
-        m_gameserver.when(C2S_ANS_CODE, [&](const std::unique_ptr<Player>& user, packet& p) {
+        m_gameserver.when(C2S_ANS_CODE, [&](const std::shared_ptr<Player>& user, packet& p) {
             // ignore...
         });
 
-        m_gameserver.when(C2S_LOGIN, [&](const std::unique_ptr<Player>& user, packet& p) {
+        m_gameserver.when(C2S_LOGIN, [&](const std::shared_ptr<Player>& user, packet& p) {
             user->deny(User::CAN_REQUEST_PRIMARY);
             p << user->GetUID();
             m_dbclient.write(p.change_type(S2D_LOGIN));
         });
 
-        m_gameserver.when(C2S_SECOND_LOGIN, [&](const std::unique_ptr<Player>& user, packet& p) {
+        m_gameserver.when(C2S_SECOND_LOGIN, [&](const std::shared_ptr<Player>& user, packet& p) {
             user->deny(User::CAN_REQUEST_SECONDARY);
             p << user->GetCredentials();
             m_dbclient.write(p.change_type(S2D_SECONDARY_LOGIN));
         });
 
-        m_gameserver.when(C2S_NEWPLAYER, [&](const std::unique_ptr<Player>& user, packet& p) {
+        m_gameserver.when(C2S_NEWPLAYER, [&](const std::shared_ptr<Player>& user, packet& p) {
 
             packet copy = p;
             
@@ -841,19 +841,19 @@ public:
             m_dbclient.write(copy.change_type(S2D_NEWPLAYER));
         });
 
-        m_gameserver.when(C2S_DELPLAYER, [&](const std::unique_ptr<Player>& user, packet& p) {
+        m_gameserver.when(C2S_DELPLAYER, [&](const std::shared_ptr<Player>& user, packet& p) {
             p << user->GetCredentials();
 
             m_dbclient.write(p.change_type(S2D_DELPLAYER));
         });
 
-        m_gameserver.when(C2S_RESTOREPLAYER, [&](const std::unique_ptr<Player>& user, packet& p) {
+        m_gameserver.when(C2S_RESTOREPLAYER, [&](const std::shared_ptr<Player>& user, packet& p) {
             p << user->GetCredentials();
 
             m_dbclient.write(p.change_type(S2D_RESTOREPLAYER));
         });
 
-        m_gameserver.when(C2S_LOADPLAYER, [&](const std::unique_ptr<Player>& user, packet& p) {
+        m_gameserver.when(C2S_LOADPLAYER, [&](const std::shared_ptr<Player>& user, packet& p) {
             user->assign(User::LOADING);
             user->deny(User::LOBBY);
             
@@ -861,7 +861,7 @@ public:
             m_dbclient.write(p.change_type(S2D_LOADPLAYER));
         });
 
-        m_gameserver.when(C2S_START, [&](const std::unique_ptr<Player>& user, packet& p) {
+        m_gameserver.when(C2S_START, [&](const std::shared_ptr<Player>& user, packet& p) {
             user->GameStart(p);
             m_map.Add(user.get());
 
@@ -869,7 +869,7 @@ public:
             user->deny(User::LOADING);
         });
 
-        m_gameserver.when(C2S_RESTART, [&](const std::unique_ptr<Player>& user, packet& p) {
+        m_gameserver.when(C2S_RESTART, [&](const std::shared_ptr<Player>& user, packet& p) {
             if (p.pop<char>() == 1) // Can I logout?
                 user->write(S2C_ANS_RESTART, "b", user->CanLogout() ? 1 : 0); // 1=Yes, 0=No -> In Fight? PVP? Etc
             else
@@ -880,23 +880,23 @@ public:
             }
         });
 
-        m_gameserver.when(C2S_GAMEEXIT, [&](const std::unique_ptr<Player>& user, packet& p) {
+        m_gameserver.when(C2S_GAMEEXIT, [&](const std::shared_ptr<Player>& user, packet& p) {
             user->write(S2C_ANS_GAMEEXIT, "b", user->CanLogout() ? 1 : 0);
         });
 
-        m_gameserver.when(C2S_MOVE_ON, [&](const std::unique_ptr<Player>& user, packet& p) {
+        m_gameserver.when(C2S_MOVE_ON, [&](const std::shared_ptr<Player>& user, packet& p) {
             std::int8_t x, y, z;
             p >> x >> y >> z;
             m_map.Move(user.get(), x, y, z);
         });
 
-        m_gameserver.when(C2S_MOVE_END, [&](const std::unique_ptr<Player>& user, packet& p) {
+        m_gameserver.when(C2S_MOVE_END, [&](const std::shared_ptr<Player>& user, packet& p) {
             std::int8_t x, y, z;
             p >> x >> y >> z;
             m_map.Move(user.get(), x, y, z, true);
         });
 
-        m_gameserver.when(C2S_CHATTING, [&](const std::unique_ptr<Player>& user, packet& p) {
+        m_gameserver.when(C2S_CHATTING, [&](const std::shared_ptr<Player>& user, packet& p) {
             auto message = p.pop_str(); // BUG: Empty packet will throw an exception.
 
             // if (message[0] == '/') // BUG: Message might be empty.
@@ -909,12 +909,12 @@ public:
             m_map.WriteInSight(user.get(), out);
         });
 
-        m_gameserver.on_connected([&](const std::unique_ptr<Player>& user) {
+        m_gameserver.on_connected([&](const std::shared_ptr<Player>& user) {
             user->assign(User::CAN_REQUEST_PRIMARY);
             std::cout << "connection: " << user->GetUID() << std::endl;
         });
 
-        m_gameserver.on_disconnected([&](const std::unique_ptr<Player>& user) {
+        m_gameserver.on_disconnected([&](const std::shared_ptr<Player>& user) {
             if (user->authorized(User::INGAME))
                 m_map.Remove(user.get());
 
@@ -967,12 +967,14 @@ public:
         InitNPC     ::Load("Config/InitNPC.txt");
 
         for (auto& object : InitNPC::DB())
-        {
-            // Create NPC and place it on map.
-            // TODO: Add to global map?
-            // BUG: Memory leak
             m_map.Add(new NPC(object.second));
-        }
+    }
+
+    void Cleanup()
+    {
+        // TODO: Use shared pointers?
+        for (const auto& pair : m_map.NPCs())
+            delete pair.second;
     }
 };
 
@@ -984,5 +986,8 @@ int main()
     manager.StartGameServer     ("localhost", 3000);
 
     std::cin.get();
+
+    manager.Cleanup();
+
     return 0;
 }

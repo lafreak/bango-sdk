@@ -4,15 +4,15 @@ void DatabaseManager::Initialize()
 {
     // BUG: When GameServer disconnects, accounts stay logged in.
     
-    m_dbserver.when(S2D_DISCONNECT, [&](const std::unique_ptr<GameServer>& s, packet& p) {
+    m_dbserver.when(S2D_DISCONNECT, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         FlagDisconnected(p.pop<int>());
     });
 
-    m_dbserver.when(S2D_LOGIN, [&](const std::unique_ptr<GameServer>& s, packet& p) {
+    m_dbserver.when(S2D_LOGIN, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         Login(s, p);
     });
 
-    m_dbserver.when(S2D_SECONDARY_LOGIN, [&](const std::unique_ptr<GameServer>& s, packet& p) {
+    m_dbserver.when(S2D_SECONDARY_LOGIN, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         switch (p.pop<char>())
         {
             case SL_LOGIN:              SecondaryLogin (s, p); break;
@@ -21,23 +21,23 @@ void DatabaseManager::Initialize()
         }
     });
 
-    m_dbserver.when(S2D_NEWPLAYER, [&](const std::unique_ptr<GameServer>& s, packet& p) {
+    m_dbserver.when(S2D_NEWPLAYER, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         NewPlayer(s, p);
     });
 
-    m_dbserver.when(S2D_DELPLAYER, [&](const std::unique_ptr<GameServer>& s, packet& p) {
+    m_dbserver.when(S2D_DELPLAYER, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         DeletePlayer(s, p);
     });
 
-    m_dbserver.when(S2D_RESTOREPLAYER, [&](const std::unique_ptr<GameServer>& s, packet& p) {
+    m_dbserver.when(S2D_RESTOREPLAYER, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         RestorePlayer(s, p);
     });
 
-    m_dbserver.when(S2D_LOADPLAYER, [&](const std::unique_ptr<GameServer>& s, packet& p) {
+    m_dbserver.when(S2D_LOADPLAYER, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         LoadPlayer(s, p);
     });
     
-    m_dbserver.when(S2D_RESTART, [&](const std::unique_ptr<GameServer>& s, packet& p) {
+    m_dbserver.when(S2D_RESTART, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         auto id = p.pop<unsigned int>();
         auto idaccount = p.pop<int>();
         SendPlayerList(s, id, idaccount);
@@ -70,7 +70,7 @@ bool DatabaseManager::Validate(const std::string& password) const
     return true;
 }
 
-void DatabaseManager::Login(const std::unique_ptr<GameServer>& s, packet& p)
+void DatabaseManager::Login(const std::shared_ptr<GameServer>& s, packet& p)
 {
     auto login = p.pop_str();
     auto passwd = p.pop_str();
@@ -129,7 +129,7 @@ void DatabaseManager::Login(const std::unique_ptr<GameServer>& s, packet& p)
 #endif
 }
 
-void DatabaseManager::SecondaryLogin(const std::unique_ptr<GameServer>& s, packet& p)
+void DatabaseManager::SecondaryLogin(const std::shared_ptr<GameServer>& s, packet& p)
 {
     auto password = p.pop_str();
     if (!Validate(password))
@@ -159,7 +159,7 @@ void DatabaseManager::SecondaryLogin(const std::unique_ptr<GameServer>& s, packe
     SendPlayerList(s, id, idaccount);
 }
 
-void DatabaseManager::SecondaryCreate(const std::unique_ptr<GameServer>& s, packet& p)
+void DatabaseManager::SecondaryCreate(const std::shared_ptr<GameServer>& s, packet& p)
 {
     auto password = p.pop_str();
     auto secondary = p.pop_str();
@@ -183,7 +183,7 @@ void DatabaseManager::SecondaryCreate(const std::unique_ptr<GameServer>& s, pack
     s->write(D2S_LOGIN, "dbd", id, LA_OK, idaccount);
 }
 
-void DatabaseManager::SecondaryChange(const std::unique_ptr<GameServer>& s, packet& p)
+void DatabaseManager::SecondaryChange(const std::shared_ptr<GameServer>& s, packet& p)
 {
     auto old_pass = p.pop_str();
     auto new_pass = p.pop_str();
@@ -207,7 +207,7 @@ void DatabaseManager::SecondaryChange(const std::unique_ptr<GameServer>& s, pack
     s->write(D2S_LOGIN, "dbd", id, LA_OK, idaccount);
 }
 
-void DatabaseManager::SendPlayerList(const std::unique_ptr<GameServer>& s, unsigned int id, int idaccount)
+void DatabaseManager::SendPlayerList(const std::shared_ptr<GameServer>& s, unsigned int id, int idaccount)
 {
     auto conn = m_pool.get();
     auto query = conn.create_query(
@@ -271,7 +271,7 @@ void DatabaseManager::SendPlayerList(const std::unique_ptr<GameServer>& s, unsig
     SendDeletedList(s, id, idaccount);
 }
 
-void DatabaseManager::SendDeletedList(const std::unique_ptr<GameServer>& s, unsigned int id, int idaccount)
+void DatabaseManager::SendDeletedList(const std::shared_ptr<GameServer>& s, unsigned int id, int idaccount)
 {
     auto conn = m_pool.get();
     auto query = conn.create_query("SELECT * FROM player WHERE idaccount=? AND deleted=1");
@@ -300,7 +300,7 @@ void DatabaseManager::SendDeletedList(const std::unique_ptr<GameServer>& s, unsi
     s->write(p);
 }
 
-void DatabaseManager::NewPlayer(const std::unique_ptr<GameServer>& s, packet& p)
+void DatabaseManager::NewPlayer(const std::shared_ptr<GameServer>& s, packet& p)
 {
     auto name =     p.pop_str();
     auto job =      p.pop<unsigned char>();
@@ -366,7 +366,7 @@ void DatabaseManager::NewPlayer(const std::unique_ptr<GameServer>& s, packet& p)
     SendPlayerList(s, id, idaccount);
 }
 
-void DatabaseManager::DeletePlayer(const std::unique_ptr<GameServer>& s, packet& p)
+void DatabaseManager::DeletePlayer(const std::shared_ptr<GameServer>& s, packet& p)
 {
     auto idplayer = p.pop<int>();
     auto idaccount = p.pop<int>();
@@ -387,7 +387,7 @@ void DatabaseManager::DeletePlayer(const std::unique_ptr<GameServer>& s, packet&
     SendPlayerList(s, id, idaccount);
 }
 
-void DatabaseManager::RestorePlayer(const std::unique_ptr<GameServer>& s, packet& p)
+void DatabaseManager::RestorePlayer(const std::shared_ptr<GameServer>& s, packet& p)
 {
     auto idplayer = p.pop<int>();
     auto idaccount = p.pop<int>();
@@ -408,7 +408,7 @@ void DatabaseManager::RestorePlayer(const std::unique_ptr<GameServer>& s, packet
     SendPlayerList(s, id, idaccount);
 }
 
-void DatabaseManager::LoadPlayer(const std::unique_ptr<GameServer>& s, packet& p)
+void DatabaseManager::LoadPlayer(const std::shared_ptr<GameServer>& s, packet& p)
 {
     auto idplayer = p.pop<int>();
     auto idguild = p.pop<int>(); //0
@@ -463,7 +463,7 @@ void DatabaseManager::LoadPlayer(const std::unique_ptr<GameServer>& s, packet& p
     LoadItems(s, id, idplayer);
 }
 
-void DatabaseManager::LoadItems(const std::unique_ptr<GameServer>& s, unsigned int id, int idplayer)
+void DatabaseManager::LoadItems(const std::shared_ptr<GameServer>& s, unsigned int id, int idplayer)
 {
     auto conn = m_pool.get();
     auto query = conn.create_query("SELECT * FROM item WHERE idplayer=?");
