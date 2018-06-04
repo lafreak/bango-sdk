@@ -19,7 +19,7 @@ using namespace bango::space;
 using namespace bango::processor;
 
 #define MAP_WIDTH 50*8192
-#define MAP_SIGHT 1024
+#define MAP_SIGHT 40
 
 struct InitItem : public db_object<InitItem>
 {
@@ -28,7 +28,8 @@ struct InitItem : public db_object<InitItem>
         Class,
         Kind,
         Level,
-        Endurance;
+        Endurance,
+        Wearable;
 
     unsigned int index() const { return Index; }
 
@@ -36,11 +37,12 @@ struct InitItem : public db_object<InitItem>
     {
         switch (FindAttribute(param.pop()))
         {
-            case A_INDEX:           Index         = param.pop(); break;
-            case A_LEVEL:           Level         = param.pop(); break;
-            case A_ENDURANCE:       Endurance     = param.pop(); break;
-            case A_CLASS:           Class         = FindAttribute(param.pop());
-                                    Kind          = FindAttribute(param.pop());
+            case A_INDEX:           Index       = param.pop(); break;
+            case A_LEVEL:           Level       = param.pop(); break;
+            case A_ENDURANCE:       Endurance   = param.pop(); break;
+            case A_WEARABLE:        Wearable    = param.pop(); break;
+            case A_CLASS:           Class       = FindAttribute(param.pop());
+                                    Kind        = FindAttribute(param.pop());
                                     break;
         }
     }
@@ -89,15 +91,11 @@ public:
     Item(const InitItem* init, const ITEMINFO& info)
         : m_init(init), m_info(info)
     {
-        m_info.MaxEnd =  m_init->Endurance;
+        //m_info.CurEnd=30;//
+        m_info.MaxEnd = m_init->Endurance;
     }
 
-    std::uint16_t   GetIndex()      const { return m_info.Index; }
-    std::int32_t    GetIID()        const { return m_info.IID; }
-    std::uint8_t    GetPrefix()     const { return m_info.Prefix; }
-    std::uint32_t   GetInfo()       const { return m_info.Info; }
-    std::uint32_t   GetNum()        const { return m_info.Num; }
-
+    // TODO: Var sizes are declared in 2 places, structures.h & here.
     operator ITEMINFO&() { return m_info; }
 };
 
@@ -105,14 +103,47 @@ class Inventory
 {
     std::map<int, const std::unique_ptr<Item>> m_items;
 
+    EQUIPMENT m_equipment;
+
+    // TODO: Temporary
+    void AddEquipmentIndex(unsigned short index) 
+    {
+        for (int i = 0; i < EQUIPMENT_SIZE; i++) 
+        {
+            if (!m_equipment.Index[i]) 
+            {
+                m_equipment.Index[i] = index;
+                break;
+            }
+        }
+    }
+
+    // TODO: Temporary
+    void RemoveEquipmentIndex(unsigned short index) 
+    {
+        for (int i = 0; i < EQUIPMENT_SIZE; i++) 
+        {
+            if (m_equipment.Index[i] == index)
+                m_equipment.Index[i] = 0;
+        }
+    }
+
 public:
+    Inventory() : m_equipment() {}
+
     void Insert(const ITEMINFO& info)
     {
         try {
             auto& init = InitItem::DB().at(info.Index);
+
             auto result = m_items.insert(std::make_pair(info.IID, std::make_unique<Item>(init.get(), info)));
             if (! result.second)
                 throw std::runtime_error("Duplicate item IID");
+
+            // TODO: Temporary
+            if (init->Wearable && info.Info & ITEM_PUTON)
+                AddEquipmentIndex(info.Index);
+
         } catch (const std::out_of_range&) {
             std::cerr << "Non existing item index: " << info.Index << std::endl;
         } catch (const std::runtime_error& e) {
@@ -121,6 +152,14 @@ public:
     }
     //void Insert(unsigned short index, unsigned int num=1) {}
 
+    void Clear()
+    {
+        m_items.clear();
+        m_equipment = {};
+    }
+
+    const EQUIPMENT& GetEquipment() const { return m_equipment; }
+
     operator packet() const
     {
         packet p(S2C_ITEMINFO);
@@ -128,7 +167,7 @@ public:
 
         for (const auto& pair : m_items)
             p << (ITEMINFO&) (*pair.second.get());
-        
+
         return p;
     }
 };
@@ -238,7 +277,6 @@ public:
 
     packet BuildAppearPacket(bool hero=false) const override
     {
-
         packet p(S2C_CREATENPC);
         p   << GetID()
             << GetIndex()
@@ -256,9 +294,7 @@ public:
 
     packet BuildDisappearPacket() const override
     {
-        packet p(S2C_REMOVENPC);
-        p << GetID();
-        return p;
+        return packet(S2C_REMOVENPC, "d", GetID());
     }
 };
 
@@ -335,6 +371,11 @@ public:
         write(BuildAppearPacket(true));
     }
 
+    void GameRestart()
+    {
+        m_inventory.Clear();
+    }
+
     bool CanLogout() const { return true; }
 
     packet BuildAppearPacket(bool hero=false) const override
@@ -348,13 +389,9 @@ public:
             << GetY() 
             << GetZ() 
             << GetDir() 
-            << GetGState();
-        
-        // Equipment Indexes
-        p << (std::int16_t)0 << (std::int16_t)0 << (std::int16_t)0 << (std::int16_t)0;
-        p << (std::int16_t)0 << (std::int16_t)0 << (std::int16_t)0 << (std::int16_t)0;
-
-        p   << GetFace() 
+            << GetGState()
+            << m_inventory.GetEquipment()
+            << GetFace() 
             << GetHair() 
             << GetMState() 
             << "\0" << "\0" // GuildClass & GuildName
@@ -374,16 +411,12 @@ public:
     
     packet BuildDisappearPacket() const override
     {
-        packet p(S2C_REMOVEPLAYER);
-        p << GetID();
-        return p;
+        return packet(S2C_REMOVEPLAYER, "d", GetID());
     }
 
     packet BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const override
     {
-        packet p(stop ? S2C_MOVEPLAYER_END : S2C_MOVEPLAYER_ON);
-        p << GetID() << delta_x << delta_y << delta_z;
-        return p;
+        return packet(stop ? S2C_MOVEPLAYER_END : S2C_MOVEPLAYER_ON, "dbbb", GetID(), delta_x, delta_y, delta_z);
     }
 
     const std::string&  GetName()                   const { return m_name; }
@@ -938,6 +971,7 @@ public:
                 user->write(S2C_ANS_RESTART, "b", user->CanLogout() ? 1 : 0); // 1=Yes, 0=No -> In Fight? PVP? Etc
             else
             {
+                user->GameRestart();
                 m_map.Remove(user.get());
                 user->deny(User::INGAME);
                 m_dbclient.write(S2D_RESTART, "dd", user->GetUID(), user->GetAID());

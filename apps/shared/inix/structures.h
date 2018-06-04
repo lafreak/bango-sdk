@@ -66,4 +66,10 @@ struct PLAYERINFO
     unsigned char Hair;
 };
 
+#define EQUIPMENT_SIZE 32
+struct EQUIPMENT
+{
+    unsigned short Index[EQUIPMENT_SIZE];
+};
+
 #pragma pack(pop)
