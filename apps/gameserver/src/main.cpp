@@ -169,9 +169,9 @@ public:
 
 class NPC : public Character
 {
-    const InitNPC* m_init;
+    const std::shared_ptr<InitNPC> m_init;
 public:
-    NPC(const InitNPC* init) 
+    NPC(const std::shared_ptr<InitNPC> init) 
         : Character(Character::NPC), m_init(init)
     {
         m_x = init->X;

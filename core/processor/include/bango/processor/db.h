@@ -4,6 +4,7 @@
 
 #include <map>
 #include <functional>
+#include <memory>
 
 namespace bango { namespace processor {
 
@@ -13,7 +14,7 @@ namespace bango { namespace processor {
     public:
         static bool Load(const char* path) { return container::instance().load(path); }
 
-        static const std::map<unsigned int, const T*>& DB() { return container::instance().db(); }
+        static const std::map<unsigned int, const std::shared_ptr<T>>& DB() { return container::instance().db(); }
 
     private:
         virtual void set(lisp::var param) = 0;
@@ -28,16 +29,14 @@ namespace bango { namespace processor {
                 return instance;
             }
 
-            const std::map<unsigned int, const T*>& db() const { return m_db; }
+            const std::map<unsigned int, const std::shared_ptr<T>>& db() const { return m_db; }
 
         private:
-            std::map<unsigned int, const T*> m_db;
+            std::map<unsigned int, const std::shared_ptr<T>> m_db;
 
             container() {}
             ~container() 
             {
-                for (auto& pair : m_db)
-                    delete pair.second;
             }
 
         public:
@@ -67,10 +66,7 @@ namespace bango { namespace processor {
 
                     // BUG: Some configs have multiple types of rows for example InitNPC npc/gennpc. Filter?
                     if (m_db.find(temp.index()) == m_db.end()) 
-                    {
-                        auto object = new T(temp);
-                        m_db.insert(std::make_pair(object->index(), object));
-                    }
+                        m_db.insert(std::make_pair(temp.index(), std::make_shared<T>(temp)));
                 }
 
                 return true; 

@@ -122,7 +122,7 @@ static void BM_DBFind(benchmark::State &state)
 {
     Example::Load("Test/Test.txt");
 
-    const Example *k;
+    std::shared_ptr<Example> k;
 
     for (auto _ : state)
         benchmark::DoNotOptimize(k = Example::DB().at(30));//Example::Find(30));
