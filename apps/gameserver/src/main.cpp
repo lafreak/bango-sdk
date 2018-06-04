@@ -437,9 +437,11 @@ private:
     AppearanceEvent   m_on_disappear =[](const Player*, const Character*){};
     MoveEvent         m_on_move      =[](const Player*, const Character*, std::int8_t, std::int8_t, std::int8_t, bool){};
 
-    typedef std::map<unsigned int, const Player*> PlayerMap;
+    typedef std::map<unsigned int, const Player*>   PlayerMap;
+    typedef std::map<unsigned int, const NPC*>      NPCMap;
 
-    PlayerMap m_players;
+    PlayerMap   m_players;
+    NPCMap      m_npcs;
 
 public:
     WorldMap(const int width, const int sight, const size_t max_container_entity=QUADTREE_MAX_NODES)
@@ -447,7 +449,8 @@ public:
     {
     }
 
-    const PlayerMap& Players() const { return m_players; }
+    const PlayerMap&    Players()   const { return m_players; }
+    const NPCMap&       NPCs()      const { return m_npcs; }
 
     void Add(const Character* entity)
     {
@@ -485,6 +488,9 @@ public:
             case Character::PLAYER: 
                 m_players.insert(std::make_pair(entity->GetID(), (const Player*)entity)); 
                 break;
+            case Character::NPC: 
+                m_npcs.insert(std::make_pair(entity->GetID(), (const NPC*)entity)); 
+                break;
         }
     }
 
@@ -501,6 +507,9 @@ public:
         {
             case Character::PLAYER: 
                 m_players.erase(entity->GetID()); 
+                break;
+            case Character::NPC: 
+                m_npcs.erase(entity->GetID()); 
                 break;
         }
 
