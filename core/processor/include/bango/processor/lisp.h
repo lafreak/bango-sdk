@@ -112,6 +112,7 @@ namespace bango { namespace processor { namespace lisp {
 		var(const var& v) { m_pObject = v.m_pObject; }
 		var(_object *p) { m_pObject = p; }
 		operator const char*() const { return m_pObject->GetString(); }
+		operator unsigned char() const { return (int)*this; }
 		operator int() const { return (int)m_pObject->GetInteger(); }
 		operator float() const { return m_pObject->GetFloat(); }
 		operator double() const { return m_pObject->GetFloat(); }

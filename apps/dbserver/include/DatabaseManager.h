@@ -51,4 +51,6 @@ public:
     void RestorePlayer  (const std::shared_ptr<GameServer>& s, packet& p);
     void LoadPlayer     (const std::shared_ptr<GameServer>& s, packet& p);
     void LoadItems      (const std::shared_ptr<GameServer>& s, unsigned int id, int idplayer);
+
+    void TrashItem      (const std::shared_ptr<GameServer>& s, packet& p);
 };

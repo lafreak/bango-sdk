@@ -19,7 +19,7 @@ using namespace bango::space;
 using namespace bango::processor;
 
 #define MAP_WIDTH 50*8192
-#define MAP_SIGHT 40
+#define MAP_SIGHT 1024
 
 struct InitItem : public db_object<InitItem>
 {
@@ -28,13 +28,15 @@ struct InitItem : public db_object<InitItem>
         Class,
         Kind,
         Level,
-        Endurance,
         Wearable;
+
+    unsigned char
+        Endurance;
 
     unsigned int index() const { return Index; }
 
     virtual void set(lisp::var param) override
-    {
+    { 
         switch (FindAttribute(param.pop()))
         {
             case A_INDEX:           Index       = param.pop(); break;
@@ -87,21 +89,58 @@ class Item
 {
     const InitItem* m_init;
     ITEMINFO        m_info;
+
+    unsigned int m_local_id;
+
 public:
     Item(const InitItem* init, const ITEMINFO& info)
         : m_init(init), m_info(info)
     {
-        //m_info.CurEnd=30;//
-        m_info.MaxEnd = m_init->Endurance;
+        static unsigned int g_max_local_id=0;
+
+        m_local_id = ++g_max_local_id; // [1, ...]
     }
 
-    // TODO: Var sizes are declared in 2 places, structures.h & here.
-    operator ITEMINFO&() { return m_info; }
+    unsigned int    GetLocalID()    const { return m_local_id; }
+    int             GetIID()        const { return m_info.IID; }
+    unsigned int    GetInfo()       const { return m_info.Info; }
+
+    operator packet() const
+    {
+        packet p;
+        p   << m_info.Index 
+            << GetLocalID() 
+            << m_info.Prefix
+            << m_info.Info
+            << m_info.Num
+            << m_init->Endurance
+            << m_info.CurEnd
+            << m_info.SetGem
+            << m_info.XAttack
+            << m_info.XMagic
+            << m_info.XDefense
+            << m_info.XHit
+            << m_info.XDodge
+            << m_info.ProtectNum
+            << m_info.WeaponLevel
+            << m_info.CorrectionAddNum
+            << m_info.Unknown1
+            << m_info.RemainingSeconds
+            << m_info.RemainingMinutes
+            << m_info.RemainingHours
+            << m_info.FuseInfo
+            << m_info.Shot
+            << m_info.Perforation
+            << m_info.GongA
+            << m_info.GongB;
+
+        return p;
+    }
 };
 
 class Inventory
 {
-    std::map<int, const std::unique_ptr<Item>> m_items;
+    std::map<unsigned int, const std::unique_ptr<Item>> m_items;
 
     EQUIPMENT m_equipment;
 
@@ -136,7 +175,8 @@ public:
         try {
             auto& init = InitItem::DB().at(info.Index);
 
-            auto result = m_items.insert(std::make_pair(info.IID, std::make_unique<Item>(init.get(), info)));
+            auto item = std::make_unique<Item>(init.get(), info);
+            auto result = m_items.insert(std::make_pair(item->GetLocalID(), std::move(item)));
             if (! result.second)
                 throw std::runtime_error("Duplicate item IID");
 
@@ -150,7 +190,19 @@ public:
             std::cerr << e.what() << std::endl;
         }
     }
-    //void Insert(unsigned short index, unsigned int num=1) {}
+
+    bool Trash(unsigned int local_id)
+    {
+        auto result = m_items.find(local_id);
+        if (result == m_items.end())
+            return false;
+
+        if (result->second->GetInfo() & ITEM_PUTON)
+            return false;
+
+        m_items.erase(result);
+        return true;
+    }
 
     void Clear()
     {
@@ -160,13 +212,22 @@ public:
 
     const EQUIPMENT& GetEquipment() const { return m_equipment; }
 
+    int LocalToIID(unsigned int local_id) const
+    {
+        try {
+            return m_items.at(local_id)->GetIID();
+        } catch (const std::exception&) {
+            return 0;
+        }
+    }
+
     operator packet() const
     {
         packet p(S2C_ITEMINFO);
         p << (unsigned short) m_items.size();
 
         for (const auto& pair : m_items)
-            p << (ITEMINFO&) (*pair.second.get());
+            p << (packet) *(pair.second.get());
 
         return p;
     }
@@ -308,6 +369,8 @@ class Player : public Character, public User
 public:
     Player(const taco_client_t& client)
         : User(client), Character(Character::PLAYER) {}
+
+    Inventory& GetInventory() { return m_inventory; }
 
     void OnLoadPlayer(packet& p)
     {
@@ -1007,6 +1070,17 @@ public:
             m_map.WriteInSight(user.get(), out);
         });
 
+        m_gameserver.when(C2S_TRASHITEM, [&](const std::shared_ptr<Player>& user, packet& p) {
+            auto local_id = p.pop<unsigned int>();
+            auto iid = user->GetInventory().LocalToIID(local_id);
+
+            if (user->GetInventory().Trash(local_id))
+            {
+                user->write(S2C_UPDATEITEMNUM, "ddb", local_id, 0, TL_DELETE);
+                m_dbclient.write(S2D_TRASHITEM, "d", iid);
+            }
+        });
+
         m_gameserver.on_connected([&](const std::shared_ptr<Player>& user) {
             user->assign(User::CAN_REQUEST_PRIMARY);
             std::cout << "connection: " << user->GetUID() << std::endl;
@@ -1037,6 +1111,7 @@ public:
             {C2S_MOVE_ON,           User::INGAME},
             {C2S_MOVE_END,          User::INGAME},
             {C2S_CHATTING,          User::INGAME},
+            {C2S_TRASHITEM,         User::INGAME},
         });
 
         m_gameserver.restrict({

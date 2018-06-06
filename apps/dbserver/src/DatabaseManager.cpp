@@ -36,6 +36,10 @@ void DatabaseManager::Initialize()
     m_dbserver.when(S2D_LOADPLAYER, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         LoadPlayer(s, p);
     });
+
+    m_dbserver.when(S2D_TRASHITEM, [&](const std::shared_ptr<GameServer>& s, packet& p) {
+        TrashItem(s, p);
+    });
     
     m_dbserver.when(S2D_RESTART, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         auto id = p.pop<unsigned int>();
@@ -485,7 +489,7 @@ void DatabaseManager::LoadItems(const std::shared_ptr<GameServer>& s, unsigned i
         info.Info       = query.get_int("info");
         info.Prefix     = query.get_int("prefix");
         info.CurEnd     = query.get_int("curend");
-        info.MaxEnd     = 0;//query.get_int("maxend"); // TODO: Move to InitItem
+        //info.MaxEnd     = 0;//query.get_int("maxend"); // TODO: Move to InitItem
         info.XAttack    = query.get_int("xattack");
         info.XMagic     = query.get_int("xmagic");
         info.XDefense   = query.get_int("xdefense");
@@ -520,4 +524,14 @@ void DatabaseManager::LoadItems(const std::shared_ptr<GameServer>& s, unsigned i
     p << items;
 
     s->write(p);
+}
+
+void DatabaseManager::TrashItem(const std::shared_ptr<GameServer>& s, packet& p)
+{
+    auto conn = m_pool.get();
+    auto query = conn.create_query("DELETE FROM item WHERE iditem=?");
+
+    query << p.pop<int>();
+
+    query.execute();
 }
