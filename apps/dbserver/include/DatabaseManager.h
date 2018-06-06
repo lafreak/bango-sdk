@@ -52,5 +52,7 @@ public:
     void LoadPlayer     (const std::shared_ptr<GameServer>& s, packet& p);
     void LoadItems      (const std::shared_ptr<GameServer>& s, unsigned int id, int idplayer);
 
+    void InsertItem     (const std::shared_ptr<GameServer>& s, packet& p);
+    void UpdateItemNum  (const std::shared_ptr<GameServer>& s, packet& p);
     void TrashItem      (const std::shared_ptr<GameServer>& s, packet& p);
 };

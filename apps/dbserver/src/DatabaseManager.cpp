@@ -36,6 +36,14 @@ void DatabaseManager::Initialize()
     m_dbserver.when(S2D_LOADPLAYER, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         LoadPlayer(s, p);
     });
+    
+    m_dbserver.when(S2D_INSERTITEM, [&](const std::shared_ptr<GameServer>& s, packet& p) {
+        InsertItem(s, p);
+    });
+
+    m_dbserver.when(S2D_UPDATEITEMNUM, [&](const std::shared_ptr<GameServer>& s, packet& p) {
+        UpdateItemNum(s, p);
+    });
 
     m_dbserver.when(S2D_TRASHITEM, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         TrashItem(s, p);
@@ -526,12 +534,72 @@ void DatabaseManager::LoadItems(const std::shared_ptr<GameServer>& s, unsigned i
     s->write(p);
 }
 
+void DatabaseManager::InsertItem(const std::shared_ptr<GameServer>& s, packet& p)
+{
+    auto info = p.pop<ITEMINFO>();
+    auto idplayer = p.pop<int>();
+    auto id = p.pop<unsigned int>();
+
+    auto conn = m_pool.get();
+    auto query = conn.create_query("INSERT INTO item "
+        "(idplayer, `index`, num, info, prefix, curend, xattack, xmagic, xdefense, xhit, xdodge, "
+        "explosiveblow, fusion, fmeele, fmagic, fdefense, fabsorb, fevasion, fhit, fhp, fmp, "
+        "fstr, fhth, fint, fwis, fdex, shot, perforation, gongleft, gongright) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+
+    query   << idplayer
+            << info.Index
+            << info.Num
+            << info.Info
+            << info.Prefix
+            << info.CurEnd
+            << info.XAttack
+            << info.XMagic
+            << info.XDefense
+            << info.XHit
+            << info.XDodge
+            << info.WeaponLevel
+            << info.FuseInfo.Level
+            << info.FuseInfo.Meele
+            << info.FuseInfo.Magic
+            << info.FuseInfo.Defense
+            << info.FuseInfo.Absorb
+            << info.FuseInfo.Dodge
+            << info.FuseInfo.Hit
+            << info.FuseInfo.HP
+            << info.FuseInfo.MP
+            << info.FuseInfo.Stat[P_STR]
+            << info.FuseInfo.Stat[P_HTH]
+            << info.FuseInfo.Stat[P_INT]
+            << info.FuseInfo.Stat[P_WIS]
+            << info.FuseInfo.Stat[P_DEX]
+            << info.Shot
+            << info.Perforation
+            << info.GongA
+            << info.GongB;
+
+    query.execute();
+
+    //TODO: Send IID.
+}
+
+void DatabaseManager::UpdateItemNum(const std::shared_ptr<GameServer>& s, packet& p)
+{
+    auto iid = p.pop<int>();
+    auto num = p.pop<unsigned int>();
+
+    auto conn = m_pool.get();
+    auto query = conn.create_query("UPDATE item SET num=? WHERE iditem=?");
+
+    query << num << iid;
+    query.execute();
+}
+
 void DatabaseManager::TrashItem(const std::shared_ptr<GameServer>& s, packet& p)
 {
     auto conn = m_pool.get();
     auto query = conn.create_query("DELETE FROM item WHERE iditem=?");
 
     query << p.pop<int>();
-
     query.execute();
 }

@@ -33,6 +33,9 @@ struct InitItem : public db_object<InitItem>
     unsigned char
         Endurance;
 
+    bool
+        Plural;
+
     unsigned int index() const { return Index; }
 
     virtual void set(lisp::var param) override
@@ -43,6 +46,7 @@ struct InitItem : public db_object<InitItem>
             case A_LEVEL:           Level       = param.pop(); break;
             case A_ENDURANCE:       Endurance   = param.pop(); break;
             case A_WEARABLE:        Wearable    = param.pop(); break;
+            case A_PLURAL:          Plural      = param.pop(); break;
             case A_CLASS:           Class       = FindAttribute(param.pop());
                                     Kind        = FindAttribute(param.pop());
                                     break;
@@ -101,9 +105,17 @@ public:
         m_local_id = ++g_max_local_id; // [1, ...]
     }
 
+    unsigned short  GetIndex()      const { return m_info.Index; }
     unsigned int    GetLocalID()    const { return m_local_id; }
     int             GetIID()        const { return m_info.IID; }
     unsigned int    GetInfo()       const { return m_info.Info; }
+    unsigned int    GetNum()        const { return m_info.Num; }
+
+    bool            IsPlural()      const { return m_init->Plural; }
+
+    void            SetNum(unsigned int num) { m_info.Num = num; }
+
+    const ITEMINFO& GetItemInfo() const { return m_info; }
 
     operator packet() const
     {
@@ -170,7 +182,7 @@ class Inventory
 public:
     Inventory() : m_equipment() {}
 
-    void Insert(const ITEMINFO& info)
+    Item* Insert(const ITEMINFO& info)
     {
         try {
             auto& init = InitItem::DB().at(info.Index);
@@ -178,22 +190,21 @@ public:
             auto item = std::make_unique<Item>(init.get(), info);
             auto result = m_items.insert(std::make_pair(item->GetLocalID(), std::move(item)));
             if (! result.second)
-                throw std::runtime_error("Duplicate item IID");
+                throw std::runtime_error("Duplicate item local ID");
 
             // TODO: Temporary
             if (init->Wearable && info.Info & ITEM_PUTON)
                 AddEquipmentIndex(info.Index);
+
+            return result.first->second.get();
 
         } catch (const std::out_of_range&) {
             std::cerr << "Non existing item index: " << info.Index << std::endl;
         } catch (const std::runtime_error& e) {
             std::cerr << e.what() << std::endl;
         }
-    }
 
-    void Insert(unsigned short index, unsigned int num=1)
-    {
-
+        return nullptr;
     }
 
     bool Trash(unsigned int local_id)
@@ -224,6 +235,14 @@ public:
         } catch (const std::exception&) {
             return 0;
         }
+    }
+
+    Item* FindByIndex(unsigned short index)
+    {
+        for (const auto& p : m_items)
+            if (p.second->GetIndex() == index)
+                return p.second.get();
+        return nullptr;
     }
 
     operator packet() const
@@ -487,6 +506,7 @@ public:
         return packet(stop ? S2C_MOVEPLAYER_END : S2C_MOVEPLAYER_ON, "dbbb", GetID(), delta_x, delta_y, delta_z);
     }
 
+    std::int32_t        GetPID()                    const { return m_data.PlayerID; }
     const std::string&  GetName()                   const { return m_name; }
     std::uint8_t        GetClass(bool hero=false)   const { return hero ? (m_data.Class | GAME_HERO) : m_data.Class; }
     std::uint8_t        GetJob()                    const { return m_data.Job; }
@@ -869,12 +889,34 @@ class GameManager
         }
     }
 
-    void InsertItem(const std::shared_ptr<Player>& player, unsigned short index) const
+    void InsertItem(Player* player, unsigned short index, unsigned int num=1) const
     {
-        
+        auto item = player->GetInventory().FindByIndex(index);
+        if (item && item->IsPlural())
+        {
+            item->SetNum(item->GetNum()+num);
+            player->write(S2C_UPDATEITEMNUM, "ddb", item->GetLocalID(), item->GetNum(), TL_CREATE);
+            m_dbclient.write(S2D_UPDATEITEMNUM, "dd", item->GetIID(), item->GetNum());
+        }
+        else
+        {
+            ITEMINFO info = {};
+            info.Index = index;
+            try {
+                const auto& init = InitItem::DB().at(index);
+                info.CurEnd = init->Endurance;
+                info.Num = init->Plural ? num : 1;
+            } catch (const std::exception&) { return; }
+            auto item = player->GetInventory().Insert(info);
+            player->write(((packet)*item).change_type(S2C_INSERTITEM));
+            //db insert
+            packet out(S2D_INSERTITEM);
+            out << item->GetItemInfo() << player->GetPID() << player->GetUID();
+            m_dbclient.write(out);
+        }
     }
 
-    void TrashItem(const std::shared_ptr<Player>& player, unsigned int local_id) const
+    void TrashItem(Player* player, unsigned int local_id) const
     {
         auto iid = player->GetInventory().LocalToIID(local_id);
         if (player->GetInventory().Trash(local_id))
@@ -1092,7 +1134,7 @@ public:
 
         m_gameserver.when(C2S_TRASHITEM, [&](const std::shared_ptr<Player>& user, packet& p) {
             auto local_id = p.pop<unsigned int>();
-            TrashItem(user, local_id);
+            TrashItem(user.get(), local_id);
         });
 
         m_gameserver.on_connected([&](const std::shared_ptr<Player>& user) {
@@ -1146,8 +1188,10 @@ public:
             receiver->write(subject->BuildMovePacket(delta_x, delta_y, delta_z, stop));
         });
 
-        m_command_dispatcher.Register("/test", [&](Player* player, CommandDispatcher::Token& token) {
-            //
+        m_command_dispatcher.Register("/get", [&](Player* player, CommandDispatcher::Token& token) {
+            auto index = (int)token;
+            auto num = (int)token;
+            InsertItem(player, index, num <= 0 ? 1 : num);
         });
 
         InitItem    ::Load("Config/InitItem.txt");
