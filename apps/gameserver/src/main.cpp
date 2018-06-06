@@ -191,6 +191,11 @@ public:
         }
     }
 
+    void Insert(unsigned short index, unsigned int num=1)
+    {
+
+    }
+
     bool Trash(unsigned int local_id)
     {
         auto result = m_items.find(local_id);
@@ -864,6 +869,21 @@ class GameManager
         }
     }
 
+    void InsertItem(const std::shared_ptr<Player>& player, unsigned short index) const
+    {
+        
+    }
+
+    void TrashItem(const std::shared_ptr<Player>& player, unsigned int local_id) const
+    {
+        auto iid = player->GetInventory().LocalToIID(local_id);
+        if (player->GetInventory().Trash(local_id))
+        {
+            player->write(S2C_UPDATEITEMNUM, "ddb", local_id, 0, TL_DELETE);
+            m_dbclient.write(S2D_TRASHITEM, "d", iid);
+        }
+    }
+
 public:
     void ConnectToDatabase  (const std::string& host, const std::int32_t port) { m_dbclient.connect(host, port); }
     void StartGameServer    (const std::string& host, const std::int32_t port) { m_gameserver.start(host, port); }
@@ -1072,13 +1092,7 @@ public:
 
         m_gameserver.when(C2S_TRASHITEM, [&](const std::shared_ptr<Player>& user, packet& p) {
             auto local_id = p.pop<unsigned int>();
-            auto iid = user->GetInventory().LocalToIID(local_id);
-
-            if (user->GetInventory().Trash(local_id))
-            {
-                user->write(S2C_UPDATEITEMNUM, "ddb", local_id, 0, TL_DELETE);
-                m_dbclient.write(S2D_TRASHITEM, "d", iid);
-            }
+            TrashItem(user, local_id);
         });
 
         m_gameserver.on_connected([&](const std::shared_ptr<Player>& user) {
