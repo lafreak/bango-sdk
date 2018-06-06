@@ -114,6 +114,7 @@ public:
     bool            IsPlural()      const { return m_init->Plural; }
 
     void            SetNum(unsigned int num) { m_info.Num = num; }
+    void            SetIID(int iid) { m_info.IID = iid; }
 
     const ITEMINFO& GetItemInfo() const { return m_info; }
 
@@ -235,6 +236,13 @@ public:
         } catch (const std::exception&) {
             return 0;
         }
+    }
+
+    void UpdateIID(unsigned int local_id, int iid)
+    {
+        try {
+            m_items.at(local_id)->SetIID(iid);
+        } catch (const std::exception&) {}
     }
 
     Item* FindByIndex(unsigned short index)
@@ -911,7 +919,7 @@ class GameManager
             player->write(((packet)*item).change_type(S2C_INSERTITEM));
             //db insert
             packet out(S2D_INSERTITEM);
-            out << item->GetItemInfo() << player->GetPID() << player->GetUID();
+            out << item->GetItemInfo() << player->GetPID() << player->GetUID() << item->GetLocalID();
             m_dbclient.write(out);
         }
     }
@@ -993,6 +1001,14 @@ public:
         m_dbclient.when(D2S_LOADITEMS, [&](packet& p) {
             UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
                 user->OnLoadItems(p);
+            });
+        });
+
+        m_dbclient.when(D2S_UPDATEITEMIID, [&](packet& p) {
+            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
+                auto local_id = p.pop<unsigned int>();
+                auto iid = p.pop<int>();
+                user->GetInventory().UpdateIID(local_id, iid);
             });
         });
 

@@ -539,6 +539,7 @@ void DatabaseManager::InsertItem(const std::shared_ptr<GameServer>& s, packet& p
     auto info = p.pop<ITEMINFO>();
     auto idplayer = p.pop<int>();
     auto id = p.pop<unsigned int>();
+    auto local_id = p.pop<unsigned int>();
 
     auto conn = m_pool.get();
     auto query = conn.create_query("INSERT INTO item "
@@ -580,7 +581,12 @@ void DatabaseManager::InsertItem(const std::shared_ptr<GameServer>& s, packet& p
 
     query.execute();
 
-    //TODO: Send IID.
+    auto res = conn.create_query("SELECT LAST_INSERT_ID()");
+    res.execute_query();
+    res.next();
+
+    auto iid = res.get_int();
+    s->write(D2S_UPDATEITEMIID, "ddd", id, local_id, iid);
 }
 
 void DatabaseManager::UpdateItemNum(const std::shared_ptr<GameServer>& s, packet& p)
