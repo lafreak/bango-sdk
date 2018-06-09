@@ -216,6 +216,9 @@ namespace inix
         { "map", A_MAP},
         { "xy", A_XY},
         { "dir", A_DIR},
+
+        // InitItem
+        { "ridingtype", A_RIDINGTYPE},
     };
 
     static std::map<unsigned int, int> g_wearables = {

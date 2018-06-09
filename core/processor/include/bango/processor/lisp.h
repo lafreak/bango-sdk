@@ -119,6 +119,7 @@ namespace bango { namespace processor { namespace lisp {
 		operator double() const { return m_pObject->GetFloat(); }
 		operator char() const { return (char)m_pObject->GetInteger(); }
 		operator short() const { return (short)m_pObject->GetInteger(); }
+		operator unsigned short() const { return (unsigned short)m_pObject->GetInteger(); }
 		operator std::uint32_t() const { return (std::uint32_t)m_pObject->GetInteger(); }
 		operator std::int64_t() const { return (std::int64_t)m_pObject->GetInteger(); }
 		var& car() const { return m_pObject->car(); }

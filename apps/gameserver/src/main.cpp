@@ -14,55 +14,14 @@
 #include <map>
 #include <sstream>
 
+#include "Item.h"
+
 using namespace bango::network;
 using namespace bango::space;
 using namespace bango::processor;
 
 #define MAP_WIDTH 50*8192
 #define MAP_SIGHT 1024
-
-struct InitItem : public db_object<InitItem>
-{
-    unsigned int 
-        Index,
-        Class,
-        Level,
-        Wearable,
-        LimitLevel,
-        LimitClass=PC_ALL;
-
-    int 
-        WearId,
-        Kind;
-
-    unsigned char
-        Endurance;
-
-    bool
-        Plural;
-
-    unsigned int index() const { return Index; }
-
-    virtual void set(lisp::var param) override
-    { 
-        switch (FindAttribute(param.pop()))
-        {
-            case A_INDEX:           Index       = param.pop(); break;
-            case A_LEVEL:           Level       = param.pop(); break;
-            case A_ENDURANCE:       Endurance   = param.pop(); break;
-            case A_WEARABLE:        Wearable    = param.pop(); break;
-            case A_PLURAL:          Plural      = param.pop(); break;
-            case A_CLASS:           Class       = FindAttribute(param.pop());
-                                    Kind        = FindAttribute(param.pop());
-                                    break;
-            case A_LIMIT:           LimitClass  = FindAttribute(param.pop());
-                                    LimitLevel  = param.pop();
-                                    break;
-        }
-
-        WearId = FindWearId(Kind);
-    }
-};
 
 struct InitNPC : public db_object<InitNPC>
 {
@@ -96,275 +55,6 @@ struct InitNPC : public db_object<InitNPC>
                                 DirY        = param.pop();
                                 break;
         }
-    }
-};
-
-class Item
-{
-    const InitItem* m_init;
-    ITEMINFO        m_info;
-
-    unsigned int m_local_id;
-
-public:
-    Item(const InitItem* init, const ITEMINFO& info)
-        : m_init(init), m_info(info)
-    {
-        static unsigned int g_max_local_id=0;
-
-        m_local_id = ++g_max_local_id; // [1, ...]
-    }
-
-    unsigned short  GetIndex()      const { return m_info.Index; }
-    unsigned int    GetLocalID()    const { return m_local_id; }
-    int             GetIID()        const { return m_info.IID; }
-    unsigned int    GetInfo()       const { return m_info.Info; }
-    unsigned int    GetNum()        const { return m_info.Num; }
-    int             GetWearId()     const { return m_init->WearId; }
-    unsigned int    GetLevel()      const { return m_init->Level; }
-    unsigned int    GetLimitLevel() const { return m_init->LimitLevel; }
-    unsigned int    GetLimitClass() const { return m_init->LimitClass; }
-    int             GetKind()       const { return m_init->Kind; }
-
-    bool            IsPlural()      const { return m_init->Plural; }
-    bool            IsWearable()    const { return m_init->Wearable; }
-
-    void            SetNum(unsigned int num)    { m_info.Num = num; }
-    void            SetIID(int iid)             { m_info.IID = iid; }
-
-    void AddInfo(unsigned int info) { m_info.Info |= info; }
-    void SubInfo(unsigned int info) { m_info.Info &= ~info; }
-
-    const ITEMINFO& GetItemInfo() const { return m_info; }
-
-    operator packet() const
-    {
-        packet p;
-        p   << m_info.Index 
-            << GetLocalID() 
-            << m_info.Prefix
-            << m_info.Info
-            << m_info.Num
-            << m_init->Endurance
-            << m_info.CurEnd
-            << m_info.SetGem
-            << m_info.XAttack
-            << m_info.XMagic
-            << m_info.XDefense
-            << m_info.XHit
-            << m_info.XDodge
-            << m_info.ProtectNum
-            << m_info.WeaponLevel
-            << m_info.CorrectionAddNum
-            << m_info.Unknown1
-            << m_info.RemainingSeconds
-            << m_info.RemainingMinutes
-            << m_info.RemainingHours
-            << m_info.FuseInfo
-            << m_info.Shot
-            << m_info.Perforation
-            << m_info.GongA
-            << m_info.GongB;
-
-        return p;
-    }
-};
-
-class Inventory
-{
-    std::map<unsigned int, const std::unique_ptr<Item>> m_items;
-
-    EQUIPMENT m_equipment;
-
-    Item* m_wear_items[WS_LAST];
-
-    // TODO: Temporary
-    void AddEquipmentIndex(unsigned short index) 
-    {
-        for (int i = 0; i < EQUIPMENT_SIZE; i++) 
-        {
-            if (!m_equipment.Index[i]) 
-            {
-                m_equipment.Index[i] = index;
-                break;
-            }
-        }
-    }
-
-    // TODO: Temporary
-    void RemoveEquipmentIndex(unsigned short index) 
-    {
-        for (int i = 0; i < EQUIPMENT_SIZE; i++) 
-        {
-            if (m_equipment.Index[i] == index)
-                m_equipment.Index[i] = 0;
-        }
-    }
-
-public:
-    Inventory() { Reset(); }
-
-    void dump() const {
-        std::cout << "Wear Items:\n";
-        for (int i = 0; i < WS_LAST; i++)
-            std::cout << (m_wear_items[i] ? m_wear_items[i]->GetIndex() : (unsigned short) 0) << " ";
-        std::cout << "\nEquipment:\n";
-        for (int i = 0; i < EQUIPMENT_SIZE; i++)
-            std::cout << m_equipment.Index[i] << " ";
-        std::cout << std::endl;
-    }
-
-    Item* Insert(const ITEMINFO& info)
-    {
-        try {
-            auto& init = InitItem::DB().at(info.Index);
-
-            auto item = std::make_unique<Item>(init.get(), info);
-            auto result = m_items.insert(std::make_pair(item->GetLocalID(), std::move(item)));
-            if (! result.second)
-                throw std::runtime_error("Duplicate item local ID");
-
-            // TODO: Temporary
-            if (init->Wearable && info.Info & ITEM_PUTON) 
-            {
-                assert(init->WearId >= 0); // BUG: May trigger when items were put on manually trough DB.
-                m_wear_items[init->WearId] = result.first->second.get();
-                AddEquipmentIndex(info.Index);
-            }
-
-            return result.first->second.get();
-
-        } catch (const std::out_of_range&) {
-            std::cerr << "Non existing item index: " << info.Index << std::endl;
-        } catch (const std::runtime_error& e) {
-            std::cerr << e.what() << std::endl;
-        }
-
-        return nullptr;
-    }
-
-    bool Trash(unsigned int local_id)
-    {
-        auto result = m_items.find(local_id);
-        if (result == m_items.end())
-            return false;
-
-        if (result->second->GetInfo() & ITEM_PUTON)
-            return false;
-
-        m_items.erase(result);
-        return true;
-    }
-
-    //! \param local_id LocalID of item to put on.
-    //! \returns Item that was put on or nullptr if item doesnt exist.
-    Item* PutOn(Item* item)
-    {
-        if (item->GetInfo() & ITEM_PUTON)
-            return nullptr;
-
-        if (!item->IsWearable())
-            return nullptr;
-
-        if (item->GetWearId() == -1)
-            return nullptr;
-
-        if (item->GetKind() == ISC_SWORD2HAND)
-            if (m_wear_items[WS_SHIELD] != nullptr)
-                return nullptr;
-
-        if (item->GetKind() == ISC_SHIELD)
-            if (m_wear_items[WS_WEAPON] != nullptr)
-                if (m_wear_items[WS_WEAPON]->GetKind() == ISC_SWORD2HAND)
-                    return nullptr;
-
-        if (m_wear_items[item->GetWearId()] != nullptr)
-            return nullptr;
-
-        m_wear_items[item->GetWearId()] = item;
-        item->AddInfo(ITEM_PUTON);
-
-        AddEquipmentIndex(item->GetIndex());
-
-        return item;
-    }
-
-    //! \param local_id LocalID of item to put off.
-    //! \returns Item that was put off or nullptr if item doesnt exist.
-    Item* PutOff(unsigned int local_id)
-    {
-        auto result = m_items.find(local_id);
-        if (result == m_items.end())
-            return nullptr;
-
-        if (! (result->second->GetInfo() & ITEM_PUTON) )
-            return nullptr;
-
-        assert(result->second->IsWearable());
-        assert(result->second->GetWearId() != -1);
-        assert(m_wear_items[result->second->GetWearId()] != nullptr);
-
-        m_wear_items[result->second->GetWearId()] = nullptr;
-        result->second->SubInfo(ITEM_PUTON);
-
-        RemoveEquipmentIndex(result->second->GetIndex());
-
-        return result->second.get();
-    }
-
-    void Reset()
-    {
-        m_items.clear();
-        m_equipment = {};
-
-        for (int i = 0; i < WS_LAST; i++)
-            m_wear_items[i] = nullptr;
-    }
-
-    const EQUIPMENT& GetEquipment() const { return m_equipment; }
-
-    int LocalToIID(unsigned int local_id) const
-    {
-        try {
-            return m_items.at(local_id)->GetIID();
-        } catch (const std::exception&) {
-            return 0;
-        }
-    }
-
-    void UpdateIID(unsigned int local_id, int iid)
-    {
-        try {
-            m_items.at(local_id)->SetIID(iid);
-        } catch (const std::exception&) {}
-    }
-
-    Item* FindByIndex(unsigned short index)
-    {
-        for (const auto& p : m_items)
-            if (p.second->GetIndex() == index)
-                return p.second.get();
-        return nullptr;
-    }
-
-    Item* FindByLocalID(unsigned int local_id)
-    {
-        try {
-            return m_items.at(local_id).get();
-        } catch (const std::exception&) {
-            return nullptr;
-        }
-    }
-
-    operator packet() const
-    {
-        packet p(S2C_ITEMINFO);
-        p << (unsigned short) m_items.size();
-
-        for (const auto& pair : m_items)
-            p << (packet) *(pair.second.get());
-
-        return p;
     }
 };
 
@@ -494,18 +184,14 @@ public:
     }
 };
 
-class Player : public Character, public User
+class Player : public Character, public User, public Inventory
 {
     PLAYERINFO m_data;
     std::string m_name;
 
-    Inventory m_inventory;
-    
 public:
     Player(const taco_client_t& client)
         : User(client), Character(Character::PLAYER) {}
-
-    Inventory& GetInventory() { return m_inventory; }
 
     void OnLoadPlayer(packet& p)
     {
@@ -555,10 +241,10 @@ public:
         for (unsigned short i = 0; i < count; i++)
         {
             auto info = p.pop<ITEMINFO>();
-            m_inventory.Insert(info);
+            Insert(info);
         }
 
-        write(m_inventory);
+        write((Inventory)*this);
     }
 
     void GameStart(packet& p)
@@ -571,23 +257,23 @@ public:
 
     void GameRestart()
     {
-        m_inventory.Reset();
+        Reset();
     }
 
-    Item* PutOnItem(packet& p)
+    const Item::Ptr PutOnItem(packet& p)
     {
-        auto local_id = p.pop<unsigned int>();
-        auto item = m_inventory.FindByLocalID(local_id);
+        auto local = p.pop<unsigned int>();
+        auto item = FindByLocalID(local);
         if (!item)
             return nullptr;
 
-        if (item->GetLimitClass() != PC_ALL && item->GetLimitClass() != GetClass())
+        if (item->GetInit().LimitClass != PC_ALL && item->GetInit().LimitClass != GetClass())
             return nullptr;
 
-        if (item->GetLimitLevel() > GetLevel())
+        if (item->GetInit().LimitLevel > GetLevel())
             return nullptr;
 
-        return m_inventory.PutOn(item);
+        return PutOn(local);
     }
 
     bool CanLogout() const { return true; }
@@ -604,7 +290,7 @@ public:
             << GetZ() 
             << GetDir() 
             << GetGState()
-            << m_inventory.GetEquipment()
+            << GetEquipment()
             << GetFace() 
             << GetHair() 
             << GetMState() 
@@ -1018,12 +704,12 @@ class GameManager
 
     void InsertItem(Player* player, unsigned short index, unsigned int num=1) const
     {
-        auto item = player->GetInventory().FindByIndex(index);
-        if (item && item->IsPlural())
+        auto item = player->FindByIndex(index);
+        if (item && item->GetInit().Plural)
         {
-            item->SetNum(item->GetNum()+num);
-            player->write(S2C_UPDATEITEMNUM, "ddb", item->GetLocalID(), item->GetNum(), TL_CREATE);
-            m_dbclient.write(S2D_UPDATEITEMNUM, "dd", item->GetIID(), item->GetNum());
+            item->UpdateNum(item->GetInfo().Num+num);
+            player->write(S2C_UPDATEITEMNUM, "ddb", item->GetLocalID(), item->GetInfo().Num, TL_CREATE);
+            m_dbclient.write(S2D_UPDATEITEMNUM, "dd", item->GetInfo().IID, item->GetInfo().Num);
         }
         else
         {
@@ -1034,11 +720,11 @@ class GameManager
                 info.CurEnd = init->Endurance;
                 info.Num = init->Plural ? num : 1;
             } catch (const std::exception&) { return; }
-            auto item = player->GetInventory().Insert(info);
+            auto item = player->Insert(info);
             player->write(((packet)*item).change_type(S2C_INSERTITEM));
             //db insert
             packet out(S2D_INSERTITEM);
-            out << item->GetItemInfo() << player->GetPID() << player->GetUID() << item->GetLocalID();
+            out << item->GetInfo() << player->GetPID() << player->GetUID() << item->GetLocalID();
             m_dbclient.write(out);
         }
     }
@@ -1053,16 +739,16 @@ class GameManager
             packet(S2C_PUTONITEM, "ddw", 
                 player->GetID(), 
                 item->GetLocalID(), 
-                item->GetIndex()));
+                item->GetInit().Index));
 
-        m_dbclient.write(S2D_UPDATEITEMINFO, "dd", item->GetIID(), item->GetInfo());
+        m_dbclient.write(S2D_UPDATEITEMINFO, "dd", item->GetInfo().IID, item->GetInfo().Info);
     }
 
     void PutOffItem(const std::shared_ptr<Player>& player, packet& p)
     {
         auto local_id = p.pop<unsigned int>();
 
-        auto item = player->GetInventory().PutOff(local_id);
+        auto item = player->PutOff(local_id);
         if (!item)
             return;
 
@@ -1070,17 +756,17 @@ class GameManager
             packet(S2C_PUTOFFITEM, "ddw", 
                 player->GetID(), 
                 item->GetLocalID(), 
-                item->GetIndex()));
+                item->GetInit().Index));
 
-        m_dbclient.write(S2D_UPDATEITEMINFO, "dd", item->GetIID(), item->GetInfo());
+        m_dbclient.write(S2D_UPDATEITEMINFO, "dd", item->GetInfo().IID, item->GetInfo().Info);
     }
 
-    void TrashItem(Player* player, unsigned int local_id) const
+    void TrashItem(Player* player, unsigned int local) const
     {
-        auto iid = player->GetInventory().LocalToIID(local_id);
-        if (player->GetInventory().Trash(local_id))
+        auto iid = player->GetIID(local);
+        if (player->Trash(local))
         {
-            player->write(S2C_UPDATEITEMNUM, "ddb", local_id, 0, TL_DELETE);
+            player->write(S2C_UPDATEITEMNUM, "ddb", local, 0, TL_DELETE);
             m_dbclient.write(S2D_TRASHITEM, "d", iid);
         }
     }
@@ -1157,9 +843,9 @@ public:
 
         m_dbclient.when(D2S_UPDATEITEMIID, [&](packet& p) {
             UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
-                auto local_id = p.pop<unsigned int>();
+                auto local = p.pop<unsigned int>();
                 auto iid = p.pop<int>();
-                user->GetInventory().UpdateIID(local_id, iid);
+                user->UpdateItemIID(local, iid);
             });
         });
 
@@ -1307,6 +993,14 @@ public:
             PutOffItem(user, p);
         });
 
+        m_gameserver.when(C2S_USEITEM, [&](const std::shared_ptr<Player>& user, packet& p) {
+            auto item = user->FindByLocalID(p.pop<unsigned int>());
+            if (!item) return;
+
+            if (item->GetInit().Class == IC_RIDE)
+                m_map.WriteInSight(user.get(), packet(S2C_RIDING, "bdd", 0, user->GetID(), item->GetInit().RidingType));
+        });
+
         m_gameserver.when(C2S_TRASHITEM, [&](const std::shared_ptr<Player>& user, packet& p) {
             auto local_id = p.pop<unsigned int>();
             TrashItem(user.get(), local_id);
@@ -1344,6 +1038,7 @@ public:
             {C2S_CHATTING,          User::INGAME},
             {C2S_PUTONITEM,         User::INGAME},
             {C2S_PUTOFFITEM,        User::INGAME},
+            {C2S_USEITEM,           User::INGAME},
             {C2S_TRASHITEM,         User::INGAME},
         });
 
@@ -1369,6 +1064,11 @@ public:
             auto index = (int)token;
             auto num = (int)token;
             InsertItem(player, index, num <= 0 ? 1 : num);
+        });
+
+        m_command_dispatcher.Register("/ride", [&](Player* player, CommandDispatcher::Token& token) {
+            auto index = (int)token;
+            m_map.WriteInSight(player, packet(S2C_RIDING, "bdd", 0, player->GetID(), index));
         });
 
         InitItem    ::Load("Config/InitItem.txt");

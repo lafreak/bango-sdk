@@ -1948,4 +1948,7 @@ enum ATTRIBUTE
 	A_MAP,
 	A_XY,
 	A_DIR,
+
+	// InitItem
+	A_RIDINGTYPE,
 };

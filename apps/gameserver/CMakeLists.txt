@@ -13,6 +13,7 @@ include_directories(bangoprocessor)
 link_directories(../../thirdparty)
 
 set(SOURCES
+  src/Item.cpp
   src/main.cpp
   )
 
