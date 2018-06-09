@@ -25,7 +25,7 @@ namespace inix
         }
     };
 
-    static std::map<std::string, unsigned int, ci_less> g_attributes = {
+    static std::map<std::string, int, ci_less> g_attributes = {
         // non inix
         {"endurance",   A_ENDURANCE},
 
@@ -87,6 +87,9 @@ namespace inix
         {"archer", 		PC_ARCHER },
         {"thief", 		PC_THIEF },
         {"shaman",      PC_SHAMAN },
+        {"all",         PC_ALL },
+
+        {"soul",        ISC_SOUL},
 
 		{ "ability",A_ABILITY},
 		{ "absorb", A_ABSORB},
@@ -214,12 +217,112 @@ namespace inix
         { "xy", A_XY},
         { "dir", A_DIR},
     };
+
+    static std::map<unsigned int, int> g_wearables = {
+        // Weapons
+        {ISC_SWORD, WS_WEAPON},
+        {ISC_SWORD2HAND, WS_WEAPON},
+        {ISC_WAND, WS_WEAPON},
+        {ISC_BOW, WS_WEAPON},
+        {ISC_DAGGER, WS_WEAPON},
+        {ISC_SOUL, WS_WEAPON},
+        
+        // Shields
+        {ISC_SHIELD, WS_SHIELD},
+
+        // Armors
+        {ISC_HELMET, WS_HELMET},
+        {ISC_UPPERARMOR, WS_UPPERARMOR},
+        {ISC_LOWERARMOR, WS_LOWERARMOR},
+        {ISC_GAUNTLET, WS_GAUNTLET},
+        {ISC_BOOTS, WS_BOOTS},
+        
+        // Accessories
+        {ISC_RING, WS_RING},
+        {ISC_NECKLACE, WS_NECKLACE},
+        {ISC_RESISTNECKLACE2, WS_RESISTNECKLACE2},
+        {ISC_TRINKET, WS_TRINKET},
+
+        // Taegeuks
+
+        // Animal
+        {ISC_COCOON, WS_TRANSFORM},
+
+        // Pet
+        {ISC_EGG, WS_PET},
+
+        // Flag
+
+        // Battle Horse
+
+
+/*
+        {"weapon",      IC_WEAPON},
+        {"defense",     IC_DEFENSE},
+        {"ornament",    IC_ORNAMENT},
+        {"general",     IC_GENERAL},
+        {"quest",       IC_QUEST},
+        {"money",       IC_MONEY},
+        {"transform",   IC_TRANSFORM},
+        {"pet",         IC_PET},
+        {"limitedpet",  IC_PET},
+        {"yinyang",     IC_YINYANG},
+        {"ride",        IC_RIDE},
+
+        {"etc", 	    ISC_ETC },
+        {"fish", 		ISC_FISH },
+        {"sword", 		ISC_SWORD },
+        {"sword2h", 	ISC_SWORD2HAND },
+        {"wand", 		ISC_WAND },
+        {"bow", 		ISC_BOW },
+        {"shield", 		ISC_SHIELD },
+        {"helmet", 		ISC_HELMET },
+        {"upperarmor", 	ISC_UPPERARMOR },
+        {"lowerarmor", 	ISC_LOWERARMOR },
+        {"gauntlet", 	ISC_GAUNTLET },
+        {"boots", 		ISC_BOOTS },
+        {"ring", 		ISC_RING },
+        {"trinket", 	ISC_TRINKET },
+        {"refresh", 	ISC_REFRESH },
+        {"charm", 		ISC_CHARM },
+        {"gem", 		ISC_GEM },
+        {"coin", 		ISC_COIN },
+        {"repair", 		ISC_REPAIR },
+        {"necklace", 	ISC_NECKLACE },
+        {"resistnecklace2", ISC_RESISTNECKLACE2 },
+        {"cocoon", 		ISC_COCOON },
+        {"mask", 		ISC_MASK },
+        {"standard", 	ISC_STANDARD },
+        {"dagger",		ISC_DAGGER },
+        {"yinyangmirror", ISC_YINYANGMIRROR },
+        {"taegeuk", 	ISC_TAEGEUK },
+        {"trigramSlot1", ISC_TRIGRAM1 },
+        {"trigramSlot2", ISC_TRIGRAM2 },
+        {"trigramSlot3", ISC_TRIGRAM3 },
+        {"trigramSlot4", ISC_TRIGRAM4 },
+        {"trigramSlot5", ISC_TRIGRAM5 },
+        {"trigramSlot6", ISC_TRIGRAM6 },
+        {"trigramSlot7", ISC_TRIGRAM7 },
+        {"trigramSlot8", ISC_TRIGRAM8 },
+        {"egg", 		ISC_EGG },
+        {"enchantnecklace", ISC_ENCHANTNECKLAKE },
+        {"cost",		ISC_COSTUME },
+*/
+    };
 }
 
-static unsigned int FindAttribute(const char* attribute) 
+static int FindAttribute(const char* attribute) 
 {
     auto result = inix::g_attributes.find(attribute);
     if (result != inix::g_attributes.end())
         return result->second;
-    return 0;
+    return -1;
+}
+
+static int FindWearId(int kind)
+{
+    auto result = inix::g_wearables.find(kind);
+    if (result != inix::g_wearables.end())
+        return result->second;
+    return -1;
 }

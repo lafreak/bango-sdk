@@ -55,4 +55,5 @@ public:
     void InsertItem     (const std::shared_ptr<GameServer>& s, packet& p);
     void UpdateItemNum  (const std::shared_ptr<GameServer>& s, packet& p);
     void TrashItem      (const std::shared_ptr<GameServer>& s, packet& p);
+    void UpdateItemInfo (const std::shared_ptr<GameServer>& s, packet& p);
 };

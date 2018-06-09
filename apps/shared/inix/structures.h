@@ -66,7 +66,7 @@ struct PLAYERINFO
     unsigned char Hair;
 };
 
-#define EQUIPMENT_SIZE 32
+#define EQUIPMENT_SIZE 37
 struct EQUIPMENT
 {
     unsigned short Index[EQUIPMENT_SIZE];

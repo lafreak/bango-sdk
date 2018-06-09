@@ -45,6 +45,10 @@ void DatabaseManager::Initialize()
         UpdateItemNum(s, p);
     });
 
+    m_dbserver.when(S2D_UPDATEITEMINFO, [&](const std::shared_ptr<GameServer>& s, packet& p) {
+        UpdateItemInfo(s, p);
+    });
+
     m_dbserver.when(S2D_TRASHITEM, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         TrashItem(s, p);
     });
@@ -607,5 +611,17 @@ void DatabaseManager::TrashItem(const std::shared_ptr<GameServer>& s, packet& p)
     auto query = conn.create_query("DELETE FROM item WHERE iditem=?");
 
     query << p.pop<int>();
+    query.execute();
+}
+
+void DatabaseManager::UpdateItemInfo(const std::shared_ptr<GameServer>& s, packet& p)
+{
+    auto iid = p.pop<int>();
+    auto info = p.pop<unsigned int>();
+
+    auto conn = m_pool.get();
+    auto query = conn.create_query("UPDATE item SET info=? WHERE iditem=?");
+
+    query << info << iid;
     query.execute();
 }

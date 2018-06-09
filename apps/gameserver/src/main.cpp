@@ -26,9 +26,14 @@ struct InitItem : public db_object<InitItem>
     unsigned int 
         Index,
         Class,
-        Kind,
         Level,
-        Wearable;
+        Wearable,
+        LimitLevel,
+        LimitClass=PC_ALL;
+
+    int 
+        WearId,
+        Kind;
 
     unsigned char
         Endurance;
@@ -50,7 +55,12 @@ struct InitItem : public db_object<InitItem>
             case A_CLASS:           Class       = FindAttribute(param.pop());
                                     Kind        = FindAttribute(param.pop());
                                     break;
+            case A_LIMIT:           LimitClass  = FindAttribute(param.pop());
+                                    LimitLevel  = param.pop();
+                                    break;
         }
+
+        WearId = FindWearId(Kind);
     }
 };
 
@@ -110,11 +120,20 @@ public:
     int             GetIID()        const { return m_info.IID; }
     unsigned int    GetInfo()       const { return m_info.Info; }
     unsigned int    GetNum()        const { return m_info.Num; }
+    int             GetWearId()     const { return m_init->WearId; }
+    unsigned int    GetLevel()      const { return m_init->Level; }
+    unsigned int    GetLimitLevel() const { return m_init->LimitLevel; }
+    unsigned int    GetLimitClass() const { return m_init->LimitClass; }
+    int             GetKind()       const { return m_init->Kind; }
 
     bool            IsPlural()      const { return m_init->Plural; }
+    bool            IsWearable()    const { return m_init->Wearable; }
 
-    void            SetNum(unsigned int num) { m_info.Num = num; }
-    void            SetIID(int iid) { m_info.IID = iid; }
+    void            SetNum(unsigned int num)    { m_info.Num = num; }
+    void            SetIID(int iid)             { m_info.IID = iid; }
+
+    void AddInfo(unsigned int info) { m_info.Info |= info; }
+    void SubInfo(unsigned int info) { m_info.Info &= ~info; }
 
     const ITEMINFO& GetItemInfo() const { return m_info; }
 
@@ -157,6 +176,8 @@ class Inventory
 
     EQUIPMENT m_equipment;
 
+    Item* m_wear_items[WS_LAST];
+
     // TODO: Temporary
     void AddEquipmentIndex(unsigned short index) 
     {
@@ -181,7 +202,17 @@ class Inventory
     }
 
 public:
-    Inventory() : m_equipment() {}
+    Inventory() { Reset(); }
+
+    void dump() const {
+        std::cout << "Wear Items:\n";
+        for (int i = 0; i < WS_LAST; i++)
+            std::cout << (m_wear_items[i] ? m_wear_items[i]->GetIndex() : (unsigned short) 0) << " ";
+        std::cout << "\nEquipment:\n";
+        for (int i = 0; i < EQUIPMENT_SIZE; i++)
+            std::cout << m_equipment.Index[i] << " ";
+        std::cout << std::endl;
+    }
 
     Item* Insert(const ITEMINFO& info)
     {
@@ -194,8 +225,12 @@ public:
                 throw std::runtime_error("Duplicate item local ID");
 
             // TODO: Temporary
-            if (init->Wearable && info.Info & ITEM_PUTON)
+            if (init->Wearable && info.Info & ITEM_PUTON) 
+            {
+                assert(init->WearId >= 0); // BUG: May trigger when items were put on manually trough DB.
+                m_wear_items[init->WearId] = result.first->second.get();
                 AddEquipmentIndex(info.Index);
+            }
 
             return result.first->second.get();
 
@@ -221,10 +256,69 @@ public:
         return true;
     }
 
-    void Clear()
+    //! \param local_id LocalID of item to put on.
+    //! \returns Item that was put on or nullptr if item doesnt exist.
+    Item* PutOn(Item* item)
+    {
+        if (item->GetInfo() & ITEM_PUTON)
+            return nullptr;
+
+        if (!item->IsWearable())
+            return nullptr;
+
+        if (item->GetWearId() == -1)
+            return nullptr;
+
+        if (item->GetKind() == ISC_SWORD2HAND)
+            if (m_wear_items[WS_SHIELD] != nullptr)
+                return nullptr;
+
+        if (item->GetKind() == ISC_SHIELD)
+            if (m_wear_items[WS_WEAPON] != nullptr)
+                if (m_wear_items[WS_WEAPON]->GetKind() == ISC_SWORD2HAND)
+                    return nullptr;
+
+        if (m_wear_items[item->GetWearId()] != nullptr)
+            return nullptr;
+
+        m_wear_items[item->GetWearId()] = item;
+        item->AddInfo(ITEM_PUTON);
+
+        AddEquipmentIndex(item->GetIndex());
+
+        return item;
+    }
+
+    //! \param local_id LocalID of item to put off.
+    //! \returns Item that was put off or nullptr if item doesnt exist.
+    Item* PutOff(unsigned int local_id)
+    {
+        auto result = m_items.find(local_id);
+        if (result == m_items.end())
+            return nullptr;
+
+        if (! (result->second->GetInfo() & ITEM_PUTON) )
+            return nullptr;
+
+        assert(result->second->IsWearable());
+        assert(result->second->GetWearId() != -1);
+        assert(m_wear_items[result->second->GetWearId()] != nullptr);
+
+        m_wear_items[result->second->GetWearId()] = nullptr;
+        result->second->SubInfo(ITEM_PUTON);
+
+        RemoveEquipmentIndex(result->second->GetIndex());
+
+        return result->second.get();
+    }
+
+    void Reset()
     {
         m_items.clear();
         m_equipment = {};
+
+        for (int i = 0; i < WS_LAST; i++)
+            m_wear_items[i] = nullptr;
     }
 
     const EQUIPMENT& GetEquipment() const { return m_equipment; }
@@ -251,6 +345,15 @@ public:
             if (p.second->GetIndex() == index)
                 return p.second.get();
         return nullptr;
+    }
+
+    Item* FindByLocalID(unsigned int local_id)
+    {
+        try {
+            return m_items.at(local_id).get();
+        } catch (const std::exception&) {
+            return nullptr;
+        }
     }
 
     operator packet() const
@@ -468,7 +571,23 @@ public:
 
     void GameRestart()
     {
-        m_inventory.Clear();
+        m_inventory.Reset();
+    }
+
+    Item* PutOnItem(packet& p)
+    {
+        auto local_id = p.pop<unsigned int>();
+        auto item = m_inventory.FindByLocalID(local_id);
+        if (!item)
+            return nullptr;
+
+        if (item->GetLimitClass() != PC_ALL && item->GetLimitClass() != GetClass())
+            return nullptr;
+
+        if (item->GetLimitLevel() > GetLevel())
+            return nullptr;
+
+        return m_inventory.PutOn(item);
     }
 
     bool CanLogout() const { return true; }
@@ -924,6 +1043,38 @@ class GameManager
         }
     }
 
+    void PutOnItem(const std::shared_ptr<Player>& player, packet& p)
+    {
+        auto item = player->PutOnItem(p);
+        if (!item)
+            return;
+
+        m_map.WriteInSight(player.get(), 
+            packet(S2C_PUTONITEM, "ddw", 
+                player->GetID(), 
+                item->GetLocalID(), 
+                item->GetIndex()));
+
+        m_dbclient.write(S2D_UPDATEITEMINFO, "dd", item->GetIID(), item->GetInfo());
+    }
+
+    void PutOffItem(const std::shared_ptr<Player>& player, packet& p)
+    {
+        auto local_id = p.pop<unsigned int>();
+
+        auto item = player->GetInventory().PutOff(local_id);
+        if (!item)
+            return;
+
+        m_map.WriteInSight(player.get(), 
+            packet(S2C_PUTOFFITEM, "ddw", 
+                player->GetID(), 
+                item->GetLocalID(), 
+                item->GetIndex()));
+
+        m_dbclient.write(S2D_UPDATEITEMINFO, "dd", item->GetIID(), item->GetInfo());
+    }
+
     void TrashItem(Player* player, unsigned int local_id) const
     {
         auto iid = player->GetInventory().LocalToIID(local_id);
@@ -1148,6 +1299,14 @@ public:
             m_map.WriteInSight(user.get(), out);
         });
 
+        m_gameserver.when(C2S_PUTONITEM, [&](const std::shared_ptr<Player>& user, packet& p) {
+            PutOnItem(user, p);
+        });
+
+        m_gameserver.when(C2S_PUTOFFITEM, [&](const std::shared_ptr<Player>& user, packet& p) {
+            PutOffItem(user, p);
+        });
+
         m_gameserver.when(C2S_TRASHITEM, [&](const std::shared_ptr<Player>& user, packet& p) {
             auto local_id = p.pop<unsigned int>();
             TrashItem(user.get(), local_id);
@@ -1183,6 +1342,8 @@ public:
             {C2S_MOVE_ON,           User::INGAME},
             {C2S_MOVE_END,          User::INGAME},
             {C2S_CHATTING,          User::INGAME},
+            {C2S_PUTONITEM,         User::INGAME},
+            {C2S_PUTOFFITEM,        User::INGAME},
             {C2S_TRASHITEM,         User::INGAME},
         });
 
