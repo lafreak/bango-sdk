@@ -2,6 +2,7 @@ core/network/build
 core/persistence/build
 apps/gameserver.1
 core/bnetwork
+core/async
 bin/*
 !bin/Test
 Calls.txt
