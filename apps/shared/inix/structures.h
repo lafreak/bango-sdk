@@ -47,6 +47,7 @@ struct PLAYERINFO
     unsigned char Class;
     unsigned char Job;
     unsigned char Level;
+    unsigned char Map;
     unsigned short Strength;
     unsigned short Health;
     unsigned short Inteligence;

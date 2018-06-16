@@ -13,7 +13,14 @@ include_directories(bangoprocessor)
 link_directories(../../thirdparty)
 
 set(SOURCES
-  src/Item.cpp
+  src/CommandDispatcher.cpp
+  src/User.cpp
+  src/Character.cpp
+  src/NPC.cpp
+  src/Player.cpp
+  src/Socket.cpp
+  src/World.cpp
+  src/Inventory.cpp
   src/main.cpp
   )
 

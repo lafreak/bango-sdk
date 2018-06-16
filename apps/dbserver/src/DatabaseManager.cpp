@@ -455,6 +455,7 @@ void DatabaseManager::LoadPlayer(const std::shared_ptr<GameServer>& s, packet& p
     out.push<char>(query.get_int("class"));
     out.push<char>(query.get_int("job"));
     out.push<char>(query.get_int("level"));
+    out.push<char>(query.get_int("map"));
     out.push<unsigned short>(query.get_int("strength"));
     out.push<unsigned short>(query.get_int("health"));
     out.push<unsigned short>(query.get_int("inteligence"));

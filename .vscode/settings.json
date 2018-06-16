@@ -63,7 +63,8 @@
     "cinttypes": "cpp",
     "deque": "cpp",
     "fstream": "cpp",
-    "numeric": "cpp"
+    "numeric": "cpp",
+    "future": "cpp"
   },
   "C_Cpp.errorSquiggles": "Disabled"
 }
