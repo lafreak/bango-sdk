@@ -7,104 +7,14 @@
 #include "World.h"
 
 #include "CommandDispatcher.h"
+#include "DBListener.h"
 
 using namespace bango::network;
 using namespace bango::space;
 using namespace bango::processor;
 
-class GameManager
-{
-    // BUG: Very inefficient.
-    void UserByUID(unsigned int uid, const std::function<void(const std::shared_ptr<Player>&)>&& callback) const
-    {
-        for (auto& session : Socket::GameServer().sessions())
-        {
-            if (session.second->GetUID() == uid)
-                callback(session.second);
-        }
-    }
-
-public:
-    GameManager()
-    {
-        //!
-        //! DBServer -> GameServer
-        //!
-
-        Socket::DBClient().when(D2S_LOGIN, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
-                user->assign(User::CAN_REQUEST_SECONDARY);
-                user->write(p.change_type(S2C_ANS_LOGIN));
-            });
-        });
-
-        // TODO: Bad naming, its not authorized
-        Socket::DBClient().when(D2S_AUTHORIZED, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
-                user->assign(User::AUTHORIZED);
-                user->SetAID(p.pop<int>());
-            });
-        });
-
-        Socket::DBClient().when(D2S_SEC_LOGIN, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
-                user->assign(User::CAN_REQUEST_SECONDARY);
-                user->write(p.change_type(S2C_SECOND_LOGIN));
-            });
-        });
-
-        Socket::DBClient().when(D2S_PLAYER_INFO, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
-                user->write(p.change_type(S2C_PLAYERINFO));
-                user->assign(User::LOBBY);
-            });
-        });
-
-        Socket::DBClient().when(D2S_DELPLAYERINFO, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
-                user->write(p.change_type(S2C_DELPLAYERINFO));
-            });
-        });
-        
-        Socket::DBClient().when(D2S_ANS_NEWPLAYER, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
-                user->write(p.change_type(S2C_ANS_NEWPLAYER));
-            });
-        });
-
-        Socket::DBClient().when(D2S_LOADPLAYER, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
-                if (p.pop<char>())
-                {
-                    user->write(S2C_MESSAGE, "b", MSG_NOTEXISTPLAYER);
-                    return;
-                }
-
-                // BUG: Player might log in by the time packet arrived?
-                user->OnLoadPlayer(p);
-            });
-        });
-
-        Socket::DBClient().when(D2S_LOADITEMS, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
-                user->OnLoadItems(p);
-            });
-        });
-
-        Socket::DBClient().when(D2S_UPDATEITEMIID, [&](packet& p) {
-            UserByUID(p.pop<unsigned int>(), [&](const std::shared_ptr<Player>& user) {
-                auto local = p.pop<unsigned int>();
-                auto iid = p.pop<int>();
-                user->UpdateItemIID(local, iid);
-            });
-        });
-    }
-};
-
 int main()
 {
-    GameManager manager;
-
     InitItem    ::Load("Config/InitItem.txt");
     InitNPC     ::Load("Config/InitNPC.txt");
 
@@ -133,6 +43,16 @@ int main()
     Socket::GameServer().when(C2S_PUTOFFITEM,   std::bind(&Player::OnPutOffItem,    _1, _2));
     Socket::GameServer().when(C2S_USEITEM,      std::bind(&Player::OnUseItem,       _1, _2));
     Socket::GameServer().when(C2S_TRASHITEM,    std::bind(&Player::OnTrashItem,     _1, _2));
+
+    Socket::DBClient().when(D2S_LOGIN,          std::bind(&DBListener::OnLogin,             _1));
+    Socket::DBClient().when(D2S_AUTHORIZED,     std::bind(&DBListener::OnAuthorized,        _1));
+    Socket::DBClient().when(D2S_SEC_LOGIN,      std::bind(&DBListener::OnSecondaryLogin,    _1));
+    Socket::DBClient().when(D2S_PLAYER_INFO,    std::bind(&DBListener::OnPlayerInfo,        _1));
+    Socket::DBClient().when(D2S_DELPLAYERINFO,  std::bind(&DBListener::OnDeletePlayerInfo,  _1));
+    Socket::DBClient().when(D2S_ANS_NEWPLAYER,  std::bind(&DBListener::OnNewPlayerAnswer,   _1));
+    Socket::DBClient().when(D2S_LOADPLAYER,     std::bind(&DBListener::OnLoadPlayer,        _1));
+    Socket::DBClient().when(D2S_LOADITEMS,      std::bind(&DBListener::OnLoadItems,         _1));
+    Socket::DBClient().when(D2S_UPDATEITEMIID,  std::bind(&DBListener::OnUpdateItemIID,     _1));
 
     CommandDispatcher::Register("/get",         std::bind(&Player::OnGetItem,       _1, _2));
 

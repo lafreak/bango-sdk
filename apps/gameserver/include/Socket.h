@@ -17,4 +17,6 @@ class Socket
 public:
     static bango::network::client& DBClient();
     static bango::network::server<Player>& GameServer();
+
+    static Player* FindUserByUID(unsigned int uid);
 };

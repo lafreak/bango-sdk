@@ -21,6 +21,7 @@ set(SOURCES
   src/Socket.cpp
   src/World.cpp
   src/Inventory.cpp
+  src/DBListener.cpp
   src/main.cpp
   )
 
