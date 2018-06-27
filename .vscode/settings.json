@@ -64,7 +64,12 @@
     "deque": "cpp",
     "fstream": "cpp",
     "numeric": "cpp",
-    "future": "cpp"
+    "future": "cpp",
+    "queue": "cpp",
+    "xtree": "cpp",
+    "map": "cpp",
+    "string": "cpp",
+    "xfunctional": "cpp"
   },
   "C_Cpp.errorSquiggles": "Disabled"
 }
