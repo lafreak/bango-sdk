@@ -21,6 +21,7 @@ public:
     {
         p >> m_data >> m_name >> m_x >> m_y;
         m_z = m_data.Z;
+        m_map = m_data.Map;
 
         write(S2C_PROPERTY, "bsbwwwwwwddwwwwwbIwwwwwwbbbbbd",
             0, //Grade
@@ -195,4 +196,6 @@ public:
 
     void InsertItem(unsigned short index, unsigned int num=1);
     bool TrashItem(unsigned int local);
+
+    void Tick() override;
 };

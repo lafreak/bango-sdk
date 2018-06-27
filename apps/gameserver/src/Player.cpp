@@ -26,7 +26,8 @@ void Player::OnStart(packet& p)
 
     write(BuildAppearPacket(true));
 
-    World::Map(GetMap()).Add(this);
+    //World::Map(GetMap()).Add(this);
+    World::Add(this);
 
     assign(User::INGAME);
     deny(User::LOADING);
@@ -40,7 +41,8 @@ void Player::OnRestart(packet& p)
     else
     {
         Inventory::Reset();
-        World::Map(GetMap()).Remove(this);
+        //World::Map(GetMap()).Remove(this);
+        World::Remove(this);
         deny(User::INGAME);
         Socket::DBClient().write(S2D_RESTART, "dd", GetUID(), GetAID());
     }
@@ -55,7 +57,8 @@ void Player::OnMove(packet& p, bool end)
 {
     std::int8_t x, y, z;
     p >> x >> y >> z;
-    World::Map(GetMap()).Move(this, x, y, z, end);
+    //World::Map(GetMap()).Move(this, x, y, z, end);
+    World::Move(this, x, y, z, end);
 }
 
 void Player::OnChatting(bango::network::packet& p)
@@ -196,4 +199,8 @@ bool Player::TrashItem(unsigned int local)
     Socket::DBClient().write(S2D_TRASHITEM, "d", iid);
 
     return true;
+}
+
+void Player::Tick()
+{
 }

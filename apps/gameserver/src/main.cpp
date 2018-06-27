@@ -2,6 +2,8 @@
 #include <cassert>
 #include <map>
 #include <sstream>
+#include <future>
+#include <chrono>
 
 #include "Socket.h"
 #include "World.h"
@@ -97,6 +99,26 @@ int main()
         return 1;
     }
 
+    using namespace std::chrono_literals;
+
+    std::promise<void> done;
+    std::shared_future<void> done_future(done.get_future());
+
+    auto ticker = std::async(std::launch::async, [&]{
+        std::future_status status;
+        do {
+            status = done_future.wait_for(1s);
+            if (status == std::future_status::timeout) {
+                for (auto& p : World::Players())
+                    p.second->Tick();
+            }
+        } while (status != std::future_status::ready);
+    });
+
     std::cin.get();
+    done.set_value();
+
+    World::Cleanup();
+
     return 0;
 }

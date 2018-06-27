@@ -11,6 +11,7 @@ class Character : public bango::space::quad_entity
 
 public:
     int             m_z;
+    std::uint8_t    m_map;
 
 public:
     Character(std::uint8_t type) : m_type(type)
@@ -27,6 +28,7 @@ public:
 
     std::uint32_t   GetID()     const { return m_id; }
     std::uint8_t    GetType()   const { return m_type; }
+    std::uint8_t    GetMap()    const { return m_map; }
     int             GetX()      const { return m_x; }
     int             GetY()      const { return m_y; }
     int             GetZ()      const { return m_z; }
@@ -38,4 +40,6 @@ public:
 
     void LookAt(int x, int y) { SetDirection(x - m_x, y - m_y); }
     void SetDirection(std::int8_t delta_x, std::int8_t delta_y);
+
+    virtual void Tick() {}
 };

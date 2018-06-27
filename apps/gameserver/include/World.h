@@ -23,6 +23,7 @@ public:
         // TODO: Add check if entity already exists. std::list->std::map?
         void insert(const bango::space::quad_entity* entity) override
         {
+            // TODO: Change?
             switch (((Character*)entity)->GetType())
             {
                 case Character::PLAYER: 
@@ -282,18 +283,14 @@ class World
     constexpr static unsigned short MAP_COUNT = 32;
 
     // BUG: Stack vs heap
-    std::vector<WorldMap*> m_maps;
+    std::vector<std::unique_ptr<WorldMap>> m_maps;
+
+    std::map<char, std::map<unsigned int, Character*>> m_entities;
 
     World()
     {
         for (int i = 0; i < MAP_COUNT; i++)
-            m_maps.push_back(new WorldMap(MAP_WIDTH, MAP_SIGHT));
-    }
-
-    ~World()
-    {
-        for (auto& map : m_maps)
-            delete map;
+            m_maps.push_back(std::make_unique<WorldMap>(MAP_WIDTH, MAP_SIGHT));
     }
 
     static World& Get()
@@ -306,9 +303,10 @@ public:
 
     static WorldMap& Map(size_t id)
     {
-        return *Get().m_maps[id >= MAP_COUNT ? 0 : id];
+        return *Get().m_maps[id >= MAP_COUNT ? 0 : id].get();
     }
 
+    // TODO: Change
     static void OnAppear(const WorldMap::AppearanceEvent& callback)
     {
         for (auto& map : Get().m_maps)
@@ -330,7 +328,32 @@ public:
     static void SpawnNpcs()
     {
         for (const auto& init : InitNPC::DB())
-            Map(init.second->Map).Add(new NPC(init.second.get()));
-        //BUG: Memory leak!
+            Add(new NPC(init.second.get()));
     }
+
+    static void Cleanup()
+    {
+        for (const auto& p : Npcs())
+            delete p.second;
+    }
+
+    static void Add(Character* entity)
+    {
+        Get().m_entities[entity->GetType()].insert(std::make_pair(entity->GetID(), entity));
+        Map(entity->GetMap()).Add(entity);
+    }
+
+    static void Remove(Character* entity)
+    {
+        Get().m_entities[entity->GetType()].erase(entity->GetID());
+        Map(entity->GetMap()).Remove(entity);
+    }
+
+    static void Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z=0, bool stop=false)
+    {
+        Map(entity->GetMap()).Move(entity, delta_x, delta_y, delta_z, stop);
+    }
+
+    static const std::map<unsigned int, Character*>& Players()  { return Get().m_entities[Character::PLAYER]; }
+    static const std::map<unsigned int, Character*>& Npcs()     { return Get().m_entities[Character::NPC]; }
 };
