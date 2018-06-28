@@ -13,7 +13,7 @@ void Player::OnConnected()
 void Player::OnDisconnected()
 {
     if (authorized(User::INGAME))
-        World::Map(GetMap()).Remove(this);
+        World::Remove(this);
 
     if (authorized(User::AUTHORIZED))
         Socket::DBClient().write(S2D_DISCONNECT, "d", GetAID());
@@ -26,7 +26,6 @@ void Player::OnStart(packet& p)
 
     write(BuildAppearPacket(true));
 
-    //World::Map(GetMap()).Add(this);
     World::Add(this);
 
     assign(User::INGAME);
@@ -57,7 +56,6 @@ void Player::OnMove(packet& p, bool end)
 {
     std::int8_t x, y, z;
     p >> x >> y >> z;
-    //World::Map(GetMap()).Move(this, x, y, z, end);
     World::Move(this, x, y, z, end);
 }
 
@@ -199,6 +197,39 @@ bool Player::TrashItem(unsigned int local)
     Socket::DBClient().write(S2D_TRASHITEM, "d", iid);
 
     return true;
+}
+
+void Player::Teleport(int x, int y, int z)
+{
+    char map=0, cheat=0;
+
+    m_teleport_x = x;
+    m_teleport_y = y;
+
+    write(S2C_TELEPORT, "bdddb", map, x, y, z, cheat);
+}
+
+void Player::OnTeleportAnswer(packet& p)
+{
+    // TODO: Add packet hack checks.
+    if (m_teleport_x == 0)
+        return;
+
+    auto answer = p.pop<char>();
+    auto z = p.pop<int>();
+
+    if (answer)
+        World::Teleport(this, m_teleport_x, m_teleport_y, z);
+
+    m_teleport_x = m_teleport_y = 0;
+}
+
+void Player::OnMoveTo(CommandDispatcher::Token& token)
+{
+    int x = token;
+    int y = token;
+
+    Teleport(x, y);
 }
 
 void Player::Tick()

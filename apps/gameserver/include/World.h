@@ -13,100 +13,26 @@ class WorldMap
 public:
     class Container : public bango::space::quad_entity_container<Container>
     {
-        // std::list<Player*>    m_players;
-        // std::list<NPC*>       m_npcs;
-
+    public:
         typedef std::map<unsigned int, Character*> CharacterContainer;
-
+    private:
         std::map<char, CharacterContainer> m_entities;
 
     public:
-        // const std::list<Player*>& players()   const { return m_players;   }
-        // const std::list<NPC*>&    npcs()      const { return m_npcs;      }
 
-        Container()
-        {
-            m_entities[Character::PLAYER]   = {};
-            m_entities[Character::NPC]      = {};
-        }
+        Container();
 
-        const CharacterContainer& players()     const { return m_entities.at(Character::PLAYER); }
-        const CharacterContainer& npcs()        const { return m_entities.at(Character::NPC); }
+        const CharacterContainer& players()     const { return m_entities.at(Character::PLAYER);    }
+        const CharacterContainer& monsters()    const { return m_entities.at(Character::MONSTER);   }
+        const CharacterContainer& npcs()        const { return m_entities.at(Character::NPC);       }
+        const CharacterContainer& loots()       const { return m_entities.at(Character::LOOT);      }
 
-        // TODO: Add check if entity already exists. std::list->std::map?
-        void insert(const bango::space::quad_entity* entity) override
-        {
-            // TODO: Change?
-            // switch (((Character*)entity)->GetType())
-            // {
-            //     case Character::PLAYER: 
-            //         m_players.push_back((Player*) entity);
-            //         break;
-            //     case Character::NPC:
-            //         m_npcs.push_back((NPC*) entity);
-            //         break;
-            // }
-            auto character = (Character*) entity;
-
-            m_entities[character->GetType()].insert(std::make_pair(character->GetID(), character));
-        }
-
-        // TODO: Add check if entity already exists. std::list->std::map?
-        void remove(const bango::space::quad_entity* entity) override
-        {
-            // switch (((Character*)entity)->GetType())
-            // {
-            //     case Character::PLAYER: 
-            //         m_players.remove((Player*) entity);
-            //         break;
-            //     case Character::NPC: 
-            //         m_npcs.remove((NPC*) entity);
-            //         break;
-            // }
-            auto character = (Character*) entity;
-
-            m_entities[character->GetType()].erase(character->GetID());
-        }
-
-        void merge(const Container* container) override
-        {
-            // m_players   .insert(m_players.end(),    container->m_players.begin(),   container->m_players.end()  );
-            // m_npcs      .insert(m_npcs.end(),       container->m_npcs.begin(),      container->m_npcs.end()     );
-            for (const auto& p : container->m_entities)
-                m_entities[p.first].insert(p.second.cbegin(), p.second.cend());
-        }
-
-        size_t size() const override
-        {
-            size_t count=0;
-            for (const auto& p : m_entities)
-                count += p.second.size();
-            return count;
-            //return m_players.size() + m_npcs.size();
-        }
-
-        long long total_memory() const override
-        {
-            // return 
-            //     sizeof(m_players)+m_players.size()*sizeof(Player*) +
-            //     sizeof(m_npcs)+m_npcs.size()*sizeof(NPC*);
-            long long count=0;
-            for (const auto& p : m_entities)
-                count += sizeof(p.second)+p.second.size()*sizeof(Character*);
-        }
-        
-        void for_each(const std::function<void(const bango::space::quad_entity*)>&& callback) const override
-        {
-            // for (auto& qe : m_players)
-            //     callback(qe);
-
-            // for (auto& qe : m_npcs)
-            //     callback(qe);
-
-            for (const auto& p : m_entities)
-                for (auto& q : p.second)
-                    callback(q.second);
-        }
+        void insert(const bango::space::quad_entity* entity) override;
+        void remove(const bango::space::quad_entity* entity) override;
+        void merge(const Container* container) override;
+        size_t size() const override;
+        long long total_memory() const override;
+        void for_each(const std::function<void(const bango::space::quad_entity*)>&& callback) const override;
     };
 
 private:
@@ -125,202 +51,51 @@ private:
     AppearanceEvent   m_on_disappear;// =[](const Player*, const Character*){};
     MoveEvent         m_on_move;//      =[](const Player*, const Character*, std::int8_t, std::int8_t, std::int8_t, bool){};
 
-    typedef std::map<unsigned int, Player*>   PlayerMap;
-    typedef std::map<unsigned int, NPC*>      NPCMap;
+    std::map<char, Container::CharacterContainer> m_entities;
 
-    PlayerMap   m_players;
-    NPCMap      m_npcs;
+    std::recursive_mutex m_rmtx;
 
 public:
     WorldMap(const int width, const int sight, const size_t max_container_entity=QUADTREE_MAX_NODES)
         : m_sight(sight), m_quad(bango::space::square{{0,0}, width}, max_container_entity)
     {
+        m_entities[Character::PLAYER]={};
+        m_entities[Character::MONSTER]={};
+        m_entities[Character::NPC]={};
+        m_entities[Character::LOOT]={};
     }
 
-    const PlayerMap&    Players()   const { return m_players; }
-    const NPCMap&       NPCs()      const { return m_npcs; }
+    //! Non thread-safe.
+    const Container::CharacterContainer& Players()  const { return m_entities.at(Character::PLAYER);    }
+    const Container::CharacterContainer& Monsters() const { return m_entities.at(Character::MONSTER);   }
+    const Container::CharacterContainer& Npcs()     const { return m_entities.at(Character::NPC);       }
+    const Container::CharacterContainer& Loots()    const { return m_entities.at(Character::LOOT);      }
 
-    void Add(Character* entity)
-    {
-        auto center = bango::space::point{entity->m_x, entity->m_y};
-        m_quad.query(center, m_sight, [&](const Container* container) {
-            for (auto& p : container->players())
-            {
-                auto player = (Player*) p.second;
+    //! Adds new entity to the map.
+    //! Thread-safe.
+    void Add(Character* entity);
 
-                if (player->distance(center) <= m_sight)
-                {
-                    m_on_appear(player, entity);
-                    if (entity->GetType() == Character::PLAYER)
-                        m_on_appear((Player*) entity, player);
-                }
-            }
+    //! Removes entity from the map.
+    //! Thread-safe.
+    void Remove(Character* entity);
 
-            if (entity->GetType() != Character::PLAYER)
-                return;
+    //! Moves entity to new position.
+    //! Thread-safe.
+    void Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z=0, bool stop=false);
 
-            for (auto& p : container->npcs())
-            {
-                auto npc = p.second;
+    //! Executes callback for all players around in given radius.
+    //! Thread-safe.
+    void ForEachPlayerAround(const bango::space::quad_entity* qe, unsigned int radius, const std::function<void(Player*)>&& callback);
 
-                if (npc->distance(center) <= m_sight)
-                    m_on_appear((Player*) entity, npc);
-            }
-        });
-        
-        try {
-            m_quad.insert(entity);
-        } catch (const std::exception& e) {
-            std::cerr << e.what() << std::endl;
-            return;
-        }
+    //! Writes packet to players in sight.
+    //! Thread-safe.
+    void WriteInSight(const bango::space::quad_entity* qe, const bango::network::packet& p);
+    
+    //! Writes packet to all players on this WorldMap.
+    //! Thread-safe.
+    void WriteOnMap(const bango::network::packet& p);
 
-        switch (entity->GetType())
-        {
-            case Character::PLAYER: 
-                m_players.insert(std::make_pair(entity->GetID(), (Player*)entity)); 
-                break;
-            case Character::NPC: 
-                m_npcs.insert(std::make_pair(entity->GetID(), (NPC*)entity)); 
-                break;
-        }
-    }
-
-    void Remove(Character* entity)
-    {
-        try {
-            m_quad.remove(entity);
-        } catch (const std::exception& e) {
-            std::cerr << e.what() << std::endl;
-            return;
-        }
-
-        switch (entity->GetType())
-        {
-            case Character::PLAYER: 
-                m_players.erase(entity->GetID()); 
-                break;
-            case Character::NPC: 
-                m_npcs.erase(entity->GetID()); 
-                break;
-        }
-
-        auto center = bango::space::point{entity->m_x, entity->m_y}; // TODO: Dont convert to point each time.
-        m_quad.query(center, m_sight, [&](const Container* container) {
-            for (auto& p : container->players())
-            {
-                auto player = (Player*) p.second;
-
-                if (player->distance(center) <= m_sight)
-                    m_on_disappear(player, entity);
-            }
-        });
-    }
-
-    void Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z=0, bool stop=false)
-    {
-        try {
-            m_quad.remove(entity);
-        } catch (const std::exception& e) {
-            std::cerr << e.what() << std::endl;
-            return;
-        }
-
-        auto old_center = bango::space::point{entity->m_x, entity->m_y};
-        auto new_center = bango::space::point{entity->m_x+delta_x, entity->m_y+delta_y};
-
-        entity->m_x = new_center.x;
-        entity->m_y = new_center.y;
-        entity->m_z += delta_z;
-
-        entity->SetDirection(delta_x, delta_y);
-
-        // TODO: Add some margin.
-        m_quad.query(old_center, m_sight, [&](const Container* container) {
-            for (auto& p : container->players())
-            {
-                auto player = (Player*) p.second;
-
-                if (player->distance(old_center) <= m_sight && player->distance(new_center) > m_sight) 
-                {
-                    m_on_disappear(player, entity);
-                    if (entity->GetType() == Character::PLAYER)
-                        m_on_disappear((Player*) entity, player);
-                }
-            }
-
-            if (entity->GetType() != Character::PLAYER)
-                return;
-
-            for (auto& p : container->npcs())
-            {
-                auto npc = p.second;
-
-                if (npc->distance(old_center) <= m_sight && npc->distance(new_center) > m_sight) 
-                    m_on_disappear((Player*) entity, npc);
-            }
-        });
-
-        m_quad.query(new_center, m_sight, [&](const Container* container) {
-            for (auto& p : container->players())
-            {
-                auto player = (Player*) p.second;
-
-                if (player->distance(old_center) <= m_sight && player->distance(new_center) <= m_sight) 
-                    m_on_move(player, entity, delta_x, delta_y, delta_z, stop);
-                else if (player->distance(old_center) > m_sight && player->distance(new_center) <= m_sight) 
-                {
-                    m_on_appear(player, entity);
-                    if (entity->GetType() == Character::PLAYER)
-                        m_on_appear((Player*) entity, player);
-                }
-            }
-
-            if (entity->GetType() != Character::PLAYER)
-                return;
-
-            for (auto& p : container->npcs())
-            {
-                auto npc = p.second;
-
-                if (npc->distance(old_center) > m_sight && npc->distance(new_center) <= m_sight) 
-                    m_on_appear((Player*) entity, npc);
-            }
-        });
-
-        try {
-            m_quad.insert(entity);
-        } catch (const std::exception& e) {
-            std::cerr << e.what() << std::endl;
-        }
-    }
-
-    void ForEachPlayerAround(const bango::space::quad_entity* qe, unsigned int radius, const std::function<void(Player*)>&& callback)
-    {
-        auto center = bango::space::point{qe->m_x, qe->m_y};
-        m_quad.query(center, radius, [&](const Container* container) {
-            for (auto& p : container->players()) {
-                auto player = (Player*) p.second;
-
-                if (player->distance(center) <= radius)
-                    callback(player);
-            }
-        });
-    }
-
-    void WriteInSight(const bango::space::quad_entity* qe, const bango::network::packet& p)
-    {
-        ForEachPlayerAround(qe, m_sight, [&](Player* player) {
-            player->write(p);
-        });
-    }
-
-    void WriteOnMap(const bango::network::packet& p)
-    {
-        for (const auto& pair : Players())
-            pair.second->write(p);
-    }
-
+    //! Registers callbacks for appearance events.
     void OnAppear       (const AppearanceEvent&    callback){ m_on_appear       = callback; }
     void OnDisappear    (const AppearanceEvent&    callback){ m_on_disappear    = callback; }
     void OnMove         (const MoveEvent&          callback){ m_on_move         = callback; }
@@ -332,7 +107,8 @@ class World
 
     std::vector<std::unique_ptr<WorldMap>> m_maps;
 
-    std::map<char, std::map<unsigned int, Character*>> m_entities;
+    std::map<char, WorldMap::Container::CharacterContainer> m_entities;
+    std::recursive_mutex m_entities_rmtx;
 
     World()
     {
@@ -380,19 +156,24 @@ public:
 
     static void Cleanup()
     {
-        for (const auto& p : Npcs())
-            delete p.second;
+        ForEachNpc([](NPC* npc) { delete npc; });
     }
 
     static void Add(Character* entity)
     {
-        Get().m_entities[entity->GetType()].insert(std::make_pair(entity->GetID(), entity));
+        {
+            std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+            Get().m_entities[entity->GetType()].insert(std::make_pair(entity->GetID(), entity));
+        }
         Map(entity->GetMap()).Add(entity);
     }
 
     static void Remove(Character* entity)
     {
-        Get().m_entities[entity->GetType()].erase(entity->GetID());
+        {
+            std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+            Get().m_entities[entity->GetType()].erase(entity->GetID());
+        }
         Map(entity->GetMap()).Remove(entity);
     }
 
@@ -401,6 +182,86 @@ public:
         Map(entity->GetMap()).Move(entity, delta_x, delta_y, delta_z, stop);
     }
 
-    static const std::map<unsigned int, Character*>& Players()  { return Get().m_entities[Character::PLAYER]; }
-    static const std::map<unsigned int, Character*>& Npcs()     { return Get().m_entities[Character::NPC]; }
+    static void Teleport(Player* entity, int x, int y, int z, int spread=0, int map=-1)
+    {
+        // TODO: Add random spread.
+        
+        Map(entity->GetMap()).Remove(entity);
+        entity->m_x = x;
+        entity->m_y = y;
+        entity->m_z = z;
+
+        if (map >= 0 && map < MAP_COUNT)
+            entity->m_map = map;
+
+        Map(entity->GetMap()).Add(entity);
+    }
+
+    static const WorldMap::Container::CharacterContainer& Players()  { return Get().m_entities[Character::PLAYER];   }//Unsafe
+    static void ForEachPlayer(const std::function<void(Player*)>& callback)
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+        for (auto& p : Get().m_entities[Character::PLAYER])
+            callback((Player*) p.second);
+    }
+    static void ForPlayer(std::uint32_t id, const std::function<void(Player*)>& callback)
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+        try {
+            callback( (Player*) Get().m_entities[Character::PLAYER].at(id));
+        } catch (const std::exception&) {}
+    }
+
+    static const WorldMap::Container::CharacterContainer& Monsters() { return Get().m_entities[Character::MONSTER];  }//Unsafe
+    // static void ForEachMonster(const std::function<void(Monster*)>& callback)
+    // {
+    //     std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+    //     for (auto& p : Get().m_entities[Character::MONSTER])
+    //         callback((Monster*) p.second);
+    // }
+    // static void ForMonster(std::uint32_t id, const std::function<void(Monster*)>& callback)
+    // {
+    //     std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+    //     try {
+    //         callback( (Monster*) Get().m_entities[Character::MONSTER].at(id));
+    //     } catch (const std::exception&) {}
+    // }
+
+    static const WorldMap::Container::CharacterContainer& Npcs()     { return Get().m_entities[Character::NPC];      }//Unsafe
+    static void ForEachNpc(const std::function<void(NPC*)>& callback)
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+        for (auto& p : Get().m_entities[Character::NPC])
+            callback((NPC*) p.second);
+    }
+    static void ForNpc(std::uint32_t id, const std::function<void(NPC*)>& callback)
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+        try {
+            callback( (NPC*) Get().m_entities[Character::NPC].at(id));
+        } catch (const std::exception&) {}
+    }
+
+    static const WorldMap::Container::CharacterContainer& Loots()    { return Get().m_entities[Character::LOOT];     }//Unsafe
+    // static void ForEachLoot(const std::function<void(Loot*)>& callback)
+    // {
+    //     std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+    //     for (auto& p : Get().m_entities[Character::LOOT])
+    //         callback((Loot*) p.second);
+    // }
+    // static void ForLoot(std::uint32_t id, const std::function<void(Loot*)>& callback)
+    // {
+    //     std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+    //     try {
+    //         callback( (Loot*) Get().m_entities[Character::LOOT].at(id));
+    //     } catch (const std::exception&) {}
+    // }
 };

@@ -45,6 +45,7 @@ int main()
     Socket::GameServer().when(C2S_PUTOFFITEM,   std::bind(&Player::OnPutOffItem,    _1, _2));
     Socket::GameServer().when(C2S_USEITEM,      std::bind(&Player::OnUseItem,       _1, _2));
     Socket::GameServer().when(C2S_TRASHITEM,    std::bind(&Player::OnTrashItem,     _1, _2));
+    Socket::GameServer().when(C2S_TELEPORT,     std::bind(&Player::OnTeleportAnswer,    _1, _2));
 
     Socket::DBClient().when(D2S_LOGIN,          std::bind(&DBListener::OnLogin,             _1));
     Socket::DBClient().when(D2S_AUTHORIZED,     std::bind(&DBListener::OnAuthorized,        _1));
@@ -57,6 +58,7 @@ int main()
     Socket::DBClient().when(D2S_UPDATEITEMIID,  std::bind(&DBListener::OnUpdateItemIID,     _1));
 
     CommandDispatcher::Register("/get",         std::bind(&Player::OnGetItem,       _1, _2));
+    CommandDispatcher::Register("/move2",       std::bind(&Player::OnMoveTo,        _1, _2));
 
     World::OnAppear     (std::bind(&Player::OnCharacterAppear,      _1, _2));
     World::OnDisappear  (std::bind(&Player::OnCharacterDisappear,   _1, _2));
@@ -109,8 +111,13 @@ int main()
         do {
             status = done_future.wait_for(1s);
             if (status == std::future_status::timeout) {
-                for (auto& p : World::Players())
-                    p.second->Tick();
+                World::ForEachPlayer([](Player* player) {
+                    player->Tick();
+                });
+
+                // World::ForEachNpc([](NPC* npc) {
+                //     npc->Tick();
+                // });
             }
         } while (status != std::future_status::ready);
     });

@@ -48,7 +48,7 @@ namespace bango { namespace network {
         void grant      (const std::map<unsigned char, int>&& roles);
         void restrict   (const std::map<unsigned char, int>&& roles);
 
-        const std::map<int*, const std::shared_ptr<T>>& sessions() const { return m_sessions; }
+        //const std::map<int*, const std::shared_ptr<T>>& sessions() const { return m_sessions; }
     };
 
     template<class T>

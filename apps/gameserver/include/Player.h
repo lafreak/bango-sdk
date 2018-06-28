@@ -13,6 +13,9 @@ class Player : public Character, public User, public Inventory
     PLAYERINFO m_data;
     std::string m_name;
 
+    int m_teleport_x=0;
+    int m_teleport_y=0;
+
 public:
     Player(const bango::network::taco_client_t& client)
         : User(client), Character(Character::PLAYER) {}
@@ -90,9 +93,11 @@ public:
     void OnPutOffItem(bango::network::packet& p);
     void OnUseItem(bango::network::packet& p);
     void OnTrashItem(bango::network::packet& p);
+    void OnTeleportAnswer(bango::network::packet& p);
 
     // Command Endpoints
     void OnGetItem(CommandDispatcher::Token& token);
+    void OnMoveTo(CommandDispatcher::Token& token);
 
     // Map Endpoints
     void OnCharacterAppear(Character * subject);
@@ -196,6 +201,7 @@ public:
 
     void InsertItem(unsigned short index, unsigned int num=1);
     bool TrashItem(unsigned int local);
+    void Teleport(int x, int y, int z=0);
 
     void Tick() override;
 };

@@ -79,4 +79,6 @@ public:
     {
         return bango::network::packet(S2C_REMOVENPC, "d", GetID());
     }
+
+    void Tick() override;
 };
