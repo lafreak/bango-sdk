@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <map>
 
+#include  <iostream>
+
 //! Limits amount of elements in container.
 //! When this amount is exceeded quad division occurs.
 //! Affects performance!
@@ -276,7 +278,7 @@ namespace bango { namespace space {
 #endif
         
         if (!is_root())
-            m_parent->merge();
+            m_parent->merge(); // try to merge
     }
 
     template<class T>
@@ -284,8 +286,9 @@ namespace bango { namespace space {
     {
         if (is_leaf())
             throw std::logic_error("merge quad is leaf");
-        if (!m_top_left->is_leaf())
-            throw std::logic_error("merge quad child is not leaf");
+        // Brother doesnt need to be leaf!
+        //if (!m_top_left->is_leaf())
+        //    throw std::logic_error("merge quad child is not leaf");
 #ifdef DUPLICATES_SAFE
         if (distinct_size() > m_max_container_entities)//QUADTREE_MAX_NODES)
 #else
