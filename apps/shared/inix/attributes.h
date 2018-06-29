@@ -120,7 +120,7 @@ namespace inix
 		{ "damage", A_DAMAGE},
 		{ "damage_direction", A_DAMAGE_DIRECTION},
 		{ "damagetype", A_DAMAGETYPE},		
-		{ "defense", A_DEFENSE},
+		//{ "defense", A_DEFENSE},
 		{ "delaytime", A_DELAYTIME},
 		{ "desc", A_DESC},
 		{ "dex", A_DEX},

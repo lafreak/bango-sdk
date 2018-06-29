@@ -24,8 +24,8 @@ void Player::OnStart(packet& p)
     auto unknown = p.pop<char>();
     auto height = p.pop<int>();
 
-    write(BuildAppearPacket(true));
-    //OnCharacterAppear(this, true);
+    //write(BuildAppearPacket(true));
+    OnCharacterAppear(this, true);
 
     World::Add(this);
 
@@ -65,41 +65,8 @@ void Player::OnLoadPlayer(packet& p)
     p >> m_data >> m_name >> m_x >> m_y;
     m_z = m_data.Z;
     m_map = m_data.Map;
-
-    write(S2C_PROPERTY, "bsbwwwwwwddwwwwwbIwwwwwwbbbbbd",
-        0, //Grade
-        "\0", //GuildName
-        0, //GRole
-        GetContribute(),
-        GetStrength(),
-        GetHealth(),
-        GetInteligence(),
-        GetWisdom(),
-        GetDexterity(),
-        GetCurHP(),
-        GetCurHP(), //MaxHP
-        GetCurMP(),
-        GetCurMP(), //MaxMP
-        1, //Hit
-        2, //Dodge
-        3, //Defense
-        4, //Absorb
-        GetExp(),
-        5, //MinAttack
-        6, //MaxAttack
-        7, //MinMagic
-        8, //MaxMagic
-        GetPUPoint(),
-        GetSUPoint(),
-        9, //ResistFire
-        10, //ResistIce
-        11, //ResistLitning
-        12, //ResistCurse
-        13, //ResistPalsy
-        GetRage());
-
-    short time = 1200;
-    write(S2C_ANS_LOAD, "wdd", time, GetX(), GetY());
+    m_curhp = m_data.CurHP;
+    m_curmp = m_data.CurMP;
 }
 
 void Player::OnLoadItems(packet& p)
@@ -112,7 +79,51 @@ void Player::OnLoadItems(packet& p)
         Inventory::Insert(info);
     }
 
+    OnLoadFinish();
+}
+
+void Player::OnLoadFinish()
+{
+    write(S2C_PROPERTY, "bsbwwwwwwddwwwwwbIwwwwwwbbbbbd",
+        0, //Grade
+        "\0", //GuildName
+        0, //GRole
+        GetContribute(),
+        GetBaseStrength(),
+        GetBaseHealth(),
+        GetBaseInteligence(),
+        GetBaseWisdom(),
+        GetBaseDexterity(),
+        GetCurHP(),
+        GetMaxHP(),//GetCurHP(), //MaxHP
+        GetCurMP(),
+        GetMaxMP(),//GetCurMP(), //MaxMP
+        GetHit(),//1, //Hit
+        GetDodge(),//2, //Dodge
+        GetDefense(),//3, //Defense
+        GetAbsorb(),//4, //Absorb
+        GetExp(),
+        GetMinAttack(),//5, //MinAttack
+        GetMaxAttack(),//6, //MaxAttack
+        GetMinMagic(),//7, //MinMagic
+        GetMaxMagic(),//8, //MaxMagic
+        GetPUPoint(),
+        GetSUPoint(),
+        GetResist(RT_FIRE),//9, //ResistFire
+        GetResist(RT_ICE),//10, //ResistIce
+        GetResist(RT_LITNING),//11, //ResistLitning
+        GetResist(RT_CURSE),//12, //ResistCurse
+        GetResist(RT_PALSY),//13, //ResistPalsy
+        GetRage());
+
+    short time = 1200;
+    write(S2C_ANS_LOAD, "wdd", time, GetX(), GetY());
+    //TODO: Change positions?
+
     write((Inventory)*this);
+
+    // Send Inventory property
+    SendInventoryProperty();
 }
 
 void Player::OnRest(packet& p)
@@ -158,6 +169,8 @@ void Player::OnPutOnItem(packet& p)
             item->GetInit().Index));
 
     Socket::DBClient().write(S2D_UPDATEITEMINFO, "dd", item->GetInfo().IID, item->GetInfo().Info);
+
+    SendInventoryProperty();
 }
 
 void Player::OnPutOffItem(packet& p)
@@ -175,6 +188,8 @@ void Player::OnPutOffItem(packet& p)
             item->GetInit().Index));
 
     Socket::DBClient().write(S2D_UPDATEITEMINFO, "dd", item->GetInfo().IID, item->GetInfo().Info);
+
+    SendInventoryProperty();
 }
 
 void Player::OnUseItem(packet& p)
@@ -332,6 +347,44 @@ packet Player::BuildDisappearPacket() const
 packet Player::BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const
 {
     return packet(stop ? S2C_MOVEPLAYER_END : S2C_MOVEPLAYER_ON, "dbbb", GetID(), delta_x, delta_y, delta_z);
+}
+
+std::uint32_t Player::GetMaxHP() const
+{
+    //TODO: Add buffs.
+	return (
+        (GetLevel() >= 96 ? 195 :
+		(GetLevel() >= 91 ? 141.8147 :
+		(GetLevel() >= 86 ? 111.426 :
+		(GetLevel() >= 81 ? 91.758 :
+		(GetLevel() >= 76 ? 78 :
+		(GetLevel() >= 72 ? 67.8162 :
+                            52)))))) * GetLevel() / 3) + 115 + 2 * GetHealth() * GetHealth() / g_denoHP[GetClass()] + Inventory::GetAddHP(); //+ m_dwMaxHPAdd;
+}
+
+std::uint32_t Player::GetMaxMP() const
+{
+	return (
+        (GetLevel() >= 96 ? 20 :
+		(GetLevel() >= 91 ? 18 :
+		(GetLevel() >= 86 ? 16 :
+		(GetLevel() >= 81 ? 14 :
+		(GetLevel() >= 76 ? 12 :
+		(GetLevel() >= 72 ? 10 :
+                            8)))))) * GetLevel()) + 140 + GetWisdom() + 2 * GetWisdom() * GetWisdom() / g_denoMP[GetClass()] + Inventory::GetAddMP();// + m_wMaxMPAdd;
+}
+
+void Player::SendInventoryProperty()
+{
+    //TODO: Total-Base?
+    write(S2C_UPDATEPROPERTY, "bwwww",   P_STRADD, Inventory::GetAddStrength(), GetHit(), GetMinAttack(), GetMaxAttack());
+    write(S2C_UPDATEPROPERTY, "bwddw",   P_HTHADD, Inventory::GetAddHealth(), GetCurHP(), GetMaxHP(), GetResist(RT_PALSY));
+    write(S2C_UPDATEPROPERTY, "bwwwwww", P_INTADD, Inventory::GetAddInteligence(), GetMinMagic(), GetMaxMagic(), GetResist(RT_FIRE), GetResist(RT_ICE), GetResist(RT_LITNING));
+    write(S2C_UPDATEPROPERTY, "bwwwwww", P_WISADD, Inventory::GetAddWisdom(), GetCurMP(), GetMaxMP(), GetMinMagic(), GetMaxMagic(), GetResist(RT_CURSE));
+    write(S2C_UPDATEPROPERTY, "bwwwwww", P_DEXADD, Inventory::GetAddDexterity(), GetHit(), GetDodge(), GetDodge(), GetMinAttack(), GetMaxAttack());
+
+    write(S2C_UPDATEPROPERTY, "bw", P_ABSORB, GetAbsorb());
+    write(S2C_UPDATEPROPERTY, "bww", P_DEFENSE, GetDefense(), GetDefense());
 }
 
 void Player::Tick()

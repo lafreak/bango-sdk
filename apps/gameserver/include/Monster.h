@@ -8,7 +8,7 @@ class Monster : public Character
 {
     std::uint16_t m_index;
     std::uint8_t m_race=1;//non-beheadable
-    std::uint8_t m_level=50;
+    //std::uint8_t m_level=50;
 
 public:
     Monster(std::uint16_t index, int x, int y, int map=0)
@@ -22,7 +22,7 @@ public:
 
     std::uint16_t GetIndex() const { return m_index; }
     std::uint8_t GetRace() const { return m_race; }
-    std::uint8_t GetLevel() const { return m_level; }
+    //std::uint8_t GetLevel() const { return m_level; }
 
     bango::network::packet BuildAppearPacket(bool hero=false) const override;
     bango::network::packet BuildDisappearPacket() const override;

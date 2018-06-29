@@ -59,10 +59,9 @@ int main()
 
     CommandDispatcher::Register("/get",         std::bind(&Player::OnGetItem,       _1, _2));
     CommandDispatcher::Register("/move2",       std::bind(&Player::OnMoveTo,        _1, _2));
+    
     CommandDispatcher::Register("/mob", [&](Player* player, CommandDispatcher::Token& token) {
-        int index = token;
-        std::cout << "Spawning " << index << std::endl;
-        World::Add(new Monster(index, player->GetX()+10, player->GetY()+10, player->GetMap()));
+        World::Add(new Monster((int)token, player->GetX()+10, player->GetY()+10, player->GetMap()));
     });
 
     World::OnAppear     (std::bind(&Player::OnCharacterAppear,      _1, _2, _3));

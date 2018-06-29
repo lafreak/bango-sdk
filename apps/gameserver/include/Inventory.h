@@ -31,6 +31,14 @@ struct InitItem : public bango::processor::db_object<InitItem>
         Plural,
         Wearable;
 
+    struct
+    {
+        unsigned int Stats[5] ={0,};
+        unsigned int HP=0, MP=0, Defense=0, Hit=0, Dodge=0, Absorb=0;
+        unsigned int Resists[5] ={0,};
+        unsigned int MinAttack=0, MaxAttack=0, MinMagic=0, MaxMagic=0;
+    } Specialty;
+
     unsigned int index() const { return Index; }
 
     virtual void set(bango::processor::lisp::var param) override;
@@ -79,6 +87,35 @@ private:
 
     void AddVisibleIndex    (unsigned short index);
     void RemoveVisibleIndex (unsigned short index);
+
+    void ApplySpecialty (const Item::Ptr&);
+    void FreeSpecialty  (const Item::Ptr&);
+
+    std::uint16_t m_stats[5];
+    std::uint16_t m_hp=0, m_mp=0, m_def=0, m_hit=0, m_dodge=0, m_absorb=0;
+    std::uint16_t m_resists[5];
+    std::uint16_t m_minattack=0, m_maxattack=0, m_minmagic=0, m_maxmagic=0;
+
+protected:
+    std::uint16_t GetAddHealth()       const { return m_stats[P_HTH]; }
+    std::uint16_t GetAddStrength()     const { return m_stats[P_STR]; }
+    std::uint16_t GetAddInteligence()  const { return m_stats[P_INT]; }
+    std::uint16_t GetAddWisdom()       const { return m_stats[P_WIS]; }
+    std::uint16_t GetAddDexterity()    const { return m_stats[P_DEX]; }
+
+    std::uint16_t GetAddHP()       const { return m_hp; }
+    std::uint16_t GetAddMP()       const { return m_mp; }
+    std::uint16_t GetAddDefense()  const { return m_def; }
+    std::uint16_t GetAddHit()      const { return m_hit; }
+    std::uint16_t GetAddDodge()    const { return m_dodge; }
+    std::uint16_t GetAddAbsorb()   const { return m_absorb; }
+
+    std::uint16_t GetAddResist(std::uint8_t type) const { return m_resists[type]; }
+
+    std::uint16_t GetAddMinAttack() const { return m_minattack; }
+    std::uint16_t GetAddMaxAttack() const { return m_maxattack; }
+    std::uint16_t GetAddMinMagic()  const { return m_minmagic; }
+    std::uint16_t GetAddMaxMagic()  const { return m_maxmagic; }
 
 public:
 

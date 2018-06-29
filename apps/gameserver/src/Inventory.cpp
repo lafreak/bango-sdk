@@ -1,8 +1,13 @@
 #include "Inventory.h"
 
 #include <cassert>
+#include <algorithm>
 
-void InitItem::set(bango::processor::lisp::var param)
+#include <iostream>
+
+using namespace bango::processor;
+
+void InitItem::set(lisp::var param)
 {
     switch (FindAttribute(param.pop()))
     {
@@ -18,7 +23,46 @@ void InitItem::set(bango::processor::lisp::var param)
         case A_LIMIT:           LimitClass  = FindAttribute(param.pop());
                                 LimitLevel  = param.pop();
                                 break;
+        case A_SPECIALTY:
+        {
+            while (param.consp())
+            {
+                lisp::var p = param.pop();
+                switch (FindAttribute(p.pop()))
+                {
+                    case A_STR: Specialty.Stats[P_STR] = p.pop(); break;
+                    case A_HTH: Specialty.Stats[P_HTH] = p.pop(); break;
+                    case A_WIS: Specialty.Stats[P_WIS] = p.pop(); break;
+                    case A_INT: Specialty.Stats[P_INT] = p.pop(); break;
+                    case A_DEX: Specialty.Stats[P_DEX] = p.pop(); break;
+
+                    case A_HP:  Specialty.HP =            p.pop(); break;
+                    case A_MP:  Specialty.MP =            p.pop(); break;
+                    case IC_DEFENSE:Specialty.Defense =   p.pop(); break;
+                    case A_HIT:     Specialty.Hit =       p.pop(); break;
+                    case A_DODGE:   Specialty.Dodge =     p.pop(); break;
+                    case A_ABSORB:  Specialty.Absorb =    p.pop(); break;
+
+                    case A_ATTACK:      Specialty.MinAttack = p.pop();
+                                        Specialty.MaxAttack = p.pop();
+                                        break;
+
+                    case A_MAGICATTACK: Specialty.MinMagic = p.pop();
+                                        Specialty.MaxMagic = p.pop();
+                                        break;
+
+                    case A_RESISTCURSE:     Specialty.Resists[RT_CURSE]     = p.pop(); break;
+                    case A_RESISTFIRE:      Specialty.Resists[RT_FIRE]      = p.pop(); break;
+                    case A_RESISTICE:       Specialty.Resists[RT_ICE]       = p.pop(); break;
+                    case A_RESISTLITNING:   Specialty.Resists[RT_LITNING]   = p.pop(); break;
+                    case A_RESISTPALSY:     Specialty.Resists[RT_PALSY]     = p.pop(); break;
+                }
+            }
+        }
+        break;
     }
+        unsigned int HP=0, MP=0, Defense=0, Hit=0, Dodge=0, Absorb=0;
+        unsigned int Resists[5] ={0,};
 
     WearId = FindWearId(Kind);
 }
@@ -98,17 +142,18 @@ const Item::Ptr Inventory::Insert(const ITEMINFO& info)
         if (init->Wearable && info.Info & ITEM_PUTON) 
         {
             assert(init->WearId >= 0); // BUG: May trigger when items were put on manually trough DB.
-            m_wear_items[init->WearId] = result.first->second;
+            m_wear_items[init->WearId] = item;
             AddVisibleIndex(info.Index);
+            ApplySpecialty(item);
         }
 
         if (init->Class == IC_RIDE && info.Info & ITEM_PUTON)
         {
-            m_ride = result.first->second;
+            m_ride = item;
             AddVisibleIndex(info.Index);
         }
 
-        return result.first->second;
+        return item;
 
     } catch (const std::out_of_range&) {
         std::cerr << "Non existing item index: " << info.Index << std::endl;
@@ -123,6 +168,18 @@ void Inventory::Reset()
 {
     m_items.clear();
     m_ride = nullptr;
+
+    m_stats[P_HTH]=0;
+    m_stats[P_STR]=0;
+    m_stats[P_WIS]=0;
+    m_stats[P_INT]=0;
+    m_stats[P_DEX]=0;
+
+    m_resists[RT_CURSE]=0;
+    m_resists[RT_FIRE]=0;
+    m_resists[RT_ICE]=0;
+    m_resists[RT_LITNING]=0;
+    m_resists[RT_PALSY]=0;
 
     for (int i = 0; i < EQUIPMENT_SIZE; i++)
         m_equipment.Index[i] = 0;
@@ -203,6 +260,7 @@ const Item::Ptr Inventory::PutOn(const std::uint32_t local)
     item->AddInfo(ITEM_PUTON);
 
     AddVisibleIndex(item->GetInit().Index);
+    ApplySpecialty(item);
 
     return item;
 }
@@ -235,6 +293,7 @@ const Item::Ptr Inventory::PutOff(const std::uint32_t local)
     item->SubInfo(ITEM_PUTON);
 
     RemoveVisibleIndex(item->GetInit().Index);
+    FreeSpecialty(item);
 
     return item;
 }
@@ -264,4 +323,58 @@ int Inventory::GetIID(const std::uint32_t local) const
     } catch (const std::exception&) {
         return 0;
     }
+}
+
+void Inventory::ApplySpecialty(const Item::Ptr& item)
+{
+    m_stats[P_STR] += item->GetInit().Specialty.Stats[P_STR];
+    m_stats[P_HTH] += item->GetInit().Specialty.Stats[P_HTH];
+    m_stats[P_INT] += item->GetInit().Specialty.Stats[P_INT];
+    m_stats[P_WIS] += item->GetInit().Specialty.Stats[P_WIS];
+    m_stats[P_DEX] += item->GetInit().Specialty.Stats[P_DEX];
+
+    m_hp    += item->GetInit().Specialty.HP;
+    m_mp    += item->GetInit().Specialty.MP;
+    m_def   += item->GetInit().Specialty.Defense;
+    m_hit   += item->GetInit().Specialty.Hit;
+    m_dodge += item->GetInit().Specialty.Dodge;
+    m_absorb+= item->GetInit().Specialty.Absorb;
+
+    m_minattack+= item->GetInit().Specialty.MinAttack;
+    m_maxattack+= item->GetInit().Specialty.MaxAttack;
+    m_minmagic += item->GetInit().Specialty.MinMagic;
+    m_maxmagic += item->GetInit().Specialty.MaxMagic;
+
+    m_resists[RT_CURSE]     += item->GetInit().Specialty.Resists[RT_CURSE];
+    m_resists[RT_FIRE]      += item->GetInit().Specialty.Resists[RT_FIRE];
+    m_resists[RT_ICE]       += item->GetInit().Specialty.Resists[RT_ICE];
+    m_resists[RT_LITNING]   += item->GetInit().Specialty.Resists[RT_LITNING];
+    m_resists[RT_PALSY]     += item->GetInit().Specialty.Resists[RT_PALSY];
+}
+
+void Inventory::FreeSpecialty(const Item::Ptr& item)
+{
+    m_stats[P_STR] -= item->GetInit().Specialty.Stats[P_STR];
+    m_stats[P_HTH] -= item->GetInit().Specialty.Stats[P_HTH];
+    m_stats[P_INT] -= item->GetInit().Specialty.Stats[P_INT];
+    m_stats[P_WIS] -= item->GetInit().Specialty.Stats[P_WIS];
+    m_stats[P_DEX] -= item->GetInit().Specialty.Stats[P_DEX];
+
+    m_hp    -= item->GetInit().Specialty.HP;
+    m_mp    -= item->GetInit().Specialty.MP;
+    m_def   -= item->GetInit().Specialty.Defense;
+    m_hit   -= item->GetInit().Specialty.Hit;
+    m_dodge -= item->GetInit().Specialty.Dodge;
+    m_absorb-= item->GetInit().Specialty.Absorb;
+
+    m_minattack-= item->GetInit().Specialty.MinAttack;
+    m_maxattack-= item->GetInit().Specialty.MaxAttack;
+    m_minmagic -= item->GetInit().Specialty.MinMagic;
+    m_maxmagic -= item->GetInit().Specialty.MaxMagic;
+
+    m_resists[RT_CURSE]     -= item->GetInit().Specialty.Resists[RT_CURSE];
+    m_resists[RT_FIRE]      -= item->GetInit().Specialty.Resists[RT_FIRE];
+    m_resists[RT_ICE]       -= item->GetInit().Specialty.Resists[RT_ICE];
+    m_resists[RT_LITNING]   -= item->GetInit().Specialty.Resists[RT_LITNING];
+    m_resists[RT_PALSY]     -= item->GetInit().Specialty.Resists[RT_PALSY];
 }
