@@ -63,12 +63,11 @@ void WorldMap::Add(Character* entity)
 
             if (player->distance(center) <= m_sight)
             {
-                m_on_appear(player, entity);
+                m_on_appear(player, entity, entity->GetType() == Character::MONSTER);
                 if (entity->GetType() == Character::PLAYER)
-                    m_on_appear((Player*) entity, player);
+                    m_on_appear((Player*) entity, player, false);
             }
         }
-
         if (entity->GetType() != Character::PLAYER)
             return;
 
@@ -77,10 +76,18 @@ void WorldMap::Add(Character* entity)
             auto npc = p.second;
 
             if (npc->distance(center) <= m_sight)
-                m_on_appear((Player*) entity, npc);
+                m_on_appear((Player*) entity, npc, false);
+        }
+
+        for (auto& p : container->monsters())
+        {
+            auto monster = p.second;
+
+            if (monster->distance(center) <= m_sight)
+                m_on_appear((Player*) entity, monster, false);
         }
     });
-    
+
     try {
         m_quad.insert(entity);
     } catch (const std::exception& e) {
@@ -160,6 +167,14 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
             if (npc->distance(old_center) <= m_sight && npc->distance(new_center) > m_sight) 
                 m_on_disappear((Player*) entity, npc);
         }
+
+        for (auto& p : container->monsters())
+        {
+            auto monster = p.second;
+
+            if (monster->distance(old_center) <= m_sight && monster->distance(new_center) > m_sight) 
+                m_on_disappear((Player*) entity, monster);
+        }
     });
 
     m_quad.query(new_center, m_sight, [&](const Container* container) {
@@ -171,9 +186,9 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
                 m_on_move(player, entity, delta_x, delta_y, delta_z, stop);
             else if (player->distance(old_center) > m_sight && player->distance(new_center) <= m_sight) 
             {
-                m_on_appear(player, entity);
+                m_on_appear(player, entity, false);
                 if (entity->GetType() == Character::PLAYER)
-                    m_on_appear((Player*) entity, player);
+                    m_on_appear((Player*) entity, player, false);
             }
         }
 
@@ -185,7 +200,15 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
             auto npc = p.second;
 
             if (npc->distance(old_center) > m_sight && npc->distance(new_center) <= m_sight) 
-                m_on_appear((Player*) entity, npc);
+                m_on_appear((Player*) entity, npc, false);
+        }
+
+        for (auto& p : container->monsters())
+        {
+            auto monster = p.second;
+
+            if (monster->distance(old_center) > m_sight && monster->distance(new_center) <= m_sight) 
+                m_on_appear((Player*) entity, monster, false);
         }
     });
 

@@ -34,6 +34,11 @@ public:
     int             GetZ()      const { return m_z; }
     std::uint16_t   GetDir()    const { return m_dir; }
 
+    std::uint64_t       GetGState()     const { return 0; }
+    std::uint64_t       GetMState()     const { return 0; }
+    std::uint64_t       GetGStateEx()   const { return 0; }
+    std::uint64_t       GetMStateEx()   const { return 0; }
+
     virtual bango::network::packet BuildAppearPacket(bool hero=false)   const { return bango::network::packet(); };
     virtual bango::network::packet BuildDisappearPacket()               const { return bango::network::packet(); };
     virtual bango::network::packet BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const { return bango::network::packet(); };

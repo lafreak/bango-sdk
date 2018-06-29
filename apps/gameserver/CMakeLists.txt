@@ -18,6 +18,7 @@ set(SOURCES
   src/Character.cpp
   src/NPC.cpp
   src/Player.cpp
+  src/Monster.cpp
   src/Socket.cpp
   src/World.cpp
   src/Inventory.cpp

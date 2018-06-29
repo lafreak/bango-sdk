@@ -34,7 +34,6 @@ int main()
     Socket::GameServer().when(C2S_RESTOREPLAYER,std::bind(&User::OnRestorePlayer,   _1, _2));
     Socket::GameServer().when(C2S_LOADPLAYER,   std::bind(&User::OnLoadPlayer,      _1, _2));
 
-    Socket::GameServer().when(C2S_REST,         std::bind(&Player::OnRest,          _1, _2));
     Socket::GameServer().when(C2S_START,        std::bind(&Player::OnStart,         _1, _2));
     Socket::GameServer().when(C2S_RESTART,      std::bind(&Player::OnRestart,       _1, _2));
     Socket::GameServer().when(C2S_GAMEEXIT,     std::bind(&Player::OnExit,          _1, _2));
@@ -45,6 +44,7 @@ int main()
     Socket::GameServer().when(C2S_PUTOFFITEM,   std::bind(&Player::OnPutOffItem,    _1, _2));
     Socket::GameServer().when(C2S_USEITEM,      std::bind(&Player::OnUseItem,       _1, _2));
     Socket::GameServer().when(C2S_TRASHITEM,    std::bind(&Player::OnTrashItem,     _1, _2));
+    Socket::GameServer().when(C2S_REST,         std::bind(&Player::OnRest,          _1, _2));
     Socket::GameServer().when(C2S_TELEPORT,     std::bind(&Player::OnTeleportAnswer,    _1, _2));
 
     Socket::DBClient().when(D2S_LOGIN,          std::bind(&DBListener::OnLogin,             _1));
@@ -59,8 +59,13 @@ int main()
 
     CommandDispatcher::Register("/get",         std::bind(&Player::OnGetItem,       _1, _2));
     CommandDispatcher::Register("/move2",       std::bind(&Player::OnMoveTo,        _1, _2));
+    CommandDispatcher::Register("/mob", [&](Player* player, CommandDispatcher::Token& token) {
+        int index = token;
+        std::cout << "Spawning " << index << std::endl;
+        World::Add(new Monster(index, player->GetX()+10, player->GetY()+10, player->GetMap()));
+    });
 
-    World::OnAppear     (std::bind(&Player::OnCharacterAppear,      _1, _2));
+    World::OnAppear     (std::bind(&Player::OnCharacterAppear,      _1, _2, _3));
     World::OnDisappear  (std::bind(&Player::OnCharacterDisappear,   _1, _2));
     World::OnMove       (std::bind(&Player::OnCharacterMove,        _1, _2, _3, _4, _5, _6));
 
@@ -84,6 +89,8 @@ int main()
         {C2S_PUTOFFITEM,        User::INGAME},
         {C2S_USEITEM,           User::INGAME},
         {C2S_TRASHITEM,         User::INGAME},
+        {C2S_TELEPORT,          User::INGAME},
+        {C2S_REST,              User::INGAME},
     });
 
     //Socket::GameServer().restrict({});

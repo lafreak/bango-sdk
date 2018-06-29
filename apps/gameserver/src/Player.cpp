@@ -25,6 +25,7 @@ void Player::OnStart(packet& p)
     auto height = p.pop<int>();
 
     write(BuildAppearPacket(true));
+    //OnCharacterAppear(this, true);
 
     World::Add(this);
 
@@ -59,7 +60,68 @@ void Player::OnMove(packet& p, bool end)
     World::Move(this, x, y, z, end);
 }
 
-void Player::OnChatting(bango::network::packet& p)
+void Player::OnLoadPlayer(packet& p)
+{
+    p >> m_data >> m_name >> m_x >> m_y;
+    m_z = m_data.Z;
+    m_map = m_data.Map;
+
+    write(S2C_PROPERTY, "bsbwwwwwwddwwwwwbIwwwwwwbbbbbd",
+        0, //Grade
+        "\0", //GuildName
+        0, //GRole
+        GetContribute(),
+        GetStrength(),
+        GetHealth(),
+        GetInteligence(),
+        GetWisdom(),
+        GetDexterity(),
+        GetCurHP(),
+        GetCurHP(), //MaxHP
+        GetCurMP(),
+        GetCurMP(), //MaxMP
+        1, //Hit
+        2, //Dodge
+        3, //Defense
+        4, //Absorb
+        GetExp(),
+        5, //MinAttack
+        6, //MaxAttack
+        7, //MinMagic
+        8, //MaxMagic
+        GetPUPoint(),
+        GetSUPoint(),
+        9, //ResistFire
+        10, //ResistIce
+        11, //ResistLitning
+        12, //ResistCurse
+        13, //ResistPalsy
+        GetRage());
+
+    short time = 1200;
+    write(S2C_ANS_LOAD, "wdd", time, GetX(), GetY());
+}
+
+void Player::OnLoadItems(packet& p)
+{
+    unsigned short count = p.pop<unsigned short>();
+
+    for (unsigned short i = 0; i < count; i++)
+    {
+        auto info = p.pop<ITEMINFO>();
+        Inventory::Insert(info);
+    }
+
+    write((Inventory)*this);
+}
+
+void Player::OnRest(packet& p)
+{
+    auto action = p.pop<char>();
+    std::cout << "On Rest " << (int)action << std::endl;
+}
+
+void Player::OnChatting(packet& p)
 {
     auto message = p.pop_str(); // BUG: Empty packet will throw an exception.
 
@@ -143,10 +205,9 @@ void Player::OnGetItem(CommandDispatcher::Token& token)
     InsertItem(index, num <= 0 ? 1 : num);
 }
 
-void Player::OnCharacterAppear(Character * subject)
+void Player::OnCharacterAppear(Character * subject, bool hero)
 {
-    // TODO: If it gets created for the first time (mob spawn) add true to param list.
-    write(subject->BuildAppearPacket());
+    write(subject->BuildAppearPacket(hero));
 }
 
 void Player::OnCharacterDisappear(Character * subject)
@@ -211,7 +272,7 @@ void Player::Teleport(int x, int y, int z)
 
 void Player::OnTeleportAnswer(packet& p)
 {
-    // TODO: Add packet hack checks.
+    // TODO: Add packet hack checks or force teleportation after certain amount of time.
     if (m_teleport_x == 0)
         return;
 
@@ -230,6 +291,47 @@ void Player::OnMoveTo(CommandDispatcher::Token& token)
     int y = token;
 
     Teleport(x, y);
+}
+
+packet Player::BuildAppearPacket(bool hero) const
+{
+    packet p(S2C_CREATEPLAYER);
+
+    p   << GetID()
+        << GetName()
+        << GetClass(hero) 
+        << GetX() 
+        << GetY() 
+        << GetZ() 
+        << GetDir() 
+        << GetGState()
+        << GetEquipment()
+        << GetFace() 
+        << GetHair() 
+        << GetMState() 
+        << "\0" << "\0" // GuildClass & GuildName
+        << GetGID() 
+        << GetFlag() 
+        << GetFlagItem()
+        << GetHonorGrade() 
+        << GetHonorOption() 
+        << GetGStateEx() 
+        << GetMStateEx();
+
+    // Unknown
+    p << (std::int8_t)0 << (std::int32_t)0 << (std::int32_t)0 << (std::int8_t)0;
+
+    return p;
+}
+
+packet Player::BuildDisappearPacket() const
+{
+    return packet(S2C_REMOVEPLAYER, "d", GetID());
+}
+
+packet Player::BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const
+{
+    return packet(stop ? S2C_MOVEPLAYER_END : S2C_MOVEPLAYER_ON, "dbbb", GetID(), delta_x, delta_y, delta_z);
 }
 
 void Player::Tick()

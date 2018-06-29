@@ -3,6 +3,7 @@
 #include <bango/space/quadtree.h>
 
 #include "Player.h"
+#include "Monster.h"
 #include "NPC.h"
 
 #define MAP_WIDTH 50*8192
@@ -39,7 +40,8 @@ private:
     const int m_sight;
 
 public:
-    typedef std::function<void(Player*, Character*)>    AppearanceEvent;
+    typedef std::function<void(Player*, Character*, bool)>    AppearEvent;
+    typedef std::function<void(Player*, Character*)>    DisappearEvent;
     typedef std::function<void(Player*, Character*, 
         std::int8_t, std::int8_t, std::int8_t, bool)>   MoveEvent;
 
@@ -47,9 +49,9 @@ private:
     bango::space::quad<Container> m_quad;
 
     // BUG: Add checks.
-    AppearanceEvent   m_on_appear;//    =[](const Player*, const Character*){};
-    AppearanceEvent   m_on_disappear;// =[](const Player*, const Character*){};
-    MoveEvent         m_on_move;//      =[](const Player*, const Character*, std::int8_t, std::int8_t, std::int8_t, bool){};
+    AppearEvent     m_on_appear;//    =[](const Player*, const Character*){};
+    DisappearEvent  m_on_disappear;// =[](const Player*, const Character*){};
+    MoveEvent       m_on_move;//      =[](const Player*, const Character*, std::int8_t, std::int8_t, std::int8_t, bool){};
 
     std::map<char, Container::CharacterContainer> m_entities;
 
@@ -96,9 +98,9 @@ public:
     void WriteOnMap(const bango::network::packet& p);
 
     //! Registers callbacks for appearance events.
-    void OnAppear       (const AppearanceEvent&    callback){ m_on_appear       = callback; }
-    void OnDisappear    (const AppearanceEvent&    callback){ m_on_disappear    = callback; }
-    void OnMove         (const MoveEvent&          callback){ m_on_move         = callback; }
+    void OnAppear       (const AppearEvent&     callback){ m_on_appear       = callback; }
+    void OnDisappear    (const DisappearEvent&  callback){ m_on_disappear    = callback; }
+    void OnMove         (const MoveEvent&       callback){ m_on_move         = callback; }
 };
 
 class World
@@ -130,13 +132,13 @@ public:
     }
 
     // TODO: Change
-    static void OnAppear(const WorldMap::AppearanceEvent& callback)
+    static void OnAppear(const WorldMap::AppearEvent& callback)
     {
         for (auto& map : Get().m_maps)
             map->OnAppear(callback);
     }
 
-    static void OnDisappear(const WorldMap::AppearanceEvent& callback)
+    static void OnDisappear(const WorldMap::DisappearEvent& callback)
     {
         for (auto& map : Get().m_maps)
             map->OnDisappear(callback);
@@ -215,21 +217,21 @@ public:
     }
 
     static const WorldMap::Container::CharacterContainer& Monsters() { return Get().m_entities[Character::MONSTER];  }//Unsafe
-    // static void ForEachMonster(const std::function<void(Monster*)>& callback)
-    // {
-    //     std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+    static void ForEachMonster(const std::function<void(Monster*)>& callback)
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
 
-    //     for (auto& p : Get().m_entities[Character::MONSTER])
-    //         callback((Monster*) p.second);
-    // }
-    // static void ForMonster(std::uint32_t id, const std::function<void(Monster*)>& callback)
-    // {
-    //     std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+        for (auto& p : Get().m_entities[Character::MONSTER])
+            callback((Monster*) p.second);
+    }
+    static void ForMonster(std::uint32_t id, const std::function<void(Monster*)>& callback)
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
 
-    //     try {
-    //         callback( (Monster*) Get().m_entities[Character::MONSTER].at(id));
-    //     } catch (const std::exception&) {}
-    // }
+        try {
+            callback( (Monster*) Get().m_entities[Character::MONSTER].at(id));
+        } catch (const std::exception&) {}
+    }
 
     static const WorldMap::Container::CharacterContainer& Npcs()     { return Get().m_entities[Character::NPC];      }//Unsafe
     static void ForEachNpc(const std::function<void(NPC*)>& callback)
