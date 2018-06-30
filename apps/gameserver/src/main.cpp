@@ -22,30 +22,31 @@ int main()
 
     using namespace std::placeholders;
 
-    Socket::GameServer().on_connected(          std::bind(&Player::OnConnected,     _1));
-    Socket::GameServer().on_disconnected(       std::bind(&Player::OnDisconnected,  _1));
+    Socket::GameServer().on_connected(              std::bind(&Player::OnConnected,     _1));
+    Socket::GameServer().on_disconnected(           std::bind(&Player::OnDisconnected,  _1));
 
-    Socket::GameServer().when(C2S_CONNECT,      std::bind(&User::OnConnect,         _1, _2));
-    Socket::GameServer().when(C2S_ANS_CODE,     std::bind(&User::OnCodeAnswer,      _1, _2));
-    Socket::GameServer().when(C2S_LOGIN,        std::bind(&User::OnLogin,           _1, _2));
-    Socket::GameServer().when(C2S_SECOND_LOGIN, std::bind(&User::OnSecondaryLogin,  _1, _2));
-    Socket::GameServer().when(C2S_NEWPLAYER,    std::bind(&User::OnNewPlayer,       _1, _2));
-    Socket::GameServer().when(C2S_DELPLAYER,    std::bind(&User::OnDeletePlayer,    _1, _2));
-    Socket::GameServer().when(C2S_RESTOREPLAYER,std::bind(&User::OnRestorePlayer,   _1, _2));
-    Socket::GameServer().when(C2S_LOADPLAYER,   std::bind(&User::OnLoadPlayer,      _1, _2));
+    Socket::GameServer().when(C2S_CONNECT,          std::bind(&User::OnConnect,         _1, _2));
+    Socket::GameServer().when(C2S_ANS_CODE,         std::bind(&User::OnCodeAnswer,      _1, _2));
+    Socket::GameServer().when(C2S_LOGIN,            std::bind(&User::OnLogin,           _1, _2));
+    Socket::GameServer().when(C2S_SECOND_LOGIN,     std::bind(&User::OnSecondaryLogin,  _1, _2));
+    Socket::GameServer().when(C2S_NEWPLAYER,        std::bind(&User::OnNewPlayer,       _1, _2));
+    Socket::GameServer().when(C2S_DELPLAYER,        std::bind(&User::OnDeletePlayer,    _1, _2));
+    Socket::GameServer().when(C2S_RESTOREPLAYER,    std::bind(&User::OnRestorePlayer,   _1, _2));
+    Socket::GameServer().when(C2S_LOADPLAYER,       std::bind(&User::OnLoadPlayer,      _1, _2));
 
-    Socket::GameServer().when(C2S_START,        std::bind(&Player::OnStart,         _1, _2));
-    Socket::GameServer().when(C2S_RESTART,      std::bind(&Player::OnRestart,       _1, _2));
-    Socket::GameServer().when(C2S_GAMEEXIT,     std::bind(&Player::OnExit,          _1, _2));
-    Socket::GameServer().when(C2S_MOVE_ON,      std::bind(&Player::OnMove,          _1, _2, false));
-    Socket::GameServer().when(C2S_MOVE_END,     std::bind(&Player::OnMove,          _1, _2, true ));
-    Socket::GameServer().when(C2S_CHATTING,     std::bind(&Player::OnChatting,      _1, _2));
-    Socket::GameServer().when(C2S_PUTONITEM,    std::bind(&Player::OnPutOnItem,     _1, _2));
-    Socket::GameServer().when(C2S_PUTOFFITEM,   std::bind(&Player::OnPutOffItem,    _1, _2));
-    Socket::GameServer().when(C2S_USEITEM,      std::bind(&Player::OnUseItem,       _1, _2));
-    Socket::GameServer().when(C2S_TRASHITEM,    std::bind(&Player::OnTrashItem,     _1, _2));
-    Socket::GameServer().when(C2S_REST,         std::bind(&Player::OnRest,          _1, _2));
-    Socket::GameServer().when(C2S_TELEPORT,     std::bind(&Player::OnTeleportAnswer,    _1, _2));
+    Socket::GameServer().when(C2S_START,            std::bind(&Player::OnStart,         _1, _2));
+    Socket::GameServer().when(C2S_RESTART,          std::bind(&Player::OnRestart,       _1, _2));
+    Socket::GameServer().when(C2S_GAMEEXIT,         std::bind(&Player::OnExit,          _1, _2));
+    Socket::GameServer().when(C2S_MOVE_ON,          std::bind(&Player::OnMove,          _1, _2, false));
+    Socket::GameServer().when(C2S_MOVE_END,         std::bind(&Player::OnMove,          _1, _2, true ));
+    Socket::GameServer().when(C2S_CHATTING,         std::bind(&Player::OnChatting,      _1, _2));
+    Socket::GameServer().when(C2S_PUTONITEM,        std::bind(&Player::OnPutOnItem,     _1, _2));
+    Socket::GameServer().when(C2S_PUTOFFITEM,       std::bind(&Player::OnPutOffItem,    _1, _2));
+    Socket::GameServer().when(C2S_USEITEM,          std::bind(&Player::OnUseItem,       _1, _2));
+    Socket::GameServer().when(C2S_TRASHITEM,        std::bind(&Player::OnTrashItem,     _1, _2));
+    Socket::GameServer().when(C2S_REST,             std::bind(&Player::OnRest,          _1, _2));
+    Socket::GameServer().when(C2S_TELEPORT,         std::bind(&Player::OnTeleportAnswer,_1, _2));
+    Socket::GameServer().when(C2S_UPDATEPROPERTY,   std::bind(&Player::OnUpdateProperty,_1, _2));
 
     Socket::DBClient().when(D2S_LOGIN,          std::bind(&DBListener::OnLogin,             _1));
     Socket::DBClient().when(D2S_AUTHORIZED,     std::bind(&DBListener::OnAuthorized,        _1));

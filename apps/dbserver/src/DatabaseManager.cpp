@@ -52,6 +52,10 @@ void DatabaseManager::Initialize()
     m_dbserver.when(S2D_TRASHITEM, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         TrashItem(s, p);
     });
+
+    m_dbserver.when(S2D_UPDATEPROPERTY, [&](const std::shared_ptr<GameServer>& s, packet& p) {
+        UpdateProperty(s, p);
+    });
     
     m_dbserver.when(S2D_RESTART, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         auto id = p.pop<unsigned int>();
@@ -624,5 +628,26 @@ void DatabaseManager::UpdateItemInfo(const std::shared_ptr<GameServer>& s, packe
     auto query = conn.create_query("UPDATE item SET info=? WHERE iditem=?");
 
     query << info << iid;
+    query.execute();
+}
+
+void DatabaseManager::UpdateProperty(const std::shared_ptr<GameServer>& s, packet& p)
+{
+    auto pid = p.pop<int>();
+
+    std::uint16_t stats[5] = {
+        p.pop<std::uint16_t>(),
+        p.pop<std::uint16_t>(),
+        p.pop<std::uint16_t>(),
+        p.pop<std::uint16_t>(),
+        p.pop<std::uint16_t>()
+    };
+
+    auto pupoint = p.pop<std::uint16_t>();
+
+    auto conn = m_pool.get();
+    auto query = conn.create_query("UPDATE player SET strength=?, health=?, inteligence=?, wisdom=?, dexterity=?, pupoint=? WHERE idplayer=?");
+
+    query << stats[P_STR] << stats[P_HTH] << stats[P_INT] << stats[P_WIS] << stats[P_DEX] << pupoint << pid;
     query.execute();
 }

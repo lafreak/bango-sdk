@@ -374,17 +374,136 @@ std::uint32_t Player::GetMaxMP() const
                             8)))))) * GetLevel()) + 140 + GetWisdom() + 2 * GetWisdom() * GetWisdom() / g_denoMP[GetClass()] + Inventory::GetAddMP();// + m_wMaxMPAdd;
 }
 
+std::uint16_t Player::GetResist(std::uint8_t type) const
+{
+	switch (type)
+	{
+        case RT_FIRE:
+            return GetInteligence() / 9 + Inventory::GetAddResist(type);
+        case RT_ICE:
+            return GetInteligence() / 9 + Inventory::GetAddResist(type);
+        case RT_LITNING:
+            return GetInteligence() / 9 + Inventory::GetAddResist(type);
+        case RT_PALSY:
+            return GetHealth() / 9 + Inventory::GetAddResist(type);
+        case RT_CURSE:
+            return GetWisdom() / 9 + Inventory::GetAddResist(type);
+    }
+}
+
 void Player::SendInventoryProperty()
 {
-    //TODO: Total-Base?
-    write(S2C_UPDATEPROPERTY, "bwwww",   P_STRADD, Inventory::GetAddStrength(), GetHit(), GetMinAttack(), GetMaxAttack());
-    write(S2C_UPDATEPROPERTY, "bwddw",   P_HTHADD, Inventory::GetAddHealth(), GetCurHP(), GetMaxHP(), GetResist(RT_PALSY));
-    write(S2C_UPDATEPROPERTY, "bwwwwww", P_INTADD, Inventory::GetAddInteligence(), GetMinMagic(), GetMaxMagic(), GetResist(RT_FIRE), GetResist(RT_ICE), GetResist(RT_LITNING));
-    write(S2C_UPDATEPROPERTY, "bwwwwww", P_WISADD, Inventory::GetAddWisdom(), GetCurMP(), GetMaxMP(), GetMinMagic(), GetMaxMagic(), GetResist(RT_CURSE));
-    write(S2C_UPDATEPROPERTY, "bwwwwww", P_DEXADD, Inventory::GetAddDexterity(), GetHit(), GetDodge(), GetDodge(), GetMinAttack(), GetMaxAttack());
+    SendProperty(P_STRADD);
+    SendProperty(P_HTHADD);
+    SendProperty(P_INTADD);
+    SendProperty(P_WISADD);
+    SendProperty(P_DEXADD);
 
-    write(S2C_UPDATEPROPERTY, "bw", P_ABSORB, GetAbsorb());
-    write(S2C_UPDATEPROPERTY, "bww", P_DEFENSE, GetDefense(), GetDefense());
+    SendProperty(P_ABSORB);
+    SendProperty(P_DEFENSE);
+}
+
+void Player::SendProperty(std::uint8_t kind)
+{
+    switch (kind)
+    {
+        case P_STR:
+            write(S2C_UPDATEPROPERTY, "bwwww",  P_STR, GetBaseStrength(), GetHit(), GetMinAttack(), GetMaxAttack()); break;
+        case P_HTH:
+            write(S2C_UPDATEPROPERTY, "bwddw",  P_HTH, GetBaseHealth(), GetCurHP(), GetMaxHP(), GetResist(RT_PALSY)); break;
+        case P_INT:
+            write(S2C_UPDATEPROPERTY, "bwwwwww",P_INT, GetBaseInteligence(), GetMinMagic(), GetMaxMagic(), GetResist(RT_FIRE), GetResist(RT_ICE), GetResist(RT_LITNING)); break;
+        case P_WIS:
+            write(S2C_UPDATEPROPERTY, "bwwwwww",P_WIS, GetBaseWisdom(), GetCurMP(), GetMaxMP(), GetMinMagic(), GetMaxMagic(), GetResist(RT_CURSE)); break;
+        case P_DEX:
+            write(S2C_UPDATEPROPERTY, "bwwwwww",P_DEX, GetBaseDexterity(), GetHit(), GetDodge(), GetDodge(), GetMinAttack(), GetMaxAttack()); break;
+        case P_STRADD:
+            write(S2C_UPDATEPROPERTY, "bwwww",  P_STRADD, GetStrength()-GetBaseStrength(), GetHit(), GetMinAttack(), GetMaxAttack()); break;
+        case P_HTHADD:
+            write(S2C_UPDATEPROPERTY, "bwddw",  P_HTHADD, GetHealth()-GetBaseHealth(), GetCurHP(), GetMaxHP(), GetResist(RT_PALSY)); break;
+        case P_INTADD:
+            write(S2C_UPDATEPROPERTY, "bwwwwww",P_INTADD, GetInteligence()-GetBaseInteligence(), GetMinMagic(), GetMaxMagic(), GetResist(RT_FIRE), GetResist(RT_ICE), GetResist(RT_LITNING)); break;
+        case P_WISADD:
+            write(S2C_UPDATEPROPERTY, "bwwwwww",P_WISADD, GetWisdom()-GetBaseWisdom(), GetCurMP(), GetMaxMP(), GetMinMagic(), GetMaxMagic(), GetResist(RT_CURSE)); break;
+        case P_DEXADD:
+            write(S2C_UPDATEPROPERTY, "bwwwwww",P_DEXADD, GetDexterity()-GetBaseDexterity(), GetHit(), GetDodge(), GetDodge(), GetMinAttack(), GetMaxAttack()); break;
+        case P_ABSORB:
+            write(S2C_UPDATEPROPERTY, "bw",     P_ABSORB, GetAbsorb()); break;
+        case P_DEFENSE:
+            write(S2C_UPDATEPROPERTY, "bww",    P_DEFENSE, GetDefense(), GetDefense()); break;
+        case P_PUPOINT:
+            write(S2C_UPDATEPROPERTY, "bw",     P_PUPOINT, GetPUPoint()); break;
+    }
+}
+
+std::uint16_t Player::GetReqPU(std::uint8_t* stats)
+{
+	std::uint16_t req=0;
+
+	if (GetClass() == PC_KNIGHT)
+		req += FIND_NEED_PU_EX(GetBaseStrength(), stats[P_STR]);
+	else
+		req += FIND_NEED_PU(GetBaseStrength(), stats[P_STR]);
+
+	if (GetClass() == PC_MAGE || GetClass() == PC_SHAMAN)
+		req += FIND_NEED_PU_EX(GetBaseInteligence(), stats[P_INT]);
+	else
+		req += FIND_NEED_PU(GetBaseInteligence(), stats[P_INT]);
+
+	if (GetClass() == PC_ARCHER || GetClass() == PC_THIEF)
+		req += FIND_NEED_PU_EX(GetBaseDexterity(), stats[P_DEX]);
+	else
+		req += FIND_NEED_PU(GetBaseDexterity(), stats[P_DEX]);
+
+	req += FIND_NEED_PU(GetBaseHealth(), stats[P_HTH]);
+	req += FIND_NEED_PU(GetBaseWisdom(), stats[P_WIS]);
+
+    return req;
+}
+
+void Player::OnUpdateProperty(packet& p)
+{
+    std::uint8_t stats[5] = {
+        p.pop<std::uint8_t>(),
+        p.pop<std::uint8_t>(),
+        p.pop<std::uint8_t>(),
+        p.pop<std::uint8_t>(),
+        p.pop<std::uint8_t>()
+    };
+
+    if (stats[P_STR]+GetBaseStrength()      > MAX_STAT_DISTRIBUTED) return;
+    if (stats[P_HTH]+GetBaseHealth()        > MAX_STAT_DISTRIBUTED) return;
+    if (stats[P_INT]+GetBaseInteligence()   > MAX_STAT_DISTRIBUTED) return;
+    if (stats[P_WIS]+GetBaseWisdom()        > MAX_STAT_DISTRIBUTED) return;
+    if (stats[P_DEX]+GetBaseDexterity()     > MAX_STAT_DISTRIBUTED) return;
+
+    auto required = GetReqPU(stats);
+
+    if (GetPUPoint() < required)
+        return;
+
+    m_data.Strength     += stats[P_STR];
+    m_data.Health       += stats[P_HTH];
+    m_data.Inteligence  += stats[P_INT];
+    m_data.Wisdom       += stats[P_WIS];
+    m_data.Dexterity    += stats[P_DEX];
+    m_data.PUPoint      -= required;
+
+    SendProperty(P_STR);
+    SendProperty(P_HTH);
+    SendProperty(P_INT);
+    SendProperty(P_WIS);
+    SendProperty(P_DEX);
+    SendProperty(P_PUPOINT);
+
+    Socket::DBClient().write(S2D_UPDATEPROPERTY, "dwwwwww", 
+        GetPID(), 
+        GetBaseStrength(), 
+        GetBaseHealth(), 
+        GetBaseInteligence(), 
+        GetBaseWisdom(), 
+        GetBaseDexterity(), 
+        GetPUPoint());
 }
 
 void Player::Tick()

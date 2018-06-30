@@ -40,6 +40,7 @@ public:
     void OnUseItem(bango::network::packet& p);
     void OnTrashItem(bango::network::packet& p);
     void OnTeleportAnswer(bango::network::packet& p);
+    void OnUpdateProperty(bango::network::packet& p);
 
     // Command Endpoints
     void OnGetItem(CommandDispatcher::Token& token);
@@ -83,7 +84,7 @@ public:
     std::uint16_t       GetAbsorb()                 const override { return Inventory::GetAddAbsorb(); }
 
     std::uint16_t       GetDefense()                const override { return Inventory::GetAddDefense(); }
-    std::uint16_t       GetResist(std::uint8_t type)const override { return Inventory::GetAddResist(type); }
+    std::uint16_t       GetResist(std::uint8_t type)const override;// { return Inventory::GetAddResist(type); }
 
     std::uint32_t       GetMaxHP()                  const override;
     std::uint32_t       GetMaxMP()                  const override;
@@ -105,10 +106,13 @@ public:
 
     bool CanLogout() const { return true; }
     void SendInventoryProperty();
+    void SendProperty(std::uint8_t kind);
 
     void InsertItem(unsigned short index, unsigned int num=1);
     bool TrashItem(unsigned int local);
     void Teleport(int x, int y, int z=0);
+
+    std::uint16_t   GetReqPU(std::uint8_t* stats);
 
     void Tick() override;
 };

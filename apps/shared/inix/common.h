@@ -24,6 +24,7 @@ static long g_nNeedExp[] = {
 		94544496618 ,113453543683 ,136144403815 ,163373439683 ,196048286480 ,
 };
 
+#define MAX_STAT_DISTRIBUTED 250
 static unsigned char g_byNeedPU[] = {
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -50,6 +51,7 @@ static unsigned char g_byNeedPU[] = {
 	8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
 	8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
 	8, 8, 8, 8, 8, 8, 8, 8, 8, 8
+	// sum: 1200
 };
 
 static unsigned char g_byNeedPUEx[] = {
@@ -131,8 +133,8 @@ static unsigned short FIND_NEED_PU_EX(unsigned short cur, unsigned char add) {
 	return needPU;
 }
 
-static int g_denoHP[] = { 10, 14, 13, 13, 14 };
-static int g_denoMP[] = { 13, 10, 12, 12, 10 };
+static int g_denoHP[] = { 10, 14, 13, 13, 13 };
+static int g_denoMP[] = { 13, 10, 12, 12, 12 };
 
 // (struct) /////////////////////////////////////////////////////////
 struct DATE_TIME

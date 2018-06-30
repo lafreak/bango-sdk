@@ -19,7 +19,7 @@ CREATE TABLE player (
 	name VARCHAR(30) NOT NULL,
 	job TINYINT NOT NULL DEFAULT 1,
 	class TINYINT NOT NULL,
-	level TINYINT NOT NULL DEFAULT 100,
+	level TINYINT NOT NULL DEFAULT 70,
 	map TINYINT NOT NULL DEFAULT 0,
 	x INT NOT NULL DEFAULT 342373,#360931, #map 44 
 	y INT NOT NULL DEFAULT 217534,#187024, #map 22
@@ -117,13 +117,13 @@ INSERT INTO account (login, password, secondary)
 		('bot4', 'passwd', '00000000'),
 		('bot5', 'passwd', '00000000');
 
-INSERT INTO player (idaccount, name, class, strength, health, inteligence, wisdom, dexterity, curhp, curmp, face, hair)
+INSERT INTO player (idaccount, name, level, pupoint, supoint, class, strength, health, inteligence, wisdom, dexterity, curhp, curmp, face, hair)
 	VALUES
-	(1, 'bot1', 0, 18, 21, 8, 8, 10, 200, 200, 1, 1),
-	(2, 'bot2', 1, 8, 15, 18, 16, 8, 200, 200, 1, 1),
-	(3, 'bot3', 2, 14, 15, 8, 10, 18, 200, 200, 1, 1),
-	(4, 'bot4', 3, 14, 15, 8, 10, 18, 200, 200, 1, 1),
-	(5, 'bot5', 4, 8, 15, 20, 14, 8, 200, 200, 1, 1);
+	(1, 'bot1', 100, 628, 99, 0, 18, 21, 8, 8, 10, 200, 200, 1, 1),
+	(2, 'bot2', 100, 628, 99, 1, 8, 15, 18, 16, 8, 200, 200, 1, 1),
+	(3, 'bot3', 100, 628, 99, 2, 14, 15, 8, 10, 18, 200, 200, 1, 1),
+	(4, 'bot4', 100, 628, 99, 3, 14, 15, 8, 10, 18, 200, 200, 1, 1),
+	(5, 'bot5', 100, 628, 99, 4, 8, 15, 20, 14, 8, 200, 200, 1, 1);
 	
 
 DELIMITER $$
@@ -135,8 +135,8 @@ DECLARE accounts_to_create INT DEFAULT 1000;
 
 WHILE i <= accounts_to_create DO
     INSERT INTO account (login, password, secondary) VALUES (CONCAT('bot', i), 'passwd', '00000000');
-	INSERT INTO player (idaccount, name, class, strength, health, inteligence, wisdom, dexterity, curhp, curmp, face, hair)
-		VALUES (i, CONCAT('bot', i), 0, 18, 21, 8, 8, 10, 200, 200, 1, 1);
+	INSERT INTO player (idaccount, name, level, pupoint, supoint, class, strength, health, inteligence, wisdom, dexterity, curhp, curmp, face, hair)
+		VALUES (i, CONCAT('bot', i), 100, 628, 99, 0, 18, 21, 8, 8, 10, 200, 200, 1, 1);
 	INSERT INTO item (idplayer, `index`, info, curend) VALUES (i, 799, 1, 36);
     SET i = i + 1;
 END WHILE;
