@@ -19,7 +19,8 @@ class Player : public Character, public User, public Inventory
     int m_teleport_x=0;
     int m_teleport_y=0;
 
-    bango::utils::time::point m_last_attack;
+    bango::utils::time::point 
+        m_last_attack;
 
 public:
     Player(const bango::network::taco_client_t& client)
