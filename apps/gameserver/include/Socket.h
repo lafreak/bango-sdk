@@ -6,16 +6,16 @@
 class Player;
 class Socket
 {
-    bango::network::client g_dbclient;
-    bango::network::server<Player> g_gameserver;
+    bango::network::client          g_dbclient;
+    bango::network::server<Player>  g_gameserver;
 
-    Socket() {}
+    Socket () {}
     ~Socket() {}
 
     static Socket& Get();
 
 public:
-    static bango::network::client& DBClient();
-    static bango::network::server<Player>& GameServer();
+    static bango::network::client&          DBClient();
+    static bango::network::server<Player>&  GameServer();
 
 };

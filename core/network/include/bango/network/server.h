@@ -37,7 +37,11 @@ namespace bango { namespace network {
 
         void execute(const std::shared_ptr<T>& session, packet&& p) const;
 
+        std::uint16_t m_max_online=1024;
+        std::function<void(const writable& client)> m_on_max_online_exceeded;
+
     public:
+        void set_max_online(std::uint16_t max_online) { m_max_online = max_online; }
 
         void start(const std::string& host, std::int32_t port);
         void when(unsigned char type, const std::function<void(const std::shared_ptr<T>&, packet&)>&& callback);
@@ -49,6 +53,7 @@ namespace bango { namespace network {
         void restrict   (const std::map<unsigned char, int>&& roles);
 
         std::uint16_t get_online() const;
+        void on_max_online_exceeded(const std::function<void(const writable& client)>&& callback) { m_on_max_online_exceeded = callback; }
     };
 
     template<class T>
@@ -56,6 +61,13 @@ namespace bango { namespace network {
     {
         m_server.start(host, port, [&](const taco_client_t& client) -> bool {
             //TODO: Dont even insert if maximum users exceeded. 1024 limited by taco.
+
+            if (get_online() >= m_max_online)
+            {
+                if (m_on_max_online_exceeded)
+                    m_on_max_online_exceeded(writable(client));
+                return false;
+            }
 
             client->async_read({MAX_PACKET_LENGTH, [=](const taco_read_result_t& res) {
                 on_new_message(client, res);

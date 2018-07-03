@@ -25,6 +25,8 @@ namespace bango { namespace network {
         void write(unsigned char type) const;
         void write(const packet& p) const;
         void write(unsigned char type, const char* format, ...) const;
+
+        const std::shared_ptr<tacopie::tcp_client>& get_taco_client() const { return m_client; }
     };
 
 }}

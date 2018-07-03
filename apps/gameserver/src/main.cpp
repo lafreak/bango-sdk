@@ -23,6 +23,12 @@ int main()
 
     using namespace std::placeholders;
 
+    Socket::GameServer().set_max_online(2);
+    Socket::GameServer().on_max_online_exceeded([](const writable& client) {
+        client.write(S2C_CLOSE, "b", CC_OVERPOPULATION);
+        //client.get_taco_client()->disconnect(); //BUG: Dead connection may stay alive using packet hack.
+    });
+
     Socket::GameServer().on_connected(              std::bind(&Player::OnConnected,     _1));
     Socket::GameServer().on_disconnected(           std::bind(&Player::OnDisconnected,  _1));
 
