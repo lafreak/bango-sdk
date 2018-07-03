@@ -59,9 +59,8 @@ namespace bango { namespace network {
     template<class T>
     void server<T>::start(const std::string& host, std::int32_t port)
     {
-        m_server.start(host, port, [&](const taco_client_t& client) -> bool {
-            //TODO: Dont even insert if maximum users exceeded. 1024 limited by taco.
-
+        m_server.start(host, port, [&](const taco_client_t& client) -> bool 
+        {
             if (get_online() >= m_max_online)
             {
                 if (m_on_max_online_exceeded)

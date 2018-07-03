@@ -23,10 +23,10 @@ int main()
 
     using namespace std::placeholders;
 
-    Socket::GameServer().set_max_online(2);
+    Socket::GameServer().set_max_online(1024);
     Socket::GameServer().on_max_online_exceeded([](const writable& client) {
-        client.write(S2C_CLOSE, "b", CC_OVERPOPULATION);
-        //client.get_taco_client()->disconnect(); //BUG: Dead connection may stay alive using packet hack.
+        //BUG: Dead connection may stay alive using packet hack.
+        client.write(S2C_CLOSE, "b", CC_OVERPOPULATION); 
     });
 
     Socket::GameServer().on_connected(              std::bind(&Player::OnConnected,     _1));
@@ -57,25 +57,24 @@ int main()
     Socket::GameServer().when(C2S_PLAYER_ANIMATION, std::bind(&Player::OnPlayerAnimation,   _1, _2));
     Socket::GameServer().when(C2S_ATTACK,           std::bind(&Player::OnAttack,            _1, _2));
 
-    Socket::DBClient().when(D2S_LOGIN,          std::bind(&DBListener::OnLogin,             _1));
-    Socket::DBClient().when(D2S_AUTHORIZED,     std::bind(&DBListener::OnAuthorized,        _1));
-    Socket::DBClient().when(D2S_SEC_LOGIN,      std::bind(&DBListener::OnSecondaryLogin,    _1));
-    Socket::DBClient().when(D2S_PLAYER_INFO,    std::bind(&DBListener::OnPlayerInfo,        _1));
-    Socket::DBClient().when(D2S_DELPLAYERINFO,  std::bind(&DBListener::OnDeletePlayerInfo,  _1));
-    Socket::DBClient().when(D2S_ANS_NEWPLAYER,  std::bind(&DBListener::OnNewPlayerAnswer,   _1));
-    Socket::DBClient().when(D2S_LOADPLAYER,     std::bind(&DBListener::OnLoadPlayer,        _1));
-    Socket::DBClient().when(D2S_LOADITEMS,      std::bind(&DBListener::OnLoadItems,         _1));
-    Socket::DBClient().when(D2S_UPDATEITEMIID,  std::bind(&DBListener::OnUpdateItemIID,     _1));
+    Socket::DBClient().when(D2S_LOGIN,              std::bind(&DBListener::OnLogin,             _1));
+    Socket::DBClient().when(D2S_AUTHORIZED,         std::bind(&DBListener::OnAuthorized,        _1));
+    Socket::DBClient().when(D2S_SEC_LOGIN,          std::bind(&DBListener::OnSecondaryLogin,    _1));
+    Socket::DBClient().when(D2S_PLAYER_INFO,        std::bind(&DBListener::OnPlayerInfo,        _1));
+    Socket::DBClient().when(D2S_DELPLAYERINFO,      std::bind(&DBListener::OnDeletePlayerInfo,  _1));
+    Socket::DBClient().when(D2S_ANS_NEWPLAYER,      std::bind(&DBListener::OnNewPlayerAnswer,   _1));
+    Socket::DBClient().when(D2S_LOADPLAYER,         std::bind(&DBListener::OnLoadPlayer,        _1));
+    Socket::DBClient().when(D2S_LOADITEMS,          std::bind(&DBListener::OnLoadItems,         _1));
+    Socket::DBClient().when(D2S_UPDATEITEMIID,      std::bind(&DBListener::OnUpdateItemIID,     _1));
 
     CommandDispatcher::Register("/get",         std::bind(&Player::OnGetItem,       _1, _2));
     CommandDispatcher::Register("/move2",       std::bind(&Player::OnMoveTo,        _1, _2));
+
     CommandDispatcher::Register("/online", [&](Player* player, CommandDispatcher::Token& token) {
         std::cout << "Current Online: " << Socket::GameServer().get_online() << std::endl;
     });
 
     CommandDispatcher::Register("/mob", [&](Player* player, CommandDispatcher::Token& token) {
-        //World::Add(new Monster((int)token, player->GetX()+10, player->GetY()+10, player->GetMap()));
-    
         int index = token;
 
         try {
@@ -111,6 +110,10 @@ int main()
         {C2S_TRASHITEM,         User::INGAME},
         {C2S_TELEPORT,          User::INGAME},
         {C2S_REST,              User::INGAME},
+        {C2S_TELEPORT,          User::INGAME},
+        {C2S_UPDATEPROPERTY,    User::INGAME},
+        {C2S_PLAYER_ANIMATION,  User::INGAME},
+        {C2S_ATTACK,            User::INGAME},
     });
 
     //Socket::GameServer().restrict({});
