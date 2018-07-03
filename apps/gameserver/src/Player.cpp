@@ -3,6 +3,8 @@
 #include "Socket.h"
 #include "World.h"
 
+#include <bango/utils/random.h>
+
 using namespace bango::network;
 using namespace bango::utils;
 
@@ -525,7 +527,7 @@ void Player::OnAttack(packet& p)
 
     //auto now = time::now();
     time::point now;
-    std::cout << (now-m_last_attack).count() << std::endl;
+    std::cout << (now-m_last_attack).count() << " " << random::between(167, 173) << std::endl;
 
     m_last_attack = now;
 
