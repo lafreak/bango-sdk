@@ -69,29 +69,29 @@ public:
 
     std::uint8_t        GetAttackType()             const override { return GetClass() == PC_ARCHER ? 1 : 0; }
 
-    std::uint16_t       GetBaseStrength()           const { return m_data.Strength; }
-    std::uint16_t       GetBaseHealth()             const { return m_data.Health; }
-    std::uint16_t       GetBaseInteligence()        const { return m_data.Inteligence; }
-    std::uint16_t       GetBaseWisdom()             const { return m_data.Wisdom; }
-    std::uint16_t       GetBaseDexterity()          const { return m_data.Dexterity; }
+    std::uint16_t       GetBaseStrength()           const { return m_data.Strength;     }
+    std::uint16_t       GetBaseHealth()             const { return m_data.Health;       }
+    std::uint16_t       GetBaseInteligence()        const { return m_data.Inteligence;  }
+    std::uint16_t       GetBaseWisdom()             const { return m_data.Wisdom;       }
+    std::uint16_t       GetBaseDexterity()          const { return m_data.Dexterity;    }
 
-    std::uint16_t       GetStrength()               const override { return GetBaseStrength()       + Inventory::GetAddStrength(); }
-    std::uint16_t       GetHealth()                 const override { return GetBaseHealth()         + Inventory::GetAddHealth(); }
-    std::uint16_t       GetInteligence()            const override { return GetBaseInteligence()    + Inventory::GetAddInteligence(); }
-    std::uint16_t       GetWisdom()                 const override { return GetBaseWisdom()         + Inventory::GetAddWisdom(); }
-    std::uint16_t       GetDexterity()              const override { return GetBaseDexterity()      + Inventory::GetAddDexterity(); }
+    std::uint16_t       GetStrength()               const override { return GetBaseStrength()       + Inventory::GetAddStrength();      }
+    std::uint16_t       GetHealth()                 const override { return GetBaseHealth()         + Inventory::GetAddHealth();        }
+    std::uint16_t       GetInteligence()            const override { return GetBaseInteligence()    + Inventory::GetAddInteligence();   }
+    std::uint16_t       GetWisdom()                 const override { return GetBaseWisdom()         + Inventory::GetAddWisdom();        }
+    std::uint16_t       GetDexterity()              const override { return GetBaseDexterity()      + Inventory::GetAddDexterity();     }
 
     std::uint16_t       GetMinAttack()              const override { return Character::GetMinAttack()   + Inventory::GetAddMinAttack(); }
     std::uint16_t       GetMaxAttack()              const override { return Character::GetMaxAttack()   + Inventory::GetAddMaxAttack(); }
-    std::uint16_t       GetMinMagic()               const override { return Character::GetMinMagic()    + Inventory::GetAddMinMagic(); }
-    std::uint16_t       GetMaxMagic()               const override { return Character::GetMaxMagic()    + Inventory::GetAddMaxMagic(); }
+    std::uint16_t       GetMinMagic()               const override { return Character::GetMinMagic()    + Inventory::GetAddMinMagic();  }
+    std::uint16_t       GetMaxMagic()               const override { return Character::GetMaxMagic()    + Inventory::GetAddMaxMagic();  }
 
-    std::uint16_t       GetHit()                    const override { return Character::GetHit()     + Inventory::GetAddHit(); }
-    std::uint16_t       GetDodge()                  const override { return Character::GetDodge()   + Inventory::GetAddDodge(); }
-    std::uint16_t       GetAbsorb()                 const override { return Inventory::GetAddAbsorb(); }
+    std::uint16_t       GetHit()                    const override { return Character::GetHit()     + Inventory::GetAddHit();       }
+    std::uint16_t       GetDodge()                  const override { return Character::GetDodge()   + Inventory::GetAddDodge();     }
+    std::uint16_t       GetAbsorb()                 const override { return                           Inventory::GetAddAbsorb();    }
 
-    std::uint16_t       GetDefense  (std::uint8_t type=ATT_MEELE)   const override { return Inventory::GetAddDefense(); }
-    std::uint16_t       GetResist   (std::uint8_t type)             const override;
+    std::uint16_t       GetDefense  (std::uint8_t type=ATT_MEELE)   const override { return                               Inventory::GetAddDefense();   }
+    std::uint16_t       GetResist   (std::uint8_t type)             const override { return Character::GetResist(type)  + Inventory::GetAddResist(type);}
 
     std::uint32_t       GetMaxHP()                  const override;
     std::uint32_t       GetMaxMP()                  const override;

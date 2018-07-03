@@ -98,25 +98,25 @@ void Player::OnLoadFinish()
         GetBaseWisdom(),
         GetBaseDexterity(),
         GetCurHP(),
-        GetMaxHP(),//GetCurHP(), //MaxHP
+        GetMaxHP(),
         GetCurMP(),
-        GetMaxMP(),//GetCurMP(), //MaxMP
-        GetHit(),//1, //Hit
-        GetDodge(),//2, //Dodge
-        GetDefense(),//3, //Defense
-        GetAbsorb(),//4, //Absorb
+        GetMaxMP(),
+        GetHit(),
+        GetDodge(),
+        GetDefense(),
+        GetAbsorb(),
         GetExp(),
-        GetMinAttack(),//5, //MinAttack
-        GetMaxAttack(),//6, //MaxAttack
-        GetMinMagic(),//7, //MinMagic
-        GetMaxMagic(),//8, //MaxMagic
+        GetMinAttack(),
+        GetMaxAttack(),
+        GetMinMagic(),
+        GetMaxMagic(),
         GetPUPoint(),
         GetSUPoint(),
-        GetResist(RT_FIRE),//9, //ResistFire
-        GetResist(RT_ICE),//10, //ResistIce
-        GetResist(RT_LITNING),//11, //ResistLitning
-        GetResist(RT_CURSE),//12, //ResistCurse
-        GetResist(RT_PALSY),//13, //ResistPalsy
+        GetResist(RT_FIRE),
+        GetResist(RT_ICE),
+        GetResist(RT_LITNING),
+        GetResist(RT_CURSE),
+        GetResist(RT_PALSY),
         GetRage());
 
     short time = 1200;
@@ -376,22 +376,22 @@ std::uint32_t Player::GetMaxMP() const
                             8)))))) * GetLevel()) + 140 + GetWisdom() + 2 * GetWisdom() * GetWisdom() / g_denoMP[GetClass()] + Inventory::GetAddMP();// + m_wMaxMPAdd;
 }
 
-std::uint16_t Player::GetResist(std::uint8_t type) const
-{
-	switch (type)
-	{
-        case RT_FIRE:
-            return GetInteligence() / 9 + Inventory::GetAddResist(type);
-        case RT_ICE:
-            return GetInteligence() / 9 + Inventory::GetAddResist(type);
-        case RT_LITNING:
-            return GetInteligence() / 9 + Inventory::GetAddResist(type);
-        case RT_PALSY:
-            return GetHealth()      / 9 + Inventory::GetAddResist(type);
-        case RT_CURSE:
-            return GetWisdom()      / 9 + Inventory::GetAddResist(type);
-    }
-}
+// std::uint16_t Player::GetResist(std::uint8_t type) const
+// {
+// 	switch (type)
+// 	{
+//         case RT_FIRE:
+//             return GetInteligence() / 9 + Inventory::GetAddResist(type);
+//         case RT_ICE:
+//             return GetInteligence() / 9 + Inventory::GetAddResist(type);
+//         case RT_LITNING:
+//             return GetInteligence() / 9 + Inventory::GetAddResist(type);
+//         case RT_PALSY:
+//             return GetHealth()      / 9 + Inventory::GetAddResist(type);
+//         case RT_CURSE:
+//             return GetWisdom()      / 9 + Inventory::GetAddResist(type);
+//     }
+// }
 
 void Player::SendInventoryProperty()
 {

@@ -13,10 +13,11 @@ struct InitMonster : public bango::processor::db_object<InitMonster>
         Index=0, Race=0, Level=1, AI=0, Range=0, CloseSight=0, FarSight=0, Exp=0,
         Strength=0, Health=0, Inteligence=0, Wisdom=0, Dexterity=0,
         HP=0, MP=0, AttackSpeed=0, Hit=0, Dodge=0, Size=0, AttackType=0,
-        MinAttack=0, MaxAttack=0, MinMagic=0, MaxMagic=0, CloseDefense=0, FarDefense=0,
+        MinAttack=0, MaxAttack=0, MinMagic=0, MaxMagic=0, 
         Absorb=0, WalkSpeed=0, RunSpeed=0;
 
-    unsigned int Resist[5]={0,};
+    unsigned int Resist [5] ={0,};
+    unsigned int Defense[2] ={0,};
 
     unsigned int index() const { return Index; }
 
@@ -51,8 +52,8 @@ struct InitMonster : public bango::processor::db_object<InitMonster>
             case A_MAGICATTACK: MinMagic    = param.pop();
                                 MaxMagic    = param.pop();
                                 break;
-            case IC_DEFENSE:    CloseDefense= param.pop();
-                                FarDefense  = param.pop();
+            case IC_DEFENSE:    Defense[ATT_MEELE]  = param.pop();
+                                Defense[ATT_RANGE]  = param.pop();
                                 break;
             case A_ABSORB:      Absorb      = param.pop(); break;
             case A_SPEED:       WalkSpeed   = param.pop();
@@ -104,10 +105,14 @@ public:
 
     std::uint16_t   GetHit()        const override { return Character::GetHit()     + m_init->Hit;  }
     std::uint16_t   GetDodge()      const override { return Character::GetDodge()   + m_init->Dodge;}
-    std::uint16_t   GetAbsorb()     const override { return m_init->Absorb; }
+    std::uint16_t   GetAbsorb()     const override { return                           m_init->Absorb; }
 
-    std::uint32_t   GetMaxHP()      const override { return (52 * GetLevel() / 3) + 115 + 2 * GetHealth() * GetHealth() / /*deno*/10 + m_init->HP; }
-    std::uint32_t   GetMaxMP()      const override { return (8 * GetLevel()) + 140 + GetWisdom() + 2 * GetWisdom() * GetWisdom() / /*deno*/10 + m_init->MP; }
+    std::uint16_t   GetDefense  (std::uint8_t type=ATT_MEELE)   const override { return m_init->Defense[type];  }
+    std::uint16_t   GetResist   (std::uint8_t type)             const override { return m_init->Resist [type];  }
+
+                                                        //TODO: Level based?                            
+    std::uint32_t   GetMaxHP()      const override { return (52 * GetLevel() / 3)   + 115               + 2 * GetHealth() * GetHealth() / /*deno*/10 + m_init->HP; }
+    std::uint32_t   GetMaxMP()      const override { return (8  * GetLevel()    )   + 140 + GetWisdom() + 2 * GetWisdom() * GetWisdom() / /*deno*/10 + m_init->MP; }
 
     bango::network::packet BuildAppearPacket(bool hero=false) const override;
     bango::network::packet BuildDisappearPacket() const override;

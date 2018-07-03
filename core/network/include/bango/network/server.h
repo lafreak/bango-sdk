@@ -29,7 +29,7 @@ namespace bango { namespace network {
 
         const std::shared_ptr<T>&   insert  (const taco_client_t& client);
         void                        remove  (const taco_client_t& client);
-        const std::shared_ptr<T>&   find    (const taco_client_t& client);
+        const std::shared_ptr<T>&   find    (const taco_client_t& client);//BUG: Its not thread safe ?
 
         std::map<unsigned char, std::pair<const std::function<void(const std::shared_ptr<T>&, packet&)>,std::pair<int,int>>> m_callbacks;
         std::map<unsigned char, int> m_granted_roles;
@@ -48,13 +48,15 @@ namespace bango { namespace network {
         void grant      (const std::map<unsigned char, int>&& roles);
         void restrict   (const std::map<unsigned char, int>&& roles);
 
-        //const std::map<int*, const std::shared_ptr<T>>& sessions() const { return m_sessions; }
+        std::uint16_t get_online() const;
     };
 
     template<class T>
     void server<T>::start(const std::string& host, std::int32_t port)
     {
         m_server.start(host, port, [&](const taco_client_t& client) -> bool {
+            //TODO: Dont even insert if maximum users exceeded. 1024 limited by taco.
+
             client->async_read({MAX_PACKET_LENGTH, [=](const taco_read_result_t& res) {
                 on_new_message(client, res);
             }});
@@ -132,6 +134,15 @@ namespace bango { namespace network {
 
         // BUG: returned value may be deleted from server later on
         return m_sessions[(int*) client.get()];
+    }
+
+    template<class T>
+    std::uint16_t server<T>::get_online() const
+    {
+        //std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
+        // Is it really data race free?
+
+        return m_sessions.size();
     }
 
     template<class T>

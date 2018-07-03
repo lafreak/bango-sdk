@@ -63,7 +63,10 @@ int main()
 
     CommandDispatcher::Register("/get",         std::bind(&Player::OnGetItem,       _1, _2));
     CommandDispatcher::Register("/move2",       std::bind(&Player::OnMoveTo,        _1, _2));
-    
+    CommandDispatcher::Register("/online", [&](Player* player, CommandDispatcher::Token& token) {
+        std::cout << "Current Online: " << Socket::GameServer().get_online() << std::endl;
+    });
+
     CommandDispatcher::Register("/mob", [&](Player* player, CommandDispatcher::Token& token) {
         //World::Add(new Monster((int)token, player->GetX()+10, player->GetY()+10, player->GetMap()));
     

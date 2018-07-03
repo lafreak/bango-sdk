@@ -65,7 +65,7 @@ public:
     virtual std::uint16_t GetAbsorb()      const { return 0; }
 
     virtual std::uint16_t GetDefense(std::uint8_t type)     const { return 0; }
-    virtual std::uint16_t GetResist (std::uint8_t type)     const { return 0; }
+    virtual std::uint16_t GetResist (std::uint8_t type)     const;
 
     std::uint32_t   GetCurHP()  const { return m_curhp; }
     std::uint32_t   GetCurMP()  const { return m_curmp; }

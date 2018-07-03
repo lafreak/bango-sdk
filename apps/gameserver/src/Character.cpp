@@ -18,3 +18,20 @@ void Character::SetDirection(std::int8_t delta_x, std::int8_t delta_y)
 
     m_dir = delta_y + ((delta_x << 8) & 0xFF00);
 }
+
+std::uint16_t Character::GetResist(std::uint8_t type) const
+{
+	switch (type)
+	{
+        case RT_FIRE:
+            return GetInteligence() / 9;
+        case RT_ICE:
+            return GetInteligence() / 9;
+        case RT_LITNING:
+            return GetInteligence() / 9;
+        case RT_PALSY:
+            return GetHealth()      / 9;
+        case RT_CURSE:
+            return GetWisdom()      / 9;
+    }
+}
