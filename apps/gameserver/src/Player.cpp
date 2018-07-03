@@ -525,8 +525,7 @@ void Player::OnAttack(packet& p)
     auto id = p.pop<Character::id_t>();
     auto z = p.pop<unsigned int>();
 
-    //auto now = time::now();
-    time::point now;
+    auto now = time::now();
     std::cout << (now-m_last_attack).count() << " " << random::between(167, 173) << std::endl;
 
     m_last_attack = now;
