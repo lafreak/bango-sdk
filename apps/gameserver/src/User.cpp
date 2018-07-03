@@ -8,7 +8,8 @@ using namespace bango::network;
 
 void User::OnConnect(packet& p)
 {
-    write(S2C_CODE, "dbdddIbbb", 0, 0, 604800, 0, 0, 0, 0, 0, N_EN);
+    // ProtocolVersion, Code, TimeStamp, TimeStampStart, System, Event, ServerID, Age, Country
+    write(S2C_CODE, "dbdddIbbb", 0, 0, 604800, 0, 0, 0, 0, 18, N_EN);
 }
 
 void User::OnCodeAnswer(packet& p)

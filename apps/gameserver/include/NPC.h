@@ -5,6 +5,8 @@
 #include <bango/processor/db.h>
 #include <inix.h>
 
+#include <memory>
+
 struct InitNPC : public bango::processor::db_object<InitNPC>
 {
     unsigned int
@@ -42,9 +44,11 @@ struct InitNPC : public bango::processor::db_object<InitNPC>
 
 class NPC : public Character
 {
-    const InitNPC* m_init;
+    //const InitNPC* m_init;
+    const std::unique_ptr<InitNPC>& m_init;
 public:
-    NPC(const InitNPC* init) 
+    //NPC(const InitNPC* init) 
+    NPC(const std::unique_ptr<InitNPC>& init)
         : Character(Character::NPC), m_init(init)
     {
         m_x =   init->X;

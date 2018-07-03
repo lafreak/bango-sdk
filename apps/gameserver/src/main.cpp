@@ -19,6 +19,7 @@ int main()
 {
     InitItem    ::Load("Config/InitItem.txt");
     InitNPC     ::Load("Config/InitNPC.txt");
+    InitMonster ::Load("Config/InitMonster.txt");
 
     using namespace std::placeholders;
 
@@ -34,19 +35,21 @@ int main()
     Socket::GameServer().when(C2S_RESTOREPLAYER,    std::bind(&User::OnRestorePlayer,   _1, _2));
     Socket::GameServer().when(C2S_LOADPLAYER,       std::bind(&User::OnLoadPlayer,      _1, _2));
 
-    Socket::GameServer().when(C2S_START,            std::bind(&Player::OnStart,         _1, _2));
-    Socket::GameServer().when(C2S_RESTART,          std::bind(&Player::OnRestart,       _1, _2));
-    Socket::GameServer().when(C2S_GAMEEXIT,         std::bind(&Player::OnExit,          _1, _2));
-    Socket::GameServer().when(C2S_MOVE_ON,          std::bind(&Player::OnMove,          _1, _2, false));
-    Socket::GameServer().when(C2S_MOVE_END,         std::bind(&Player::OnMove,          _1, _2, true ));
-    Socket::GameServer().when(C2S_CHATTING,         std::bind(&Player::OnChatting,      _1, _2));
-    Socket::GameServer().when(C2S_PUTONITEM,        std::bind(&Player::OnPutOnItem,     _1, _2));
-    Socket::GameServer().when(C2S_PUTOFFITEM,       std::bind(&Player::OnPutOffItem,    _1, _2));
-    Socket::GameServer().when(C2S_USEITEM,          std::bind(&Player::OnUseItem,       _1, _2));
-    Socket::GameServer().when(C2S_TRASHITEM,        std::bind(&Player::OnTrashItem,     _1, _2));
-    Socket::GameServer().when(C2S_REST,             std::bind(&Player::OnRest,          _1, _2));
-    Socket::GameServer().when(C2S_TELEPORT,         std::bind(&Player::OnTeleportAnswer,_1, _2));
-    Socket::GameServer().when(C2S_UPDATEPROPERTY,   std::bind(&Player::OnUpdateProperty,_1, _2));
+    Socket::GameServer().when(C2S_START,            std::bind(&Player::OnStart,             _1, _2));
+    Socket::GameServer().when(C2S_RESTART,          std::bind(&Player::OnRestart,           _1, _2));
+    Socket::GameServer().when(C2S_GAMEEXIT,         std::bind(&Player::OnExit,              _1, _2));
+    Socket::GameServer().when(C2S_MOVE_ON,          std::bind(&Player::OnMove,              _1, _2, false));
+    Socket::GameServer().when(C2S_MOVE_END,         std::bind(&Player::OnMove,              _1, _2, true ));
+    Socket::GameServer().when(C2S_CHATTING,         std::bind(&Player::OnChatting,          _1, _2));
+    Socket::GameServer().when(C2S_PUTONITEM,        std::bind(&Player::OnPutOnItem,         _1, _2));
+    Socket::GameServer().when(C2S_PUTOFFITEM,       std::bind(&Player::OnPutOffItem,        _1, _2));
+    Socket::GameServer().when(C2S_USEITEM,          std::bind(&Player::OnUseItem,           _1, _2));
+    Socket::GameServer().when(C2S_TRASHITEM,        std::bind(&Player::OnTrashItem,         _1, _2));
+    Socket::GameServer().when(C2S_REST,             std::bind(&Player::OnRest,              _1, _2));
+    Socket::GameServer().when(C2S_TELEPORT,         std::bind(&Player::OnTeleportAnswer,    _1, _2));
+    Socket::GameServer().when(C2S_UPDATEPROPERTY,   std::bind(&Player::OnUpdateProperty,    _1, _2));
+    Socket::GameServer().when(C2S_PLAYER_ANIMATION, std::bind(&Player::OnPlayerAnimation,   _1, _2));
+    Socket::GameServer().when(C2S_ATTACK,           std::bind(&Player::OnAttack,            _1, _2));
 
     Socket::DBClient().when(D2S_LOGIN,          std::bind(&DBListener::OnLogin,             _1));
     Socket::DBClient().when(D2S_AUTHORIZED,     std::bind(&DBListener::OnAuthorized,        _1));
@@ -62,7 +65,15 @@ int main()
     CommandDispatcher::Register("/move2",       std::bind(&Player::OnMoveTo,        _1, _2));
     
     CommandDispatcher::Register("/mob", [&](Player* player, CommandDispatcher::Token& token) {
-        World::Add(new Monster((int)token, player->GetX()+10, player->GetY()+10, player->GetMap()));
+        //World::Add(new Monster((int)token, player->GetX()+10, player->GetY()+10, player->GetMap()));
+    
+        int index = token;
+
+        try {
+            World::Add(new Monster(InitMonster::DB().at(index), player->GetX()+10, player->GetY()+10, player->GetMap()));
+        } catch (const std::exception&) {
+            std::cout << "Monster Index doesnt exist " << index << std::endl;
+        }
     });
 
     World::OnAppear     (std::bind(&Player::OnCharacterAppear,      _1, _2, _3));

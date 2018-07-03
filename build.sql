@@ -68,6 +68,18 @@ BEGIN
 			(NEW.idplayer, 6), (NEW.idplayer, 7), (NEW.idplayer, 8), (NEW.idplayer, 9), (NEW.idplayer, 10),
 			(NEW.idplayer, 11), (NEW.idplayer, 12), (NEW.idplayer, 13), (NEW.idplayer, 14), (NEW.idplayer, 15),
 			(NEW.idplayer, 16), (NEW.idplayer, 17), (NEW.idplayer, 18), (NEW.idplayer, 19), (NEW.idplayer, 20);
+
+	IF (NEW.class = 0) THEN #Knight
+		INSERT INTO item (idplayer, `index`, curend) VALUES (NEW.idplayer, 1, 4);
+	ELSEIF (NEW.class = 1) THEN #Mage
+		INSERT INTO item (idplayer, `index`, curend) VALUES (NEW.idplayer, 90, 4);
+	ELSEIF (NEW.class = 2) THEN #Archer
+		INSERT INTO item (idplayer, `index`, curend) VALUES (NEW.idplayer, 22, 4);
+	ELSEIF (NEW.class = 3) THEN #Thief
+		INSERT INTO item (idplayer, `index`, curend) VALUES (NEW.idplayer, 1404, 4);
+	ELSEIF (NEW.class = 4) THEN #Shaman
+		INSERT INTO item (idplayer, `index`, curend) VALUES (NEW.idplayer, 7200, 4);
+	END IF;
 END; //
 DELIMITER ;
 

@@ -3,8 +3,14 @@
 #include <bango/space/quadtree.h>
 #include <bango/network/packet.h>
 
+#include <inix.h>
+
 class Character : public bango::space::quad_entity
 {
+public:
+    typedef std::uint32_t id_t;
+
+private:
     std::uint32_t   m_id;
     std::uint8_t    m_type;
     std::uint16_t   m_dir;
@@ -16,11 +22,13 @@ public:
     int             m_z;
     std::uint8_t    m_map;
 
+
 public:
     Character(std::uint8_t type) : m_type(type)
     {
+        //TODO: Make ID pool for players.
         //BUG: Not thread safe.
-        static std::uint32_t g_max_id=0;
+        static id_t g_max_id=0;
         m_id = g_max_id++;
     }
 
@@ -29,15 +37,17 @@ public:
     constexpr static std::uint8_t NPC       =2;
     constexpr static std::uint8_t LOOT      =3;
 
-    std::uint32_t   GetID()     const { return m_id; }
-    std::uint8_t    GetType()   const { return m_type; }
-    std::uint8_t    GetMap()    const { return m_map; }
-    int             GetX()      const { return m_x; }
-    int             GetY()      const { return m_y; }
-    int             GetZ()      const { return m_z; }
-    std::uint16_t   GetDir()    const { return m_dir; }
+    id_t            GetID()     const { return m_id;    }
+    std::uint8_t    GetType()   const { return m_type;  }
+    std::uint8_t    GetMap()    const { return m_map;   }
+    int             GetX()      const { return m_x;     }
+    int             GetY()      const { return m_y;     }
+    int             GetZ()      const { return m_z;     }
+    std::uint16_t   GetDir()    const { return m_dir;   }
 
-    virtual std::uint8_t GetLevel() const { return 1; }
+    virtual std::uint8_t  GetLevel() const { return 1; }
+
+    virtual std::uint8_t  GetAttackType()  const { return ATT_MEELE; }
 
     virtual std::uint16_t GetStrength()    const { return 0; }
     virtual std::uint16_t GetHealth()      const { return 0; }
@@ -54,8 +64,8 @@ public:
     virtual std::uint16_t GetDodge()       const { return GetDexterity() / 3; }
     virtual std::uint16_t GetAbsorb()      const { return 0; }
 
-    virtual std::uint16_t GetDefense()                  const { return 0; }
-    virtual std::uint16_t GetResist(std::uint8_t type)  const { return 0; }
+    virtual std::uint16_t GetDefense(std::uint8_t type)     const { return 0; }
+    virtual std::uint16_t GetResist (std::uint8_t type)     const { return 0; }
 
     std::uint32_t   GetCurHP()  const { return m_curhp; }
     std::uint32_t   GetCurMP()  const { return m_curmp; }

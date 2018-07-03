@@ -219,6 +219,13 @@ namespace inix
 
         // InitItem
         { "ridingtype", A_RIDINGTYPE},
+
+        // InitMonster
+        { "race", A_RACE},
+        { "ai", A_AI},
+        { "sight", A_SIGHT},
+        { "exp", A_EXP},
+        { "resist", A_RESIST},
     };
 
     static std::map<unsigned int, int> g_wearables = {

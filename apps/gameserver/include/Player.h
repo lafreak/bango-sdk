@@ -8,6 +8,8 @@
 
 #include <inix.h>
 
+#include <bango/utils/time.h>
+
 class Player : public Character, public User, public Inventory
 {
     PLAYERINFO m_data;
@@ -17,30 +19,32 @@ class Player : public Character, public User, public Inventory
     int m_teleport_x=0;
     int m_teleport_y=0;
 
-    
+    bango::utils::time::point m_last_attack;
 
 public:
     Player(const bango::network::taco_client_t& client)
         : User(client), Character(Character::PLAYER) {}
 
     // Network I/O Endpoints
-    void OnConnected();
-    void OnDisconnected();
-    void OnStart(bango::network::packet& p);
-    void OnRestart(bango::network::packet& p);
-    void OnExit(bango::network::packet& p);
-    void OnMove(bango::network::packet& p, bool end);
-    void OnLoadPlayer(bango::network::packet& p);
-    void OnLoadItems(bango::network::packet& p);
-    void OnLoadFinish();
-    void OnRest(bango::network::packet& p);
-    void OnChatting(bango::network::packet& p);
-    void OnPutOnItem(bango::network::packet& p);
-    void OnPutOffItem(bango::network::packet& p);
-    void OnUseItem(bango::network::packet& p);
-    void OnTrashItem(bango::network::packet& p);
-    void OnTeleportAnswer(bango::network::packet& p);
-    void OnUpdateProperty(bango::network::packet& p);
+    void OnConnected        ();
+    void OnDisconnected     ();
+    void OnStart            (bango::network::packet& p);
+    void OnRestart          (bango::network::packet& p);
+    void OnExit             (bango::network::packet& p);
+    void OnMove             (bango::network::packet& p, bool end);
+    void OnLoadPlayer       (bango::network::packet& p);
+    void OnLoadItems        (bango::network::packet& p);
+    void OnLoadFinish       ();
+    void OnRest             (bango::network::packet& p);
+    void OnChatting         (bango::network::packet& p);
+    void OnPutOnItem        (bango::network::packet& p);
+    void OnPutOffItem       (bango::network::packet& p);
+    void OnUseItem          (bango::network::packet& p);
+    void OnTrashItem        (bango::network::packet& p);
+    void OnTeleportAnswer   (bango::network::packet& p);
+    void OnUpdateProperty   (bango::network::packet& p);
+    void OnPlayerAnimation  (bango::network::packet& p);
+    void OnAttack           (bango::network::packet& p);
 
     // Command Endpoints
     void OnGetItem(CommandDispatcher::Token& token);
@@ -61,6 +65,8 @@ public:
     std::uint8_t        GetJob()                    const { return m_data.Job; }
 
     std::uint8_t        GetLevel()                  const override { return m_data.Level; }
+
+    std::uint8_t        GetAttackType()             const override { return GetClass() == PC_ARCHER ? 1 : 0; }
 
     std::uint16_t       GetBaseStrength()           const { return m_data.Strength; }
     std::uint16_t       GetBaseHealth()             const { return m_data.Health; }
@@ -83,8 +89,8 @@ public:
     std::uint16_t       GetDodge()                  const override { return Character::GetDodge()   + Inventory::GetAddDodge(); }
     std::uint16_t       GetAbsorb()                 const override { return Inventory::GetAddAbsorb(); }
 
-    std::uint16_t       GetDefense()                const override { return Inventory::GetAddDefense(); }
-    std::uint16_t       GetResist(std::uint8_t type)const override;// { return Inventory::GetAddResist(type); }
+    std::uint16_t       GetDefense  (std::uint8_t type=ATT_MEELE)   const override { return Inventory::GetAddDefense(); }
+    std::uint16_t       GetResist   (std::uint8_t type)             const override;
 
     std::uint32_t       GetMaxHP()                  const override;
     std::uint32_t       GetMaxMP()                  const override;

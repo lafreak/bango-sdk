@@ -13,12 +13,12 @@ packet Monster::BuildAppearPacket(bool hero) const
         GetX(),
         GetY(),
         GetDir(),
-        200,//GetCurHP()
-        200,//GetMaxHP()
+        GetCurHP(),//200,//GetCurHP()
+        GetCurMP(),//200,//GetMaxHP()
         GetGState(),
         GetMState(),
         "\0",
-        GetRace() | (hero ? 0x80 : 0),
+        GetRace(),//TODO: | (hero ? GAME_HERO : 0),
         0, //gid
         "\0",
         GetGStateEx(),

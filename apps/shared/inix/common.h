@@ -133,8 +133,8 @@ static unsigned short FIND_NEED_PU_EX(unsigned short cur, unsigned char add) {
 	return needPU;
 }
 
-static int g_denoHP[] = { 10, 14, 13, 13, 13 };
-static int g_denoMP[] = { 13, 10, 12, 12, 12 };
+static int g_denoHP[] = { 10, 14, 13, 13, 13 }; // mob deno 10
+static int g_denoMP[] = { 13, 10, 12, 12, 12 }; // mob deno 10
 
 // (struct) /////////////////////////////////////////////////////////
 struct DATE_TIME
@@ -1953,4 +1953,18 @@ enum ATTRIBUTE
 
 	// InitItem
 	A_RIDINGTYPE,
+
+	// InitMonster
+	A_RACE,
+	A_AI,
+	A_SIGHT,
+	A_EXP,
+	A_RESIST,
+};
+
+enum ATT
+{
+	ATT_MEELE,
+	ATT_RANGE,
+	// Magic?
 };

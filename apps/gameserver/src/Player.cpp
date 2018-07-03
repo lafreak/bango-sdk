@@ -4,6 +4,7 @@
 #include "World.h"
 
 using namespace bango::network;
+using namespace bango::utils;
 
 void Player::OnConnected()
 {
@@ -314,7 +315,7 @@ packet Player::BuildAppearPacket(bool hero) const
 
     p   << GetID()
         << GetName()
-        << GetClass(hero) 
+        << GetClass(hero) //TODO: Remove hero from param.
         << GetX() 
         << GetY() 
         << GetZ() 
@@ -351,7 +352,6 @@ packet Player::BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::in
 
 std::uint32_t Player::GetMaxHP() const
 {
-    //TODO: Add buffs.
 	return (
         (GetLevel() >= 96 ? 195 :
 		(GetLevel() >= 91 ? 141.8147 :
@@ -385,9 +385,9 @@ std::uint16_t Player::GetResist(std::uint8_t type) const
         case RT_LITNING:
             return GetInteligence() / 9 + Inventory::GetAddResist(type);
         case RT_PALSY:
-            return GetHealth() / 9 + Inventory::GetAddResist(type);
+            return GetHealth()      / 9 + Inventory::GetAddResist(type);
         case RT_CURSE:
-            return GetWisdom() / 9 + Inventory::GetAddResist(type);
+            return GetWisdom()      / 9 + Inventory::GetAddResist(type);
     }
 }
 
@@ -431,6 +431,8 @@ void Player::SendProperty(std::uint8_t kind)
             write(S2C_UPDATEPROPERTY, "bw",     P_ABSORB, GetAbsorb()); break;
         case P_DEFENSE:
             write(S2C_UPDATEPROPERTY, "bww",    P_DEFENSE, GetDefense(), GetDefense()); break;
+        case P_DODGE:
+            write(S2C_UPDATEPROPERTY, "bww",    P_DODGE, GetDodge(), GetDodge()); break;
         case P_PUPOINT:
             write(S2C_UPDATEPROPERTY, "bw",     P_PUPOINT, GetPUPoint()); break;
     }
@@ -504,6 +506,36 @@ void Player::OnUpdateProperty(packet& p)
         GetBaseWisdom(), 
         GetBaseDexterity(), 
         GetPUPoint());
+}
+
+void Player::OnPlayerAnimation(packet& p)
+{
+    auto id = p.pop<Character::id_t>();
+    auto animation = p.pop<unsigned char>();
+
+    if (animation >= 0 && animation < 20)
+        World::Map(GetMap()).WriteInSight(this, packet(S2C_PLAYER_ANIMATION, "db", GetID(), animation));
+}
+
+void Player::OnAttack(packet& p)
+{
+    auto kind = p.pop<char>();
+    auto id = p.pop<Character::id_t>();
+    auto z = p.pop<unsigned int>();
+
+    //auto now = time::now();
+    time::point now;
+    std::cout << (now-m_last_attack).count() << std::endl;
+
+    m_last_attack = now;
+
+    if (kind == CK_MONSTER)
+    {
+        World::ForMonster(id, [&](Monster* monster) {
+            //TODO: Speed check.
+            std::cout << monster->GetIndex() << std::endl;
+        });
+    }
 }
 
 void Player::Tick()

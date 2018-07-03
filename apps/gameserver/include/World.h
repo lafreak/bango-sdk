@@ -153,7 +153,8 @@ public:
     static void SpawnNpcs()
     {
         for (const auto& init : InitNPC::DB())
-            Add(new NPC(init.second.get()));
+            //Add(new NPC(init.second.get()));
+            Add(new NPC(init.second));
     }
 
     static void Cleanup()
@@ -207,7 +208,7 @@ public:
         for (auto& p : Get().m_entities[Character::PLAYER])
             callback((Player*) p.second);
     }
-    static void ForPlayer(std::uint32_t id, const std::function<void(Player*)>& callback)
+    static void ForPlayer(Character::id_t id, const std::function<void(Player*)>& callback)
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
 
@@ -224,7 +225,7 @@ public:
         for (auto& p : Get().m_entities[Character::MONSTER])
             callback((Monster*) p.second);
     }
-    static void ForMonster(std::uint32_t id, const std::function<void(Monster*)>& callback)
+    static void ForMonster(Character::id_t id, const std::function<void(Monster*)>& callback)
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
 
@@ -241,7 +242,7 @@ public:
         for (auto& p : Get().m_entities[Character::NPC])
             callback((NPC*) p.second);
     }
-    static void ForNpc(std::uint32_t id, const std::function<void(NPC*)>& callback)
+    static void ForNpc(Character::id_t id, const std::function<void(NPC*)>& callback)
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
 
@@ -258,7 +259,7 @@ public:
     //     for (auto& p : Get().m_entities[Character::LOOT])
     //         callback((Loot*) p.second);
     // }
-    // static void ForLoot(std::uint32_t id, const std::function<void(Loot*)>& callback)
+    // static void ForLoot(Character::id_t id, const std::function<void(Loot*)>& callback)
     // {
     //     std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
 

@@ -9,6 +9,7 @@ include_directories(../shared)
 include_directories(bangonetwork)
 include_directories(bangospace)
 include_directories(bangoprocessor)
+include_directories(bangoutils)
 
 link_directories(../../thirdparty)
 
@@ -31,6 +32,7 @@ target_link_libraries(gameserver
   bangonetwork 
   bangospace 
   bangoprocessor 
+  bangoutils 
   tacopie 
   pthread
   )
