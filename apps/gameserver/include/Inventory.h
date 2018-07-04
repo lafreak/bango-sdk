@@ -73,9 +73,8 @@ public:
 
 class Inventory
 {
-protected:
-    //TODO: Do not let player inherit from inventory, just make an instance;
-    Inventory() { Reset(); }
+public:
+    Inventory() { /*Reset();*/ }
 
 private:
     std::map<unsigned int, const Item::Ptr> m_items;
@@ -97,28 +96,28 @@ private:
     std::uint16_t m_resists[5];
     std::uint16_t m_aspeed=0, m_minattack=0, m_maxattack=0, m_minmagic=0, m_maxmagic=0;
 
-protected:
-    std::uint16_t GetAddHealth()       const { return m_stats[P_HTH]; }
-    std::uint16_t GetAddStrength()     const { return m_stats[P_STR]; }
-    std::uint16_t GetAddInteligence()  const { return m_stats[P_INT]; }
-    std::uint16_t GetAddWisdom()       const { return m_stats[P_WIS]; }
-    std::uint16_t GetAddDexterity()    const { return m_stats[P_DEX]; }
+public:
+    std::uint16_t GetHealth()       const { return m_stats[P_HTH]; }
+    std::uint16_t GetStrength()     const { return m_stats[P_STR]; }
+    std::uint16_t GetInteligence()  const { return m_stats[P_INT]; }
+    std::uint16_t GetWisdom()       const { return m_stats[P_WIS]; }
+    std::uint16_t GetDexterity()    const { return m_stats[P_DEX]; }
 
-    std::uint16_t GetAddHP()       const { return m_hp; }
-    std::uint16_t GetAddMP()       const { return m_mp; }
-    std::uint16_t GetAddDefense()  const { return m_def; }
-    std::uint16_t GetAddHit()      const { return m_hit; }
-    std::uint16_t GetAddDodge()    const { return m_dodge; }
-    std::uint16_t GetAddAbsorb()   const { return m_absorb; }
+    std::uint16_t GetHP()       const { return m_hp; }
+    std::uint16_t GetMP()       const { return m_mp; }
+    std::uint16_t GetDefense()  const { return m_def; }
+    std::uint16_t GetHit()      const { return m_hit; }
+    std::uint16_t GetDodge()    const { return m_dodge; }
+    std::uint16_t GetAbsorb()   const { return m_absorb; }
 
-    std::uint16_t GetAddResist(std::uint8_t type) const { return m_resists[type]; }
+    std::uint16_t GetResist(std::uint8_t type) const { return m_resists[type]; }
 
-    std::uint16_t GetAddMinAttack() const { return m_minattack; }
-    std::uint16_t GetAddMaxAttack() const { return m_maxattack; }
-    std::uint16_t GetAddMinMagic()  const { return m_minmagic; }
-    std::uint16_t GetAddMaxMagic()  const { return m_maxmagic; }
+    std::uint16_t GetMinAttack() const { return m_minattack; }
+    std::uint16_t GetMaxAttack() const { return m_maxattack; }
+    std::uint16_t GetMinMagic()  const { return m_minmagic; }
+    std::uint16_t GetMaxMagic()  const { return m_maxmagic; }
 
-    std::uint16_t GetAddAttackSpeed()   const { return m_aspeed; }
+    std::uint16_t GetAttackSpeed()   const { return m_aspeed; }
 
 public:
 
@@ -127,7 +126,7 @@ public:
     const Item::Ptr Insert(const ITEMINFO& info);  
 
     //! Resets inventory state and makes it empty.
-    void Reset();
+    //void Reset();
 
     //! Search interface.
     const Item::Ptr FindByIndex(unsigned short index) const;

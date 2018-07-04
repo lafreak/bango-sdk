@@ -122,7 +122,8 @@ void DBListener::OnUpdateItemIID(packet& p)
     Socket::GameServer().for_each([&](const std::shared_ptr<Player>& user) {
         if (user->GetUID() == uid)
         {
-            user->UpdateItemIID(local, iid);
+            user->GetInventory().UpdateItemIID(local, iid);
+            //user->UpdateItemIID(local, iid);
         }
     });
 }

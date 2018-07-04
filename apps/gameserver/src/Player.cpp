@@ -43,7 +43,8 @@ void Player::OnRestart(packet& p)
         write(S2C_ANS_RESTART, "b", CanLogout() ? 1 : 0); 
     else
     {
-        Inventory::Reset();
+        //m_inventory.Reset();
+        m_inventory = Inventory();
         //World::Map(GetMap()).Remove(this);
         World::Remove(this);
         deny(User::INGAME);
@@ -79,7 +80,7 @@ void Player::OnLoadItems(packet& p)
     for (unsigned short i = 0; i < count; i++)
     {
         auto info = p.pop<ITEMINFO>();
-        Inventory::Insert(info);
+        m_inventory.Insert(info);
     }
 
     OnLoadFinish();
@@ -123,7 +124,8 @@ void Player::OnLoadFinish()
     write(S2C_ANS_LOAD, "wdd", time, GetX(), GetY());
     //TODO: Change positions?
 
-    write((Inventory)*this);
+    //write((Inventory)*this);
+    write(m_inventory);
 
     // Send Inventory property
     SendInventoryProperty();
@@ -152,7 +154,7 @@ void Player::OnChatting(packet& p)
 void Player::OnPutOnItem(packet& p)
 {
     auto local_id = p.pop<unsigned int>();
-    auto item = FindByLocalID(local_id);
+    auto item = m_inventory.FindByLocalID(local_id);
     if (!item)
         return;
 
@@ -162,7 +164,7 @@ void Player::OnPutOnItem(packet& p)
     if (item->GetInit().LimitLevel > GetLevel())
         return;
 
-    if (!Inventory::PutOn(local_id))
+    if (!m_inventory.PutOn(local_id))
         return;
 
     World::Map(GetMap()).WriteInSight(this, 
@@ -180,7 +182,7 @@ void Player::OnPutOffItem(packet& p)
 {
     auto local_id = p.pop<unsigned int>();
 
-    auto item = Inventory::PutOff(local_id);
+    auto item = m_inventory.PutOff(local_id);
     if (!item)
         return;
 
@@ -199,7 +201,7 @@ void Player::OnUseItem(packet& p)
 {
     auto local_id = p.pop<unsigned int>();
 
-    auto item = Inventory::FindByLocalID(local_id);
+    auto item = m_inventory.FindByLocalID(local_id);
     if (!item) return;
 
     if (item->GetInit().Class == IC_RIDE)
@@ -240,7 +242,7 @@ void Player::OnCharacterMove(Character * subject, std::int8_t delta_x, std::int8
 
 void Player::InsertItem(unsigned short index, unsigned int num)
 {
-    auto item = Inventory::FindByIndex(index);
+    auto item = m_inventory.FindByIndex(index);
     if (item && item->GetInit().Plural)
     {
         item->UpdateNum(item->GetInfo().Num+num);
@@ -256,7 +258,7 @@ void Player::InsertItem(unsigned short index, unsigned int num)
             info.CurEnd = init->Endurance;
             info.Num = init->Plural ? num : 1;
         } catch (const std::exception&) { return; }
-        auto item = Inventory::Insert(info);
+        auto item = m_inventory.Insert(info);
         write(((packet)*item).change_type(S2C_INSERTITEM));
         //db insert
         packet out(S2D_INSERTITEM);
@@ -267,9 +269,9 @@ void Player::InsertItem(unsigned short index, unsigned int num)
 
 bool Player::TrashItem(unsigned int local)
 {
-    auto iid = Inventory::GetIID(local);
+    auto iid = m_inventory.GetIID(local);
 
-    if (!Inventory::Trash(local))
+    if (!m_inventory.Trash(local))
         return false;
 
     write(S2C_UPDATEITEMNUM, "ddb", local, 0, TL_DELETE);
@@ -323,7 +325,8 @@ packet Player::BuildAppearPacket(bool hero) const
         << GetZ() 
         << GetDir() 
         << GetGState()
-        << GetEquipment()
+        //<< GetEquipment()
+        << m_inventory.GetEquipment()
         << GetFace() 
         << GetHair() 
         << GetMState() 
@@ -361,7 +364,7 @@ std::uint32_t Player::GetMaxHP() const
 		(GetLevel() >= 81 ? 91.758 :
 		(GetLevel() >= 76 ? 78 :
 		(GetLevel() >= 72 ? 67.8162 :
-                            52)))))) * GetLevel() / 3) + 115 + 2 * GetHealth() * GetHealth() / g_denoHP[GetClass()] + Inventory::GetAddHP(); //+ m_dwMaxHPAdd;
+                            52)))))) * GetLevel() / 3) + 115 + 2 * GetHealth() * GetHealth() / g_denoHP[GetClass()] + m_inventory.GetHP(); //+ m_dwMaxHPAdd;
 }
 
 std::uint32_t Player::GetMaxMP() const
@@ -373,7 +376,7 @@ std::uint32_t Player::GetMaxMP() const
 		(GetLevel() >= 81 ? 14 :
 		(GetLevel() >= 76 ? 12 :
 		(GetLevel() >= 72 ? 10 :
-                            8)))))) * GetLevel()) + 140 + GetWisdom() + 2 * GetWisdom() * GetWisdom() / g_denoMP[GetClass()] + Inventory::GetAddMP();// + m_wMaxMPAdd;
+                            8)))))) * GetLevel()) + 140 + GetWisdom() + 2 * GetWisdom() * GetWisdom() / g_denoMP[GetClass()] + m_inventory.GetMP();// + m_wMaxMPAdd;
 }
 
 // std::uint16_t Player::GetResist(std::uint8_t type) const
@@ -381,15 +384,15 @@ std::uint32_t Player::GetMaxMP() const
 // 	switch (type)
 // 	{
 //         case RT_FIRE:
-//             return GetInteligence() / 9 + Inventory::GetAddResist(type);
+//             return GetInteligence() / 9 + m_inventory.GetResist(type);
 //         case RT_ICE:
-//             return GetInteligence() / 9 + Inventory::GetAddResist(type);
+//             return GetInteligence() / 9 + m_inventory.GetResist(type);
 //         case RT_LITNING:
-//             return GetInteligence() / 9 + Inventory::GetAddResist(type);
+//             return GetInteligence() / 9 + m_inventory.GetResist(type);
 //         case RT_PALSY:
-//             return GetHealth()      / 9 + Inventory::GetAddResist(type);
+//             return GetHealth()      / 9 + m_inventory.GetResist(type);
 //         case RT_CURSE:
-//             return GetWisdom()      / 9 + Inventory::GetAddResist(type);
+//             return GetWisdom()      / 9 + m_inventory.GetResist(type);
 //     }
 // }
 

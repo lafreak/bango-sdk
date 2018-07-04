@@ -163,6 +163,8 @@ const Item::Ptr Inventory::Insert(const ITEMINFO& info)
     return nullptr;
 }
 
+/*
+//! No longer supported
 void Inventory::Reset()
 {
     m_items.clear();
@@ -189,6 +191,7 @@ void Inventory::Reset()
     for (int i = 0; i < WS_LAST; i++)
         m_wear_items[i] = nullptr;
 }
+*/
 
 const Item::Ptr Inventory::FindByIndex(unsigned short index) const
 {
