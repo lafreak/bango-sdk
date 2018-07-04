@@ -36,7 +36,7 @@ struct InitItem : public bango::processor::db_object<InitItem>
         unsigned int Stats[5] ={0,};
         unsigned int HP=0, MP=0, Defense=0, Hit=0, Dodge=0, Absorb=0;
         unsigned int Resists[5] ={0,};
-        unsigned int MinAttack=0, MaxAttack=0, MinMagic=0, MaxMagic=0;
+        unsigned int AttackSpeed=0, MinAttack=0, MaxAttack=0, MinMagic=0, MaxMagic=0;
     } Specialty;
 
     unsigned int index() const { return Index; }
@@ -74,6 +74,7 @@ public:
 class Inventory
 {
 protected:
+    //TODO: Do not let player inherit from inventory, just make an instance;
     Inventory() { Reset(); }
 
 private:
@@ -94,7 +95,7 @@ private:
     std::uint16_t m_stats[5];
     std::uint16_t m_hp=0, m_mp=0, m_def=0, m_hit=0, m_dodge=0, m_absorb=0;
     std::uint16_t m_resists[5];
-    std::uint16_t m_minattack=0, m_maxattack=0, m_minmagic=0, m_maxmagic=0;
+    std::uint16_t m_aspeed=0, m_minattack=0, m_maxattack=0, m_minmagic=0, m_maxmagic=0;
 
 protected:
     std::uint16_t GetAddHealth()       const { return m_stats[P_HTH]; }
@@ -116,6 +117,8 @@ protected:
     std::uint16_t GetAddMaxAttack() const { return m_maxattack; }
     std::uint16_t GetAddMinMagic()  const { return m_minmagic; }
     std::uint16_t GetAddMaxMagic()  const { return m_maxmagic; }
+
+    std::uint16_t GetAddAttackSpeed()   const { return m_aspeed; }
 
 public:
 

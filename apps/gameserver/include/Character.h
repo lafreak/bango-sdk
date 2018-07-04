@@ -47,25 +47,26 @@ public:
 
     virtual std::uint8_t  GetLevel() const { return 1; }
 
-    virtual std::uint8_t  GetAttackType()  const { return ATT_MEELE; }
+    virtual std::uint8_t    GetAttackType()     const { return ATT_MEELE;  }
+    virtual std::uint16_t   GetAttackSpeed()    const { return 0;          }
 
-    virtual std::uint16_t GetStrength()    const { return 0; }
-    virtual std::uint16_t GetHealth()      const { return 0; }
-    virtual std::uint16_t GetInteligence() const { return 0; }
-    virtual std::uint16_t GetWisdom()      const { return 0; }
-    virtual std::uint16_t GetDexterity()   const { return 0; }
+    virtual std::uint16_t   GetStrength()       const { return 0; }
+    virtual std::uint16_t   GetHealth()         const { return 0; }
+    virtual std::uint16_t   GetInteligence()    const { return 0; }
+    virtual std::uint16_t   GetWisdom()         const { return 0; }
+    virtual std::uint16_t   GetDexterity()      const { return 0; }
 
-    virtual std::uint16_t GetMinAttack()    const { return 1 + ((11 * GetStrength() - 80) / 30) + ((GetDexterity() - 5) / 11) + (7 * GetLevel() / 10); }
-    virtual std::uint16_t GetMaxAttack()    const { return ((8 * GetStrength() - 25) / 15) + (18 * GetDexterity() / 77) + GetLevel(); }
-    virtual std::uint16_t GetMinMagic()     const { return (7 * GetInteligence() - 20) / 12 + GetWisdom() / 7; }
-    virtual std::uint16_t GetMaxMagic()     const { return 7 * GetInteligence() / 12 + 14 * GetWisdom() / 45; }
+    virtual std::uint16_t   GetMinAttack()  const { return 1 + ((11 * GetStrength() - 80) / 30) + ((GetDexterity() - 5) / 11) + (7 * GetLevel() / 10); }
+    virtual std::uint16_t   GetMaxAttack()  const { return ((8 * GetStrength() - 25) / 15) + (18 * GetDexterity() / 77) + GetLevel(); }
+    virtual std::uint16_t   GetMinMagic()   const { return (7 * GetInteligence() - 20) / 12 + GetWisdom() / 7; }
+    virtual std::uint16_t   GetMaxMagic()   const { return 7 * GetInteligence() / 12 + 14 * GetWisdom() / 45; }
 
-    virtual std::uint16_t GetHit()         const { return GetDexterity() / 8 + 15 * GetStrength() / 54; }
-    virtual std::uint16_t GetDodge()       const { return GetDexterity() / 3; }
-    virtual std::uint16_t GetAbsorb()      const { return 0; }
+    virtual std::uint16_t   GetHit()        const { return GetDexterity() / 8 + 15 * GetStrength() / 54; }
+    virtual std::uint16_t   GetDodge()      const { return GetDexterity() / 3; }
+    virtual std::uint16_t   GetAbsorb()     const { return 0; }
 
-    virtual std::uint16_t GetDefense(std::uint8_t type)     const { return 0; }
-    virtual std::uint16_t GetResist (std::uint8_t type)     const;
+    virtual std::uint16_t   GetDefense(std::uint8_t type)   const { return 0; }
+    virtual std::uint16_t   GetResist (std::uint8_t type)   const;
 
     std::uint32_t   GetCurHP()  const { return m_curhp; }
     std::uint32_t   GetCurMP()  const { return m_curmp; }

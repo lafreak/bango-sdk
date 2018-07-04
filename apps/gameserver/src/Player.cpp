@@ -526,15 +526,14 @@ void Player::OnAttack(packet& p)
     auto z = p.pop<unsigned int>();
 
     auto now = time::now();
-    std::cout << (now-m_last_attack).count() << " " << random::between(167, 173) << std::endl;
-
+    // TODO: Reduce damage
     m_last_attack = now;
 
-    if (kind == CK_MONSTER)
+    if (kind == CK_MONSTER) // TODO: Add World::For kind, id, callback
     {
-        World::ForMonster(id, [&](Monster* monster) {
-            //TODO: Speed check.
-            std::cout << monster->GetIndex() << std::endl;
+        World::ForMonster(id, [&](Monster* monster) 
+        {
+            std::cout << GetAttackSpeed() << std::endl;
         });
     }
 }

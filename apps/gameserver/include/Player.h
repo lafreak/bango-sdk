@@ -68,6 +68,7 @@ public:
     std::uint8_t        GetLevel()                  const override { return m_data.Level; }
 
     std::uint8_t        GetAttackType()             const override { return GetClass() == PC_ARCHER ? 1 : 0; }
+    std::uint16_t       GetAttackSpeed()            const override { return Inventory::GetAddAttackSpeed(); }
 
     std::uint16_t       GetBaseStrength()           const { return m_data.Strength;     }
     std::uint16_t       GetBaseHealth()             const { return m_data.Health;       }

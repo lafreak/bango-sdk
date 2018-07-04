@@ -90,7 +90,8 @@ public:
 
     std::uint8_t    GetLevel()      const override { return m_init->Level; }
 
-    std::uint8_t    GetAttackType() const override { return m_init->AttackType; }
+    std::uint8_t    GetAttackType() const override { return m_init->AttackType;  }
+    std::uint16_t   GetAttackSpeed()const override { return m_init->AttackSpeed; }
 
     std::uint16_t   GetStrength()   const override { return m_init->Strength;       }
     std::uint16_t   GetHealth()     const override { return m_init->Health;         }

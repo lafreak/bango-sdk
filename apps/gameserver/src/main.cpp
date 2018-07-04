@@ -67,8 +67,8 @@ int main()
     Socket::DBClient().when(D2S_LOADITEMS,          std::bind(&DBListener::OnLoadItems,         _1));
     Socket::DBClient().when(D2S_UPDATEITEMIID,      std::bind(&DBListener::OnUpdateItemIID,     _1));
 
-    CommandDispatcher::Register("/get",         std::bind(&Player::OnGetItem,       _1, _2));
-    CommandDispatcher::Register("/move2",       std::bind(&Player::OnMoveTo,        _1, _2));
+    CommandDispatcher::Register("/get",             std::bind(&Player::OnGetItem,           _1, _2));
+    CommandDispatcher::Register("/move2",           std::bind(&Player::OnMoveTo,            _1, _2));
 
     CommandDispatcher::Register("/online", [&](Player* player, CommandDispatcher::Token& token) {
         std::cout << "Current Online: " << Socket::GameServer().get_online() << std::endl;

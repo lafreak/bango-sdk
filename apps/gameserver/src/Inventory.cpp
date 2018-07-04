@@ -42,6 +42,7 @@ void InitItem::set(lisp::var param)
                     case A_HIT:     Specialty.Hit =       p.pop(); break;
                     case A_DODGE:   Specialty.Dodge =     p.pop(); break;
                     case A_ABSORB:  Specialty.Absorb =    p.pop(); break;
+                    case A_ASPEED:  Specialty.AttackSpeed=p.pop(); break;
 
                     case A_ATTACK:      Specialty.MinAttack = p.pop();
                                         Specialty.MaxAttack = p.pop();
@@ -61,8 +62,6 @@ void InitItem::set(lisp::var param)
         }
         break;
     }
-        unsigned int HP=0, MP=0, Defense=0, Hit=0, Dodge=0, Absorb=0;
-        unsigned int Resists[5] ={0,};
 
     WearId = FindWearId(Kind);
 }
@@ -168,6 +167,9 @@ void Inventory::Reset()
 {
     m_items.clear();
     m_ride = nullptr;
+
+    m_hp=0, m_mp=0, m_def=0, m_hit=0, m_dodge=0, m_absorb=0;
+    m_aspeed=0, m_minattack=0, m_maxattack=0, m_minmagic=0, m_maxmagic=0;
 
     m_stats[P_HTH]=0;
     m_stats[P_STR]=0;
@@ -340,6 +342,9 @@ void Inventory::ApplySpecialty(const Item::Ptr& item)
     m_dodge += item->GetInit().Specialty.Dodge;
     m_absorb+= item->GetInit().Specialty.Absorb;
 
+    if (item->GetInit().Class == IC_WEAPON)
+        m_aspeed = item->GetInit().Specialty.AttackSpeed;
+
     m_minattack+= item->GetInit().Specialty.MinAttack;
     m_maxattack+= item->GetInit().Specialty.MaxAttack;
     m_minmagic += item->GetInit().Specialty.MinMagic;
@@ -366,6 +371,9 @@ void Inventory::FreeSpecialty(const Item::Ptr& item)
     m_hit   -= item->GetInit().Specialty.Hit;
     m_dodge -= item->GetInit().Specialty.Dodge;
     m_absorb-= item->GetInit().Specialty.Absorb;
+
+    if (item->GetInit().Class == IC_WEAPON)
+        m_aspeed = 0;
 
     m_minattack-= item->GetInit().Specialty.MinAttack;
     m_maxattack-= item->GetInit().Specialty.MaxAttack;
