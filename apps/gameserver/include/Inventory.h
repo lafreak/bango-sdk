@@ -11,25 +11,25 @@
 struct InitItem : public bango::processor::db_object<InitItem>
 {
     unsigned short
-        Index;
+        Index=0;
 
     unsigned int 
-        Class,
-        Level;
+        Class=0,
+        Level=0;
 
     int 
-        WearId,
-        Kind;
+        WearId=0,
+        Kind=0;
 
     unsigned char
-        Endurance,
-        LimitLevel,
+        Endurance=0,
+        LimitLevel=1,
         LimitClass=PC_ALL,
-        RidingType;
+        RidingType=0;
 
     bool
-        Plural,
-        Wearable;
+        Plural=false,
+        Wearable=false;
 
     struct
     {
@@ -74,7 +74,7 @@ public:
 class Inventory
 {
 public:
-    Inventory() { /*Reset();*/ }
+    Inventory() { Reset(); }
 
 private:
     std::map<unsigned int, const Item::Ptr> m_items;
@@ -83,7 +83,7 @@ private:
 
     Item::Ptr m_wear_items[WS_LAST];
 
-    Item::Ptr m_ride;
+    Item::Ptr m_ride=nullptr;
 
     void AddVisibleIndex    (unsigned short index);
     void RemoveVisibleIndex (unsigned short index);
@@ -117,7 +117,9 @@ public:
     std::uint16_t GetMinMagic()  const { return m_minmagic; }
     std::uint16_t GetMaxMagic()  const { return m_maxmagic; }
 
-    std::uint16_t GetAttackSpeed()   const { return m_aspeed; }
+    std::uint16_t GetAttackSpeed()  const { return m_aspeed; }
+
+    bool HasWeapon()                const { return GetAttackSpeed() > 0; }
 
 public:
 
@@ -126,7 +128,7 @@ public:
     const Item::Ptr Insert(const ITEMINFO& info);  
 
     //! Resets inventory state and makes it empty.
-    //void Reset();
+    void Reset();
 
     //! Search interface.
     const Item::Ptr FindByIndex(unsigned short index) const;

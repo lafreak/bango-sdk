@@ -120,15 +120,16 @@ void Player::OnLoadFinish()
         GetResist(RT_PALSY),
         GetRage());
 
-    short time = 1200;
+    short time = 900;//1200;
     write(S2C_ANS_LOAD, "wdd", time, GetX(), GetY());
     //TODO: Change positions?
 
-    //write((Inventory)*this);
     write(m_inventory);
 
     // Send Inventory property
     SendInventoryProperty();
+    
+    std::cout << "Player ID " << GetID() << " has loaded.\n";
 }
 
 void Player::OnRest(packet& p)
@@ -528,17 +529,53 @@ void Player::OnAttack(packet& p)
     auto id = p.pop<Character::id_t>();
     auto z = p.pop<unsigned int>();
 
-    auto now = time::now();
-    // TODO: Reduce damage
-    m_last_attack = now;
-
-    if (kind == CK_MONSTER) // TODO: Add World::For kind, id, callback
+    World::Map(GetMap()).For(WorldMap::QK_PLAYER | WorldMap::QK_MONSTER, id, [&](Character* character) 
     {
-        World::ForMonster(id, [&](Monster* monster) 
+        // Check if is both actors are valid
+        // Check for GState 4?+
+        // Range check
+        // CanAttack
+        // OnPVP
+
+        if (!m_inventory.HasWeapon())
+            return;
+        
+        auto now = time::now();
+
+        auto duration = (now-m_last_attack).count();
+        auto damage_reduce = (double) duration / (double) GetAttackSpeed();
+
+        if (damage_reduce > 1.f)
+            damage_reduce = 1.f;
+
+        else if (damage_reduce < 0.6f)
+            return;
+
+        m_last_attack=now;
+
+        LookAt(character);
+
+        // CheckBlock
+        if (!CheckHit(character))
         {
-            std::cout << GetAttackSpeed() << std::endl;
-        });
-    }
+            World::Map(GetMap()).WriteInSight(this, packet(S2C_ATTACK, "ddddb",
+                GetID(), character->GetID(), 0, 0, ATF_MISS));
+            return;
+        }
+
+        std::int64_t damage = GetAttack();
+        damage *= damage_reduce;
+        // Something with mage
+        damage = character->GetFinalDamage(this, damage);
+        // Apply Mix Effects
+
+        World::Map(GetMap()).WriteInSight(this, packet(S2C_ATTACK, "ddddb", 
+            GetID(), 
+            character->GetID(), 
+            damage,
+            0,//EB
+            damage == 0 ? ATF_IGNORE : ATF_HIT));
+    });
 }
 
 void Player::Tick()

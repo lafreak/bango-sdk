@@ -14,7 +14,7 @@ packet Monster::BuildAppearPacket(bool hero) const
         GetY(),
         GetDir(),
         GetCurHP(),//200,//GetCurHP()
-        GetCurMP(),//200,//GetMaxHP()
+        GetMaxHP(),//200,//GetMaxHP()
         GetGState(),
         GetMState(),
         "\0",

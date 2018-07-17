@@ -3,6 +3,8 @@
 #include <bango/space/quadtree.h>
 #include <bango/network/packet.h>
 
+#include <bango/utils/random.h>
+
 #include <inix.h>
 
 class Character : public bango::space::quad_entity
@@ -45,7 +47,7 @@ public:
     int             GetZ()      const { return m_z;     }
     std::uint16_t   GetDir()    const { return m_dir;   }
 
-    virtual std::uint8_t  GetLevel() const { return 1; }
+    virtual std::uint8_t    GetLevel()          const { return 1; }
 
     virtual std::uint8_t    GetAttackType()     const { return ATT_MEELE;  }
     virtual std::uint16_t   GetAttackSpeed()    const { return 0;          }
@@ -60,6 +62,9 @@ public:
     virtual std::uint16_t   GetMaxAttack()  const { return ((8 * GetStrength() - 25) / 15) + (18 * GetDexterity() / 77) + GetLevel(); }
     virtual std::uint16_t   GetMinMagic()   const { return (7 * GetInteligence() - 20) / 12 + GetWisdom() / 7; }
     virtual std::uint16_t   GetMaxMagic()   const { return 7 * GetInteligence() / 12 + 14 * GetWisdom() / 45; }
+
+    std::uint16_t           GetAttack()     const { return bango::utils::random::between(GetMinAttack(),  GetMaxAttack());  }
+    std::uint16_t           GetMagic()      const { return bango::utils::random::between(GetMinMagic (),  GetMaxMagic ());  }
 
     virtual std::uint16_t   GetHit()        const { return GetDexterity() / 8 + 15 * GetStrength() / 54; }
     virtual std::uint16_t   GetDodge()      const { return GetDexterity() / 3; }
@@ -83,8 +88,12 @@ public:
     virtual bango::network::packet BuildDisappearPacket()               const { return bango::network::packet(); };
     virtual bango::network::packet BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const { return bango::network::packet(); };
 
+    void LookAt(Character* character) { LookAt(character->m_x, character->m_y); }
     void LookAt(int x, int y) { SetDirection(x - m_x, y - m_y); }
     void SetDirection(std::int8_t delta_x, std::int8_t delta_y);
+
+    bool            CheckHit(Character* target, int bonus=0);
+    std::int64_t    GetFinalDamage(Character* attacker, std::int64_t damage, bool magical=false);
 
     virtual void Tick() {}
 };

@@ -11,12 +11,17 @@
 #include "CommandDispatcher.h"
 #include "DBListener.h"
 
+#include <bango/utils/random.h>
+
 using namespace bango::network;
 using namespace bango::space;
 using namespace bango::processor;
+using namespace bango::utils;
 
 int main()
 {
+    random::init();
+
     InitItem    ::Load("Config/InitItem.txt");
     InitNPC     ::Load("Config/InitNPC.txt");
     InitMonster ::Load("Config/InitMonster.txt");
@@ -83,6 +88,16 @@ int main()
             std::cout << "Monster Index doesnt exist " << index << std::endl;
         }
     });
+
+    CommandDispatcher::Register("/test", [&](Player* player, CommandDispatcher::Token& token) {
+        int id = token;
+        int type = token;
+        //player->write(S2C_ATTACK, "ddddb", player->GetID(), id, 0, 0, type);
+        //player->write(S2C_ACTION, "bdd", AT_THROWITEM, id, type);
+        //player->write(S2C_INFODIE, "db", id, type);
+    });
+
+    //S2C_ATTACK, "ddddb",
 
     World::OnAppear     (std::bind(&Player::OnCharacterAppear,      _1, _2, _3));
     World::OnDisappear  (std::bind(&Player::OnCharacterDisappear,   _1, _2));

@@ -67,6 +67,14 @@ public:
         m_entities[Character::LOOT]={};
     }
 
+    enum QUERY_KIND
+    {
+        QK_PLAYER   = 1 << Character::PLAYER,
+        QK_MONSTER  = 1 << Character::MONSTER,
+        QK_NPC      = 1 << Character::NPC,
+        QK_LOOT     = 1 << Character::LOOT,
+    };
+
     //! Non thread-safe.
     const Container::CharacterContainer& Players()  const { return m_entities.at(Character::PLAYER);    }
     const Container::CharacterContainer& Monsters() const { return m_entities.at(Character::MONSTER);   }
@@ -84,6 +92,8 @@ public:
     //! Moves entity to new position.
     //! Thread-safe.
     void Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z=0, bool stop=false);
+
+    void For(QUERY_KIND kind, Character::id_t id, const std::function<void(Character*)>&& callback);
 
     //! Executes callback for all players around in given radius.
     //! Thread-safe.
@@ -268,3 +278,6 @@ public:
     //     } catch (const std::exception&) {}
     // }
 };
+
+inline WorldMap::QUERY_KIND operator|(WorldMap::QUERY_KIND a, WorldMap::QUERY_KIND b)
+{return static_cast<WorldMap::QUERY_KIND>(static_cast<int>(a) | static_cast<int>(b));}

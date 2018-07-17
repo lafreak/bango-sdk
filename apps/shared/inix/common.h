@@ -113,7 +113,7 @@ static int g_nAddDefLv[] = {
 	84, 87, 87, 90, 90, 93, 93, 96, 96, 99,
 	99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
 	99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
-	99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
+	99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99
 };
 
 // Stat-up
@@ -475,7 +475,8 @@ static BASEPROPERTY g_baseproperty[] = {
 // Attack Type Flags
 #define ATF_HIT				1
 #define ATF_CRITICAL		2
-#define ATF_BLOCK			4
+#define ATF_MISS			4
+#define ATF_IGNORE			16
 
 // Monster AI
 #define AI_NONE				0x00000000
@@ -1181,7 +1182,8 @@ enum ACTION_TYPE
 	AT_STALL,
 	AT_PRETRANSFORM,
 	AT_TRANSFORM,
-	AT_REMOVE,
+	AT_REMOVE, //14
+	AT_THROWITEM,
 };
 
 // Character Kind

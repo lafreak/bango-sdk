@@ -219,6 +219,39 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
     }
 }
 
+void WorldMap::For(QUERY_KIND kind, Character::id_t id, const std::function<void(Character*)>&& callback)
+{
+    std::lock_guard<std::recursive_mutex> lock(m_rmtx);
+
+    if (kind & QK_PLAYER)
+    {
+        try {
+            return callback(m_entities[Character::PLAYER].at(id));
+        } catch (const std::exception&) {}
+    }
+
+    if (kind & QK_NPC)
+    {
+        try {
+            return callback(m_entities[Character::NPC].at(id));
+        } catch (const std::exception&) {}
+    }
+
+    if (kind & QK_LOOT)
+    {
+        try {
+            return callback(m_entities[Character::LOOT].at(id));
+        } catch (const std::exception&) {}
+    }
+
+    if (kind & QK_MONSTER)
+    {
+        try {
+            return callback(m_entities[Character::MONSTER].at(id));
+        } catch (const std::exception&) {}
+    }
+}
+
 void WorldMap::ForEachPlayerAround(const quad_entity* qe, unsigned int radius, const std::function<void(Player*)>&& callback)
 {
     std::lock_guard<std::recursive_mutex> lock(m_rmtx);

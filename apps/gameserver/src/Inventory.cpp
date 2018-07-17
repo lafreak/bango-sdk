@@ -163,15 +163,13 @@ const Item::Ptr Inventory::Insert(const ITEMINFO& info)
     return nullptr;
 }
 
-/*
-//! No longer supported
 void Inventory::Reset()
 {
-    m_items.clear();
-    m_ride = nullptr;
+   // m_items.clear();
+    //m_ride = nullptr;
 
-    m_hp=0, m_mp=0, m_def=0, m_hit=0, m_dodge=0, m_absorb=0;
-    m_aspeed=0, m_minattack=0, m_maxattack=0, m_minmagic=0, m_maxmagic=0;
+    // m_hp=0, m_mp=0, m_def=0, m_hit=0, m_dodge=0, m_absorb=0;
+    // m_aspeed=0, m_minattack=0, m_maxattack=0, m_minmagic=0, m_maxmagic=0;
 
     m_stats[P_HTH]=0;
     m_stats[P_STR]=0;
@@ -191,7 +189,6 @@ void Inventory::Reset()
     for (int i = 0; i < WS_LAST; i++)
         m_wear_items[i] = nullptr;
 }
-*/
 
 const Item::Ptr Inventory::FindByIndex(unsigned short index) const
 {
