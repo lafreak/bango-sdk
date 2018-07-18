@@ -88,6 +88,7 @@ std::int64_t Character::GetFinalDamage(Character* attacker, std::int64_t damage,
     }
     else
     {
+        // if (GetType() == CK_MONSTER || attacker->GetType() == CK_MONSTER)
         if (true/*unknown cond*/ && abs(level_diff) < 100)//TODO: Find condition
         {
             if (level_diff < 0)
