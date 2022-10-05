@@ -135,21 +135,70 @@ void Player::OnLoadFinish()
 void Player::OnRest(packet& p)
 {
     auto action = p.pop<char>();
-    std::cout << "On Rest " << (int)action << std::endl;
+    packet restPacket(S2C_ACTION);
+    restPacket << GetID() << AT_REST << action;
+	if (action)
+	{
+		if (IsGState(CGS_REST))
+			return;
+
+		AddGState(CGS_REST);
+        World::Map(GetMap()).WriteInSight(this, restPacket);
+	}
+	else
+	{
+		if (!IsGState(CGS_REST))
+			return;
+
+		SubGState(CGS_REST);
+        World::Map(GetMap()).WriteInSight(this, restPacket);
+	}
 }
 
 void Player::OnChatting(packet& p)
 {
-    auto message = p.pop_str(); // BUG: Empty packet will throw an exception.
+    if(p.empty())
+        return;
 
-    // if (message[0] == '/') // BUG: Message might be empty.
-    if (message[0] == '/')
-        return CommandDispatcher::Dispatch(this, message);
+    auto message = p.pop_str();
 
-    packet out(S2C_CHATTING);
-    out << GetName() << message;
+    packet messagePacket(S2C_CHATTING);
+    messagePacket << GetName() << message;
 
-    World::Map(GetMap()).WriteInSight(this, out);
+    switch(message.front())
+    {
+        case '/':
+        {
+            CommandDispatcher::Dispatch(this, message);
+            break;
+        }
+        case '@':
+        {
+            std::string receiverName = message.substr(1, message.find(' ') - 1);
+
+            if(receiverName != GetName())
+            {
+                auto* receiver = World::FindPlayerByName(receiverName);
+                if(receiver)
+                {
+                    write(messagePacket);
+                    receiver->write(messagePacket);
+                }
+                else
+                {
+                    packet infoPacket(S2C_MESSAGE);
+                    infoPacket << MSG_THEREISNOPLAYER;
+                    write(infoPacket);
+                }
+            }
+            break;
+        }
+        default:
+        {
+            World::Map(GetMap()).WriteInSight(this, messagePacket);
+            break;
+        }
+    }
 }
 
 void Player::OnPutOnItem(packet& p)
