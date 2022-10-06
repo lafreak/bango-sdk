@@ -138,7 +138,7 @@ int main()
     try 
     {
         Socket::DBClient().connect("localhost", 2999);
-        Socket::GameServer().start("172.20.18.33", 3000);
+        Socket::GameServer().start("localhost", 3000);
     } 
     catch (const std::exception& e) 
     {
