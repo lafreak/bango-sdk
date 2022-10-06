@@ -11,8 +11,6 @@ include_directories(bangospace)
 include_directories(bangoprocessor)
 include_directories(bangoutils)
 
-link_directories(/usr/lib/x86_64-linux-gnu/)
-
 set(SOURCES
   src/CommandDispatcher.cpp
   src/User.cpp
