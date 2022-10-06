@@ -2,8 +2,6 @@
 
 void DatabaseManager::Initialize()
 {
-    // BUG: When GameServer disconnects, accounts stay logged in.
-    
     m_dbserver.when(S2D_DISCONNECT, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         FlagDisconnected(p.pop<int>());
     });
@@ -63,7 +61,9 @@ void DatabaseManager::Initialize()
         SendPlayerList(s, id, idaccount);
     });
 
-    // TODO: dbserver.on_disconnected -> active_users clear()
+    m_dbserver.on_disconnected([&](const std::shared_ptr<GameServer>& s) {
+        m_active_users.clear();
+    });
 }
 
 void DatabaseManager::ConnectToPool(const std::string& host, const std::string& port, const std::string& user, const std::string& password, const std::string& schema)
