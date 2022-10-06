@@ -11,7 +11,7 @@ $ sudo apt-get install libmysqlclient-dev
 ```
 $ cd build
 $ cmake ..
-$ make
+$ sudo make
 $ ./dbserver
 $ ./gameserver
 ```

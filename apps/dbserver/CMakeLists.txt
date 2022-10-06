@@ -9,8 +9,6 @@ include_directories(../shared)
 include_directories(bangonetwork)
 include_directories(bangopersistence)
 
-link_directories(../../thirdparty)
-
 set(SOURCES
   src/DatabaseManager.cpp
   src/main.cpp

@@ -11,8 +11,6 @@ include_directories(bangospace)
 include_directories(bangoprocessor)
 include_directories(bangoutils)
 
-link_directories(../../thirdparty)
-
 set(SOURCES
   src/CommandDispatcher.cpp
   src/User.cpp
