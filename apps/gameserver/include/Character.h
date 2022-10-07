@@ -24,10 +24,10 @@ public:
     int             m_z;
     std::uint8_t    m_map;
 
-    std::uint16_t   m_n64GState;
-    std::uint16_t   m_n64MState;
-    std::uint16_t   m_n64GStateEx;
-    std::uint16_t   m_n64MStateEx;
+    std::int64_t   m_gstate;
+    std::int64_t   m_mstate;
+    std::int64_t   m_gstate_ex;
+    std::int64_t   m_mstate_ex;
 
 public:
     Character(std::uint8_t type) : m_type(type)
@@ -88,23 +88,23 @@ public:
     std::uint64_t   GetGStateEx()   const { return 0; }
     std::uint64_t   GetMStateEx()   const { return 0; }
 
-    void AddGState(std::uint64_t n64GState)       { m_n64GState |= n64GState; }
-    void AddMState(std::uint64_t n64MState)       { m_n64MState |= n64MState; }
+    void AddGState(std::int64_t gstate)       { m_gstate |= gstate; }
+    void AddMState(std::int64_t mstate)       { m_mstate |= mstate; }
 
-    void AddGStateEx(std::uint64_t n64GStateEx)   { m_n64GStateEx |= n64GStateEx; }
-    void AddMStateEx(std::uint64_t n64MStateEx)   { m_n64MStateEx |= n64MStateEx; }
+    void AddGStateEx(std::int64_t gstateEx)   { m_gstate_ex |= gstateEx; }
+    void AddMStateEx(std::int64_t mstateEx)   { m_mstate_ex |= mstateEx; }
 
-    void SubGState(std::uint64_t n64GState)       { m_n64GState &= ~n64GState;}
-    void SubMState(std::uint64_t n64MState)       { m_n64MState &= ~n64MState;}
+    void SubGState(std::int64_t gstate)       { m_gstate &= ~gstate;}
+    void SubMState(std::int64_t mstate)       { m_mstate &= ~mstate;}
 
-    void SubGStateEx(std::uint64_t n64GStateEx)   { m_n64GStateEx &= ~n64GStateEx; }
-    void SubMStateEx(std::uint64_t n64MStateEx)   { m_n64MStateEx &= ~n64MStateEx; }
+    void SubGStateEx(std::int64_t gstateEx)   { m_gstate_ex &= ~gstateEx; }
+    void SubMStateEx(std::int64_t mstateEx)   { m_mstate_ex &= ~mstateEx; }
 
-    bool IsGState(std::uint64_t n64GState)        { return m_n64GState & n64GState; }
-    bool IsMState(std::uint64_t n64MState)        { return m_n64MState & n64MState; }
+    bool IsGState(std::int64_t gstate)        { return m_gstate & gstate; }
+    bool IsMState(std::int64_t mstate)        { return m_mstate & mstate; }
 
-    bool IsGStateEx(std::uint64_t n64GStateEx)    { return m_n64GStateEx & n64GStateEx; }
-    bool IsMStateEx(std::uint64_t n64MStateEx)    { return m_n64MStateEx & n64MStateEx; }
+    bool IsGStateEx(std::int64_t gstateEx)    { return m_gstate_ex & gstateEx; }
+    bool IsMStateEx(std::int64_t mstateEx)    { return m_mstate_ex & mstateEx; }
 
     virtual bango::network::packet BuildAppearPacket(bool hero=false)   const { return bango::network::packet(); };
     virtual bango::network::packet BuildDisappearPacket()               const { return bango::network::packet(); };

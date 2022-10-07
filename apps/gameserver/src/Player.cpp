@@ -135,22 +135,22 @@ void Player::OnLoadFinish()
 void Player::OnRest(packet& p)
 {
     auto action = p.pop<char>();
-    packet restPacket(S2C_ACTION);
-    restPacket << GetID() << AT_REST << action;
+    packet restPacket(S2C_ACTION,"dbb", GetID(), AT_REST, action);
+
 	if (action)
 	{
 		if (IsGState(CGS_REST))
-			return;
+            return;
 
-		AddGState(CGS_REST);
+        AddGState(CGS_REST);
         World::Map(GetMap()).WriteInSight(this, restPacket);
 	}
 	else
 	{
 		if (!IsGState(CGS_REST))
-			return;
+            return;
 
-		SubGState(CGS_REST);
+        SubGState(CGS_REST);
         World::Map(GetMap()).WriteInSight(this, restPacket);
 	}
 }
@@ -165,7 +165,7 @@ void Player::OnChatting(packet& p)
     packet messagePacket(S2C_CHATTING);
     messagePacket << GetName() << message;
 
-    switch(message.front())
+    switch(message.at(0))
     {
         case '/':
         {
@@ -176,21 +176,18 @@ void Player::OnChatting(packet& p)
         {
             std::string receiverName = message.substr(1, message.find(' ') - 1);
 
-            if(receiverName != GetName())
+            if(receiverName == GetName() || receiverName.size() + 1 == message.size())
+                return;
+
+            auto* receiver = World::FindPlayerByName(receiverName);
+            if(receiver)
             {
-                auto* receiver = World::FindPlayerByName(receiverName);
-                if(receiver)
-                {
-                    write(messagePacket);
-                    receiver->write(messagePacket);
-                }
-                else
-                {
-                    packet infoPacket(S2C_MESSAGE);
-                    infoPacket << MSG_THEREISNOPLAYER;
-                    write(infoPacket);
-                }
+                write(messagePacket);
+                receiver->write(messagePacket);
             }
+            else
+                write(S2C_MESSAGE, "d", MSG_THEREISNOPLAYER);
+
             break;
         }
         default:

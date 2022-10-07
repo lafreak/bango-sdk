@@ -221,13 +221,15 @@ public:
     static const Player* FindPlayerByName(const std::string& playerName)
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-        for (auto& p : Get().m_entities[Character::PLAYER])
-        {
+        const auto& players = Get().m_entities[Character::PLAYER];
+
+        auto playerIterator = std::find_if(players.begin(),players.end(), [&](auto& p){
             auto* player = dynamic_cast<const Player*>(p.second);
-            if(player and playerName == player->GetName())
-                return player;
-        }
-        return nullptr;
+
+            return player && playerName == player->GetName();
+        });
+
+        return playerIterator != players.end() ? dynamic_cast<const Player*>(playerIterator->second) : nullptr;
     }
 
     static void ForPlayer(Character::id_t id, const std::function<void(Player*)>& callback)
