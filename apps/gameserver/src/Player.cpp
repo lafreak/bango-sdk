@@ -157,13 +157,13 @@ void Player::OnRest(packet& p)
 
 void Player::OnChatting(packet& p)
 {
-    if(p.empty())
-        return;
-
     auto message = p.pop_str();
 
-    packet messagePacket(S2C_CHATTING);
-    messagePacket << GetName() << message;
+    if(message.empty())
+        return;
+
+    packet message_packet(S2C_CHATTING);
+    message_packet << GetName() << message;
 
     switch(message.at(0))
     {
@@ -174,16 +174,21 @@ void Player::OnChatting(packet& p)
         }
         case '@':
         {
-            std::string receiverName = message.substr(1, message.find(' ') - 1);
+            auto space_pos = message.find(' ');
 
-            if(receiverName == GetName() || receiverName.size() + 1 == message.size())
+            if (space_pos == std::string::npos)
                 return;
 
-            auto* receiver = World::FindPlayerByName(receiverName);
+            std::string receiver_name = message.substr(1, space_pos - 1);
+
+            if(receiver_name == GetName())
+                return;
+
+            auto* receiver = World::FindPlayerByName(receiver_name);
             if(receiver)
             {
-                write(messagePacket);
-                receiver->write(messagePacket);
+                write(message_packet);
+                receiver->write(message_packet);
             }
             else
                 write(S2C_MESSAGE, "d", MSG_THEREISNOPLAYER);
@@ -192,7 +197,7 @@ void Player::OnChatting(packet& p)
         }
         default:
         {
-            World::Map(GetMap()).WriteInSight(this, messagePacket);
+            World::Map(GetMap()).WriteInSight(this, message_packet);
             break;
         }
     }
