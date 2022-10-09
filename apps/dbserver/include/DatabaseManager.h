@@ -58,4 +58,5 @@ public:
     void UpdateItemInfo (const std::shared_ptr<GameServer>& s, packet& p);
 
     void UpdateProperty (const std::shared_ptr<GameServer>& s, packet& p);
+    void SaveAllProperty (const std::shared_ptr<GameServer>& s, packet& p);
 };

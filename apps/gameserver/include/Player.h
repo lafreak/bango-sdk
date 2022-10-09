@@ -119,6 +119,7 @@ public:
     bool CanLogout() const { return true; }
     void SendInventoryProperty();
     void SendProperty(std::uint8_t kind);
+    void SaveAllProperty();
 
     void InsertItem(unsigned short index, unsigned int num=1);
     bool TrashItem(unsigned int local);

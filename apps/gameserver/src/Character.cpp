@@ -103,3 +103,11 @@ std::int64_t Character::GetFinalDamage(Character* attacker, std::int64_t damage,
 
     return damage < 0 ? 0 : damage;
 }
+
+void Character::ResetStates()
+{
+    m_gstate = 0;
+    m_gstate_ex = 0;
+    m_mstate = 0;
+    m_mstate_ex = 0;
+}
