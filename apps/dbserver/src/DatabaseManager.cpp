@@ -61,6 +61,10 @@ void DatabaseManager::Initialize()
         SendPlayerList(s, id, idaccount);
     });
 
+    m_dbserver.when(S2D_SAVEALLPROPERTY, [&](const std::shared_ptr<GameServer>& s, packet& p) {
+        SaveAllProperty(s, p);
+    });
+
     m_dbserver.on_disconnected([&](const std::shared_ptr<GameServer>& s) {
         m_active_users.clear();
     });
@@ -649,5 +653,28 @@ void DatabaseManager::UpdateProperty(const std::shared_ptr<GameServer>& s, packe
     auto query = conn.create_query("UPDATE player SET strength=?, health=?, inteligence=?, wisdom=?, dexterity=?, pupoint=? WHERE idplayer=?");
 
     query << stats[P_STR] << stats[P_HTH] << stats[P_INT] << stats[P_WIS] << stats[P_DEX] << pupoint << pid;
+    query.execute();
+}
+
+void DatabaseManager::SaveAllProperty(const std::shared_ptr<GameServer>& s, packet& p)
+{
+    auto pid = p.pop<int>();
+    auto level = p.pop<unsigned char>();
+    auto x = p.pop<int>();
+    auto y = p.pop<int>();
+    auto z = p.pop<int>();
+    auto contribute = p.pop<unsigned short>();
+    auto cur_hp = p.pop<unsigned int>();
+    auto cur_mp = p.pop<unsigned int>();
+    auto exp = p.pop<unsigned long>();
+    auto pupoint = p.pop<unsigned short>();
+    auto supoint = p.pop<unsigned short>();
+    auto rage = p.pop<unsigned int>();
+
+
+    auto conn = m_pool.get();
+    auto query = conn.create_query("UPDATE player SET level=?, x=?, y=?, z=?, contribute=?, curhp=?, curmp=?, exp=?, pupoint=?, supoint=?, anger=? WHERE idplayer=?");
+
+    query << level << x << y << z << contribute << cur_hp << cur_mp << exp << pupoint << supoint << rage << pid;
     query.execute();
 }

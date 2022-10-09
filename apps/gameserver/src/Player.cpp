@@ -43,8 +43,10 @@ void Player::OnRestart(packet& p)
         write(S2C_ANS_RESTART, "b", CanLogout() ? 1 : 0); 
     else
     {
+        SaveAllProperty();
         //m_inventory.Reset();
         m_inventory = Inventory();
+        ResetStates();
         //World::Map(GetMap()).Remove(this);
         World::Remove(this);
         deny(User::INGAME);
@@ -495,6 +497,22 @@ void Player::SendProperty(std::uint8_t kind)
     }
 }
 
+void Player::SaveAllProperty()
+{
+    Socket::DBClient().write(S2D_SAVEALLPROPERTY, "dbdddwddIwwd",
+    GetPID(),
+    GetLevel(),
+    GetX(),
+    GetY(),
+    GetZ(),
+    GetContribute(),
+    GetCurHP(),
+    GetCurMP(),
+    GetExp(),
+    GetPUPoint(),
+    GetSUPoint(),
+    GetRage());
+}
 std::uint16_t Player::GetReqPU(std::uint8_t* stats)
 {
 	std::uint16_t req=0;
