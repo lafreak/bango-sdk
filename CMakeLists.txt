@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.5.2 FATAL_ERROR)
 
+project(bango-sdk)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
 
 option(USE_GTEST "GTEST" OFF)
