@@ -4,9 +4,16 @@
 #include <sstream>
 #include <future>
 #include <chrono>
+#include <cstdint>
+
+#include "CLI/App.hpp"
+#include "CLI/Formatter.hpp"
+#include "CLI/Config.hpp"
 
 #include "Socket.h"
 #include "World.h"
+#include "BeheadableMonster.h"
+#include "NormalMonster.h"
 
 #include "CommandDispatcher.h"
 #include "DBListener.h"
@@ -18,8 +25,26 @@ using namespace bango::space;
 using namespace bango::processor;
 using namespace bango::utils;
 
-int main()
+int main(int argc, char** argv)
 {
+    CLI::App app{"KalOnline Game Server (c) Bango Emu"};
+
+    std::string db_address{"0.0.0.0"};
+    std::uint16_t db_port = 2999;
+    std::string game_address{"0.0.0.0"};
+    std::uint16_t game_port = 3000;
+
+    app.add_option("--db_address", db_address, "DB server address");
+    app.add_option("--db_port", db_port, "DB server port");
+    app.add_option("--game_address", game_address, "Game server address");
+    app.add_option("--game_port", game_port, "Game server port");
+
+    try {
+        app.parse(argc, argv);
+    } catch (const CLI::ParseError &e) {
+        return app.exit(e);
+    }
+
     random::init();
 
     InitItem    ::Load("Config/InitItem.txt");
@@ -83,7 +108,24 @@ int main()
         int index = token;
 
         try {
-            World::Add(new Monster(InitMonster::DB().at(index), player->GetX()+10, player->GetY()+10, player->GetMap()));
+            switch(InitMonster::DB().at(index)->Race)
+            {
+                case MR_NOTMAGUNI:
+                {
+                    World::Add(new NormalMonster(InitMonster::DB().at(index), player->GetX()+10, player->GetY()+10, player->GetMap()));
+                    break;
+                }
+                case MR_MAGUNI:
+                { 
+                    World::Add(new BeheadableMonster(InitMonster::DB().at(index), player->GetX()+10, player->GetY()+10, player->GetMap()));
+                    break;
+                }
+                default:
+                {
+                    World::Add(new NormalMonster(InitMonster::DB().at(index), player->GetX()+10, player->GetY()+10, player->GetMap()));
+                    break;
+                }
+            }
         } catch (const std::exception&) {
             std::cout << "Monster Index doesnt exist " << index << std::endl;
         }
@@ -137,8 +179,11 @@ int main()
 
     try 
     {
-        Socket::DBClient().connect("localhost", 2999);
-        Socket::GameServer().start("localhost", 3000);
+        Socket::DBClient().connect(db_address, db_port);
+        std::cout << "Connected to DB Server on address " << db_address << ":" << db_port << std::endl;
+
+        Socket::GameServer().start(game_address, game_port);
+        std::cout << "Game Server has started on address " << game_address << ":" << game_port << std::endl;
     } 
     catch (const std::exception& e) 
     {

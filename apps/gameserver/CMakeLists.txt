@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 project(gameserver)
 
@@ -23,6 +23,8 @@ set(SOURCES
   src/Inventory.cpp
   src/DBListener.cpp
   src/main.cpp
+  src/BeheadableMonster.cpp
+  src/NormalMonster.cpp
   )
 
 add_executable(gameserver ${SOURCES})
@@ -33,4 +35,5 @@ target_link_libraries(gameserver
   bangoutils 
   tacopie 
   pthread
+  CLI11
   )

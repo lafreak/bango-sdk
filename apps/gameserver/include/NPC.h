@@ -85,4 +85,5 @@ public:
     }
 
     void Tick() override;
+    void Die() override {}
 };

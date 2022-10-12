@@ -1,4 +1,5 @@
 #include "Monster.h"
+#include "World.h"
 
 #include <iostream>
 
@@ -35,9 +36,4 @@ packet Monster::BuildDisappearPacket() const
 packet Monster::BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const
 {
     return packet();
-}
-
-void Monster::Tick()
-{
-    std::cout << GetIndex() << std::endl;
 }

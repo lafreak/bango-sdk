@@ -1,7 +1,7 @@
 #include "Player.h"
-
 #include "Socket.h"
 #include "World.h"
+#include "BeheadableMonster.h"
 
 #include <bango/utils/random.h>
 
@@ -21,7 +21,6 @@ void Player::OnDisconnected()
     if (authorized(User::AUTHORIZED))
         Socket::DBClient().write(S2D_DISCONNECT, "d", GetAID());
 }
-
 void Player::OnStart(packet& p)
 {
     auto unknown = p.pop<char>();
@@ -614,12 +613,6 @@ void Player::OnAttack(packet& p)
         auto duration = (now-m_last_attack).count();
         auto damage_reduce = (double) duration / (double) GetAttackSpeed();
 
-        if (damage_reduce > 1.f)
-            damage_reduce = 1.f;
-
-        else if (damage_reduce < 0.6f)
-            return;
-
         m_last_attack=now;
 
         LookAt(character);
@@ -632,21 +625,43 @@ void Player::OnAttack(packet& p)
             return;
         }
 
+        if (damage_reduce > 1.f)
+            damage_reduce = 1.f;
+
+        else if (damage_reduce < 0.6f)
+            return;
+
         std::int64_t damage = GetAttack();
         damage *= damage_reduce;
         // Something with mage
         damage = character->GetFinalDamage(this, damage);
         // Apply Mix Effects
 
+        //BUG: It is possible to do more damage than remaining HP of target.
+        //TODO: damage is not 4 byte it is 8 byte("dddIb")
         World::Map(GetMap()).WriteInSight(this, packet(S2C_ATTACK, "ddddb", 
             GetID(), 
             character->GetID(), 
             damage,
             0,//EB
             damage == 0 ? ATF_IGNORE : ATF_HIT));
+
+        if(damage <= 0)
+            return;
+
+        if(character->GetCurHP() <= damage)
+            character->Die();
+        else
+            character->ReduceHP(damage);
     });
 }
 
 void Player::Tick()
 {
+}
+
+void Player::Die()
+{
+    AddGState(CGS_KO);
+    World::Map(GetMap()).WriteInSight(this, bango::network::packet(S2C_ACTION, "db", GetID(), AT_DIE));
 }

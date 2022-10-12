@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 project(dbserver)
 
@@ -9,6 +9,14 @@ include_directories(../shared)
 include_directories(bangonetwork)
 include_directories(bangopersistence)
 
+include(FetchContent)
+FetchContent_Declare(
+  cli11
+  GIT_REPOSITORY https://github.com/CLIUtils/CLI11
+  GIT_TAG        v2.2.0
+)
+
+FetchContent_MakeAvailable(cli11)
 set(SOURCES
   src/DatabaseManager.cpp
   src/main.cpp
@@ -22,4 +30,5 @@ target_link_libraries(dbserver
   zdb 
   mysqlclient
   pthread
+  CLI11
   )

@@ -118,6 +118,4 @@ public:
     bango::network::packet BuildAppearPacket(bool hero=false) const override;
     bango::network::packet BuildDisappearPacket() const override;
     bango::network::packet BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const override;
-
-    void Tick() override;
 };

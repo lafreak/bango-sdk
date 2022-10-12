@@ -128,4 +128,5 @@ public:
     std::uint16_t   GetReqPU(std::uint8_t* stats);
 
     void Tick() override;
+    void Die() override;
 };

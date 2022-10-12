@@ -119,7 +119,7 @@ class World
 
     std::vector<std::unique_ptr<WorldMap>> m_maps;
 
-    std::map<char, WorldMap::Container::CharacterContainer> m_entities;
+    std::unordered_map<char, WorldMap::Container::CharacterContainer> m_entities;
     std::recursive_mutex m_entities_rmtx;
 
     World()
@@ -170,6 +170,19 @@ public:
     static void Cleanup()
     {
         ForEachNpc([](NPC* npc) { delete npc; });
+    }
+
+    static void RemoveDeadMonsters()
+    {
+        auto& monsters = Get().m_entities[Character::MONSTER];
+        for(auto it = monsters.begin(); it != monsters.end(); ++it)
+        {
+            if(it->second->IsGState(CGS_KO))
+            {
+                delete it->second;
+                monsters.erase(it++);
+            }
+        }
     }
 
     static void Add(Character* entity)
