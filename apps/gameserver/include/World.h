@@ -172,16 +172,16 @@ public:
         ForEachNpc([](NPC* npc) { delete npc; });
     }
 
-    static void RemoveDeadMonsters()
+    static void EraseIfMonsterDead()
     {
-        auto& monsters = Get().m_entities[Character::MONSTER];
-        for(auto it = monsters.begin(); it != monsters.end(); ++it)
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+        auto monsters = Get().m_entities[Character::MONSTER];
+        for(auto it = monsters.begin(); it != monsters.end(); )
         {
             if(it->second->IsGState(CGS_KO))
-            {
-                delete it->second;
-                monsters.erase(it++);
-            }
+                it = monsters.erase(it);
+            else
+                ++it;
         }
     }
 

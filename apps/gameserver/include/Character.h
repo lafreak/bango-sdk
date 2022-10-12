@@ -79,7 +79,7 @@ public:
     std::uint32_t   GetCurHP()  const { return m_curhp; }
     std::uint32_t   GetCurMP()  const { return m_curmp; }
 
-    void ReduceHP(uint32_t reduce) { m_curhp -= reduce; }
+    void ReduceHP(std::uint32_t reduce);
 
     virtual std::uint32_t GetMaxHP() const { return 1; }
     virtual std::uint32_t GetMaxMP() const { return 1; }

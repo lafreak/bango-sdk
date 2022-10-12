@@ -1,7 +1,7 @@
 #include "Player.h"
 #include "Socket.h"
 #include "World.h"
-#include "BeheadableMonster.h"
+#include "Monster.h"
 
 #include <bango/utils/random.h>
 
@@ -637,8 +637,11 @@ void Player::OnAttack(packet& p)
         damage = character->GetFinalDamage(this, damage);
         // Apply Mix Effects
 
-        //BUG: It is possible to do more damage than remaining HP of target.
-        //TODO: damage is not 4 byte it is 8 byte("dddIb")
+        if (damage < 0)  // first ensure the data is unsigned.
+            return;
+        if ((uint64_t)damage > character->GetCurHP())  // then we can safely cast to unsigned64
+            damage = character->GetCurHP();
+
         World::Map(GetMap()).WriteInSight(this, packet(S2C_ATTACK, "ddddb", 
             GetID(), 
             character->GetID(), 
@@ -646,13 +649,10 @@ void Player::OnAttack(packet& p)
             0,//EB
             damage == 0 ? ATF_IGNORE : ATF_HIT));
 
-        if(damage <= 0)
-            return;
+        character->ReduceHP(damage);  // inside reducehp we could even throw an exception to ensure we never have less than 0 hp
 
-        if(character->GetCurHP() <= damage)
+        if(character->GetCurHP() <= 0)
             character->Die();
-        else
-            character->ReduceHP(damage);
     });
 }
 

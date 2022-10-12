@@ -1,4 +1,5 @@
 #include "Character.h"
+#include <exception>
 
 using namespace bango::utils;
 
@@ -110,4 +111,11 @@ void Character::ResetStates()
     m_gstate_ex = 0;
     m_mstate = 0;
     m_mstate_ex = 0;
+}
+
+void Character::ReduceHP(std::uint32_t reduce)
+{
+    if(reduce > m_curhp)
+        throw std::logic_error("reduce is higher than current HP");
+    m_curhp -= reduce;
 }

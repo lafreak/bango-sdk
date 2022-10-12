@@ -1,0 +1,12 @@
+#pragma once
+// Class representing non-beheadable monster.
+
+#include "Monster.h"
+
+class RegularMonster : public Monster
+{
+public:
+    RegularMonster(const std::unique_ptr<InitMonster>& init, int x, int y, int map=0) : Monster(init, x, y) {}
+    void Die() override;
+    void Tick() override;
+};

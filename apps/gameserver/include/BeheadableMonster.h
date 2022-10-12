@@ -2,7 +2,7 @@
 // Class representing beheadable monster.
 
 #include "Monster.h"
-#include <chrono>
+#include <bango/utils/time.h>
 
 class BeheadableMonster : public Monster
 {
@@ -12,5 +12,5 @@ public:
     void Tick() override;
 
 private:
-    std::chrono::steady_clock::time_point m_death_time;
+    bango::utils::time::point m_death_time;
 };

@@ -1,5 +1,7 @@
 #include "Monster.h"
 #include "World.h"
+#include "RegularMonster.h"
+#include "BeheadableMonster.h"
 
 #include <iostream>
 
@@ -36,4 +38,27 @@ packet Monster::BuildDisappearPacket() const
 packet Monster::BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const
 {
     return packet();
+}
+// World::Add(new RegularMonster(InitMonster::DB().at(index), player->GetX()+10, player->GetY()+10, player->GetMap()));
+
+void Monster::CreateMonster(uint32_t index, int32_t x, int32_t y, int32_t map)
+{
+    switch(InitMonster::DB().at(index)->Race)
+    {
+        case MR_NOTMAGUNI:
+        {
+            World::Add(new RegularMonster(InitMonster::DB().at(index), x, y, map));
+            break;
+        }
+        case MR_MAGUNI:
+        { 
+            World::Add(new BeheadableMonster(InitMonster::DB().at(index), x, y, map));
+            break;
+        }
+        default:
+        {
+            World::Add(new RegularMonster(InitMonster::DB().at(index), x, y, map));
+            break;
+        }
+    }
 }
