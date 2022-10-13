@@ -78,11 +78,17 @@ public:
     Monster(const std::unique_ptr<InitMonster>& init, int x, int y, int map=0)
         : Character(Character::MONSTER), m_init(init)
     {
+        SetInitStats(x, y, map);
+    }
+
+    void SetInitStats(int x,int y,int map=0)
+    {
         m_x = x;
         m_y = y;
         m_map = map;
         m_curhp = GetMaxHP();
         m_curmp = GetMaxMP();
+        ResetStates();
     }
 
     std::uint16_t   GetIndex()      const { return m_init->Index; }

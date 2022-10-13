@@ -2,6 +2,7 @@
 #include "World.h"
 #include "RegularMonster.h"
 #include "BeheadableMonster.h"
+#include "ObjectPool.h"
 
 #include <iostream>
 
@@ -47,17 +48,38 @@ void Monster::CreateMonster(uint32_t index, int32_t x, int32_t y, int32_t map)
     {
         case MR_NOTMAGUNI:
         {
-            World::Add(new RegularMonster(InitMonster::DB().at(index), x, y, map));
+            Monster* monster = ObjectPool::GetInstance().GetRegularMonster();
+            if(monster)
+            {
+                monster->SetInitStats(x,y,map);
+                World::Add(dynamic_cast<RegularMonster*>(monster));
+            }
+            else
+                World::Add(new RegularMonster(InitMonster::DB().at(index), x, y, map));
             break;
         }
         case MR_MAGUNI:
-        { 
-            World::Add(new BeheadableMonster(InitMonster::DB().at(index), x, y, map));
+        {
+            Monster* monster = ObjectPool::GetInstance().GetBeheadableMonster();
+            if(monster)
+            {
+                monster->SetInitStats(x,y,map);
+                World::Add(dynamic_cast<BeheadableMonster*>(monster));
+            }
+            else
+                World::Add(new BeheadableMonster(InitMonster::DB().at(index), x, y, map));
             break;
         }
         default:
         {
-            World::Add(new RegularMonster(InitMonster::DB().at(index), x, y, map));
+            Monster* monster = ObjectPool::GetInstance().GetRegularMonster();
+            if(monster)
+            {
+                monster->SetInitStats(x,y,map);
+                World::Add(dynamic_cast<RegularMonster*>(monster));
+            }
+            else
+                World::Add(new RegularMonster(InitMonster::DB().at(index), x, y, map));
             break;
         }
     }

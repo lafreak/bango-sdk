@@ -5,6 +5,7 @@
 #include "Player.h"
 #include "Monster.h"
 #include "NPC.h"
+#include "ObjectPool.h"
 
 #define MAP_WIDTH 50*8192
 #define MAP_SIGHT 1024
@@ -179,7 +180,18 @@ public:
         for(auto it = monsters.begin(); it != monsters.end(); )
         {
             if(it->second->IsGState(CGS_KO))
+            {
+                Monster* monster = dynamic_cast<Monster*>(it->second);
+                if(monster->GetRace() == MR_NOTMAGUNI)
+                {
+                    ObjectPool::GetInstance().AddRegularMonster(monster);
+                }
+                else if(monster->GetRace() == MR_MAGUNI)
+                {
+                    ObjectPool::GetInstance().AddBeheadableMonster(monster);
+                }
                 it = monsters.erase(it);
+            }
             else
                 ++it;
         }
