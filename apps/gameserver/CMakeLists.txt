@@ -23,6 +23,8 @@ set(SOURCES
   src/Inventory.cpp
   src/DBListener.cpp
   src/main.cpp
+  src/BeheadableMonster.cpp
+  src/RegularMonster.cpp
   )
 
 add_executable(gameserver ${SOURCES})

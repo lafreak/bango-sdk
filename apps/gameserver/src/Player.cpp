@@ -1,7 +1,7 @@
 #include "Player.h"
-
 #include "Socket.h"
 #include "World.h"
+#include "Monster.h"
 
 #include <bango/utils/random.h>
 
@@ -21,7 +21,6 @@ void Player::OnDisconnected()
     if (authorized(User::AUTHORIZED))
         Socket::DBClient().write(S2D_DISCONNECT, "d", GetAID());
 }
-
 void Player::OnStart(packet& p)
 {
     auto unknown = p.pop<char>();
@@ -638,15 +637,31 @@ void Player::OnAttack(packet& p)
         damage = character->GetFinalDamage(this, damage);
         // Apply Mix Effects
 
+        if (damage < 0)
+            return;
+        if ((uint64_t)damage > character->GetCurHP())
+            damage = character->GetCurHP();
+
         World::Map(GetMap()).WriteInSight(this, packet(S2C_ATTACK, "ddddb", 
             GetID(), 
             character->GetID(), 
             damage,
             0,//EB
             damage == 0 ? ATF_IGNORE : ATF_HIT));
+
+        character->ReduceHP(damage);
+
+        if(character->GetCurHP() <= 0)
+            character->Die();
     });
 }
 
 void Player::Tick()
 {
+}
+
+void Player::Die()
+{
+    AddGState(CGS_KO);
+    World::Map(GetMap()).WriteInSight(this, bango::network::packet(S2C_ACTION, "db", GetID(), AT_DIE));
 }

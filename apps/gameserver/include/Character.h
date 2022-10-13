@@ -2,7 +2,6 @@
 
 #include <bango/space/quadtree.h>
 #include <bango/network/packet.h>
-
 #include <bango/utils/random.h>
 
 #include <inix.h>
@@ -80,8 +79,15 @@ public:
     std::uint32_t   GetCurHP()  const { return m_curhp; }
     std::uint32_t   GetCurMP()  const { return m_curmp; }
 
+    void ReduceHP(std::uint32_t reduce);
+
     virtual std::uint32_t GetMaxHP() const { return 1; }
     virtual std::uint32_t GetMaxMP() const { return 1; }
+
+    void SetGState(std::uint64_t gstate)       { m_gstate = gstate; }
+    void SetMState(std::uint64_t mstate)       { m_mstate = mstate; }
+    void SetGStateEx(std::uint64_t gstate_ex)  { m_gstate_ex = gstate_ex; }
+    void SetMStateEx(std::uint64_t mstate_ex)  { m_mstate_ex = mstate_ex; }
 
     std::uint64_t   GetGState()     const { return m_gstate; }
     std::uint64_t   GetMState()     const { return m_mstate; }
@@ -119,5 +125,6 @@ public:
     bool            CheckHit(Character* target, int bonus=0);
     std::int64_t    GetFinalDamage(Character* attacker, std::int64_t damage, bool magical=false);
 
-    virtual void Tick() {}
+    virtual void Tick() = 0;
+    virtual void Die() = 0;
 };

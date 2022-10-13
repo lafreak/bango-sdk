@@ -12,6 +12,8 @@
 
 #include "Socket.h"
 #include "World.h"
+#include "BeheadableMonster.h"
+#include "RegularMonster.h"
 
 #include "CommandDispatcher.h"
 #include "DBListener.h"
@@ -106,7 +108,7 @@ int main(int argc, char** argv)
         int index = token;
 
         try {
-            World::Add(new Monster(InitMonster::DB().at(index), player->GetX()+10, player->GetY()+10, player->GetMap()));
+            Monster::CreateMonster(index, player->GetX(), player->GetY(), player->GetMap());
         } catch (const std::exception&) {
             std::cout << "Monster Index doesnt exist " << index << std::endl;
         }
@@ -185,10 +187,10 @@ int main(int argc, char** argv)
                 World::ForEachPlayer([](Player* player) {
                     player->Tick();
                 });
-
-                // World::ForEachNpc([](NPC* npc) {
-                //     npc->Tick();
-                // });
+                World::ForEachMonster([](Monster* monster) {
+                    monster->Tick();
+                });
+                World::EraseIfMonsterDead();
             }
         } while (status != std::future_status::ready);
     });
