@@ -613,6 +613,12 @@ void Player::OnAttack(packet& p)
         auto duration = (now-m_last_attack).count();
         auto damage_reduce = (double) duration / (double) GetAttackSpeed();
 
+        if (damage_reduce > 1.f)
+            damage_reduce = 1.f;
+
+        else if (damage_reduce < 0.6f)
+            return;
+
         m_last_attack=now;
 
         LookAt(character);
@@ -625,21 +631,15 @@ void Player::OnAttack(packet& p)
             return;
         }
 
-        if (damage_reduce > 1.f)
-            damage_reduce = 1.f;
-
-        else if (damage_reduce < 0.6f)
-            return;
-
         std::int64_t damage = GetAttack();
         damage *= damage_reduce;
         // Something with mage
         damage = character->GetFinalDamage(this, damage);
         // Apply Mix Effects
 
-        if (damage < 0)  // first ensure the data is unsigned.
+        if (damage < 0)
             return;
-        if ((uint64_t)damage > character->GetCurHP())  // then we can safely cast to unsigned64
+        if ((uint64_t)damage > character->GetCurHP())
             damage = character->GetCurHP();
 
         World::Map(GetMap()).WriteInSight(this, packet(S2C_ATTACK, "ddddb", 
@@ -649,7 +649,7 @@ void Player::OnAttack(packet& p)
             0,//EB
             damage == 0 ? ATF_IGNORE : ATF_HIT));
 
-        character->ReduceHP(damage);  // inside reducehp we could even throw an exception to ensure we never have less than 0 hp
+        character->ReduceHP(damage);
 
         if(character->GetCurHP() <= 0)
             character->Die();
