@@ -70,9 +70,9 @@ void DatabaseManager::Initialize()
     });
 }
 
-void DatabaseManager::ConnectToPool(const std::string& host, const std::string& port, const std::string& user, const std::string& password, const std::string& schema)
+bool DatabaseManager::ConnectToPool(const std::string& host, const std::string& port, const std::string& user, const std::string& password, const std::string& schema)
 {
-    m_pool.connect(host, port, user, password, schema);
+    return m_pool.connect(host, port, user, password, schema);
 }
 
 void DatabaseManager::StartDBServer(const std::string& host, const std::int32_t port)

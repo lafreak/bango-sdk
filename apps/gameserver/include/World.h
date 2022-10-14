@@ -175,7 +175,7 @@ public:
     static void EraseIfMonsterDead()
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-        auto monsters = Get().m_entities[Character::MONSTER];
+        auto& monsters = Get().m_entities[Character::MONSTER];
         for(auto it = monsters.begin(); it != monsters.end(); )
         {
             if(it->second->IsGState(CGS_KO))

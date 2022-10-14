@@ -40,6 +40,8 @@ namespace bango { namespace network {
         std::uint16_t m_max_online=1024;
         std::function<void(const writable& client)> m_on_max_online_exceeded;
 
+        std::vector<char> m_remaining_buffer;
+
     public:
         void set_max_online(std::uint16_t max_online) { m_max_online = max_online; }
 
@@ -79,6 +81,8 @@ namespace bango { namespace network {
 
             return false;
         });
+        m_server.get_io_service()->set_nb_workers(40);
+        std::cout << "Workers set to 4" << std::endl;
     }
 
     template<class T>
@@ -92,7 +96,15 @@ namespace bango { namespace network {
                 on_new_message(client, res);
             }});
 
-            auto buffer = res.buffer; //?
+            std::vector<char> buffer;
+            if (m_remaining_buffer.size() > 0) {
+                buffer = m_remaining_buffer;
+                std::copy(res.buffer.begin(), res.buffer.end(), std::back_inserter(buffer));
+                m_remaining_buffer.clear();
+            } else {
+                buffer = res.buffer;
+            }
+            //auto buffer = res.buffer; //?
 
             while (((unsigned short*)buffer.data())[0] <= buffer.size())
             {
@@ -101,8 +113,11 @@ namespace bango { namespace network {
                 buffer.erase(buffer.begin(), buffer.begin() + size);
             }
 
-            if (buffer.size() > 0)
+            // TODO: Wrap around, wait for next packet to recover remaining buffer.
+            if (buffer.size() > 0) {
                 std::cerr << "packet leftover\n";
+                m_remaining_buffer = buffer;
+            }
         }
         else
         {

@@ -33,7 +33,7 @@ public:
 
     void Initialize();
 
-    void ConnectToPool(const std::string& host, const std::string& port, const std::string& user, const std::string& password, const std::string& schema);
+    bool ConnectToPool(const std::string& host, const std::string& port, const std::string& user, const std::string& password, const std::string& schema);
     void StartDBServer(const std::string& host, const std::int32_t port);
 
     void FlagDisconnected(int id) { m_active_users.erase(id); }

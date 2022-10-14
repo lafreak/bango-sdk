@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
 project(bango-sdk)
 
@@ -18,11 +18,13 @@ ExternalProject_Add(tacopie_external
                     GIT_TAG "1ef58161e23f3ff6d4c57703ead349bf9c61d0d5"
                     UPDATE_COMMAND ""
                     PATCH_COMMAND ""
+                    CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${TACOPIE_ROOT}/bin"
                     BINARY_DIR ${TACOPIE_ROOT}/src/tacopie
                     SOURCE_DIR ${TACOPIE_ROOT}/src/tacopie
                     INSTALL_DIR ${TACOPIE_ROOT}/bin
                     BUILD_COMMAND make
                     BUILD_BYPRODUCTS ${TACOPIE_LIB_DIR}/libtacopie.a)
+link_directories(${TACOPIE_LIB_DIR})
 
 add_subdirectory(core/network)
 add_subdirectory(core/persistence)
@@ -31,3 +33,4 @@ add_subdirectory(core/processor)
 add_subdirectory(core/utils)
 add_subdirectory(apps/dbserver)
 add_subdirectory(apps/gameserver)
+add_subdirectory(apps/debugapp)
