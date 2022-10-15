@@ -4,7 +4,7 @@
 #include <bango/network/authorizable.h>
 
 #include <functional>
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include <iostream>
 #include <algorithm>
@@ -19,7 +19,7 @@ namespace bango { namespace network {
 
         tacopie::tcp_server m_server;
 
-        std::map<int*, const std::shared_ptr<T>> m_sessions;
+        std::unordered_map<int*, const std::shared_ptr<T>> m_sessions;
         std::recursive_mutex m_sessions_rmtx;
 
         std::function<void(const std::shared_ptr<T>&)> m_on_connected;
@@ -31,9 +31,9 @@ namespace bango { namespace network {
         void                        remove  (const taco_client_t& client);
         const std::shared_ptr<T>&   find    (const taco_client_t& client);//BUG: Its not thread safe ?
 
-        std::map<unsigned char, std::pair<const std::function<void(const std::shared_ptr<T>&, packet&)>,std::pair<int,int>>> m_callbacks;
-        std::map<unsigned char, int> m_granted_roles;
-        std::map<unsigned char, int> m_restricted_roles;
+        std::unordered_map<unsigned char, std::pair<const std::function<void(const std::shared_ptr<T>&, packet&)>,std::pair<int,int>>> m_callbacks;
+        std::unordered_map<unsigned char, int> m_granted_roles;
+        std::unordered_map<unsigned char, int> m_restricted_roles;
 
         void execute(const std::shared_ptr<T>& session, packet&& p) const;
 
@@ -44,6 +44,7 @@ namespace bango { namespace network {
 
     public:
         void set_max_online(std::uint16_t max_online) { m_max_online = max_online; }
+        void set_nb_workers(std::size_t worker_count) { m_server.get_io_service()->set_nb_workers(worker_count); }
 
         void start(const std::string& host, std::int32_t port);
         void when(unsigned char type, const std::function<void(const std::shared_ptr<T>&, packet&)>&& callback);
@@ -51,8 +52,8 @@ namespace bango { namespace network {
         void on_disconnected(const std::function<void(const std::shared_ptr<T>&)>&& callback);
         void for_each(const std::function<void(const std::shared_ptr<T>&)>&& callback);
 
-        void grant      (const std::map<unsigned char, int>&& roles);
-        void restrict   (const std::map<unsigned char, int>&& roles);
+        void grant      (const std::unordered_map<unsigned char, int>&& roles);
+        void restrict   (const std::unordered_map<unsigned char, int>&& roles);
 
         std::uint16_t get_online() const;
         void on_max_online_exceeded(const std::function<void(const writable& client)>&& callback) { m_on_max_online_exceeded = callback; }
@@ -81,8 +82,6 @@ namespace bango { namespace network {
 
             return false;
         });
-        m_server.get_io_service()->set_nb_workers(40);
-        std::cout << "Workers set to 4" << std::endl;
     }
 
     template<class T>
@@ -212,7 +211,7 @@ namespace bango { namespace network {
     }
     
     template<class T>
-    void server<T>::grant(const std::map<unsigned char, int>&& roles)
+    void server<T>::grant(const std::unordered_map<unsigned char, int>&& roles)
     {
         for (auto& pair : roles) {
             auto event = m_callbacks.find(pair.first);
@@ -222,7 +221,7 @@ namespace bango { namespace network {
     }
 
     template<class T>
-    void server<T>::restrict(const std::map<unsigned char, int>&& roles)
+    void server<T>::restrict(const std::unordered_map<unsigned char, int>&& roles)
     {
         for (auto& pair : roles) {
             auto event = m_callbacks.find(pair.first);
