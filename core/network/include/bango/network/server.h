@@ -4,36 +4,40 @@
 #include <bango/network/authorizable.h>
 
 #include <functional>
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include <iostream>
 #include <algorithm>
+#include <list>
 
 namespace bango { namespace network {
 
     template<class T>
     class server
     {
+        struct client_metadata {
+            // on_new_message not always collects entire chunk of data but stops in the middle.
+            // This remaining buffer linked to session keeps remaining chunk which are not fully received yet.
+            std::vector<char> m_remaining_buffer;
+        };
+
         typedef std::shared_ptr<tacopie::tcp_client> taco_client_t;
         typedef tacopie::tcp_client::read_result taco_read_result_t;
 
+        typedef std::pair<const std::shared_ptr<T>, client_metadata> session_with_meta_t;
+        typedef std::shared_ptr<session_with_meta_t> session_with_meta_ptr_t;
+
         tacopie::tcp_server m_server;
 
-        std::map<int*, const std::shared_ptr<T>> m_sessions;
-        std::recursive_mutex m_sessions_rmtx;
+        std::list<session_with_meta_ptr_t> m_sessions;
+        std::mutex m_sessions_mtx;
 
         std::function<void(const std::shared_ptr<T>&)> m_on_connected;
         std::function<void(const std::shared_ptr<T>&)> m_on_disconnected;
 
-        void on_new_message(const taco_client_t& client, const taco_read_result_t& res);
+        void on_new_message(session_with_meta_ptr_t session_with_meta_ptr, const taco_client_t& client, const taco_read_result_t& res);
 
-        const std::shared_ptr<T>&   insert  (const taco_client_t& client);
-        void                        remove  (const taco_client_t& client);
-        const std::shared_ptr<T>&   find    (const taco_client_t& client);//BUG: Its not thread safe ?
-
-        std::map<unsigned char, std::pair<const std::function<void(const std::shared_ptr<T>&, packet&)>,std::pair<int,int>>> m_callbacks;
-        std::map<unsigned char, int> m_granted_roles;
-        std::map<unsigned char, int> m_restricted_roles;
+        std::unordered_map<unsigned char, std::pair<const std::function<void(const std::shared_ptr<T>&, packet&)>,std::pair<int,int>>> m_callbacks;
 
         void execute(const std::shared_ptr<T>& session, packet&& p) const;
 
@@ -42,6 +46,7 @@ namespace bango { namespace network {
 
     public:
         void set_max_online(std::uint16_t max_online) { m_max_online = max_online; }
+        void set_nb_workers(std::size_t worker_count) { m_server.get_io_service()->set_nb_workers(worker_count); }
 
         void start(const std::string& host, std::int32_t port);
         void when(unsigned char type, const std::function<void(const std::shared_ptr<T>&, packet&)>&& callback);
@@ -49,8 +54,8 @@ namespace bango { namespace network {
         void on_disconnected(const std::function<void(const std::shared_ptr<T>&)>&& callback);
         void for_each(const std::function<void(const std::shared_ptr<T>&)>&& callback);
 
-        void grant      (const std::map<unsigned char, int>&& roles);
-        void restrict   (const std::map<unsigned char, int>&& roles);
+        void grant      (const std::unordered_map<unsigned char, int>&& roles);
+        void restrict   (const std::unordered_map<unsigned char, int>&& roles);
 
         std::uint16_t get_online() const;
         void on_max_online_exceeded(const std::function<void(const writable& client)>&& callback) { m_on_max_online_exceeded = callback; }
@@ -61,6 +66,7 @@ namespace bango { namespace network {
     {
         m_server.start(host, port, [&](const taco_client_t& client) -> bool 
         {
+            std::lock_guard<std::mutex> lock(m_sessions_mtx);
             if (get_online() >= m_max_online)
             {
                 if (m_on_max_online_exceeded)
@@ -68,91 +74,75 @@ namespace bango { namespace network {
                 return false;
             }
 
-            client->async_read({MAX_PACKET_LENGTH, [=](const taco_read_result_t& res) {
-                on_new_message(client, res);
-            }});
-
-            auto& session = insert(client);
+            // Add new session.
+            m_sessions.emplace_back(std::make_shared<session_with_meta_t>(std::make_pair(std::make_shared<T>(client), client_metadata{})));
+            auto& session_with_meta_ptr = m_sessions.back();
 
             if (m_on_connected)
-                m_on_connected(session);
+                m_on_connected(session_with_meta_ptr->first);
+
+            client->async_read({MAX_PACKET_LENGTH, [this, session_with_meta_ptr, client](const taco_read_result_t& res) {
+                on_new_message(session_with_meta_ptr, client, res);
+            }});
 
             return false;
         });
     }
 
     template<class T>
-    void server<T>::on_new_message(const taco_client_t& client, const taco_read_result_t& res)
+    void server<T>::on_new_message(session_with_meta_ptr_t session_with_meta_ptr, const taco_client_t& client, const taco_read_result_t& res)
     {
-        auto& session = find(client);
-
         if (res.success)
         {
-            client->async_read({MAX_PACKET_LENGTH, [=](const taco_read_result_t& res) {
-                on_new_message(client, res);
-            }});
-
-            auto buffer = res.buffer; //?
+            // FIXME: This is slow.
+            std::vector<char> buffer;
+            auto& meta = session_with_meta_ptr->second;
+            if (meta.m_remaining_buffer.size() > 0) {
+                buffer.reserve(meta.m_remaining_buffer.size() + res.buffer.size());
+                buffer.insert(buffer.end(), meta.m_remaining_buffer.begin(), meta.m_remaining_buffer.end());
+                buffer.insert(buffer.end(), res.buffer.begin(), res.buffer.end());
+                meta.m_remaining_buffer.clear();
+            } else {
+                buffer = res.buffer;
+            }
 
             while (((unsigned short*)buffer.data())[0] <= buffer.size())
             {
                 auto size = ((unsigned short*)buffer.data())[0];
-                execute(session, packet(std::vector<char>(buffer.begin(), buffer.begin() + size)));
+                execute(session_with_meta_ptr->first, packet(std::vector<char>(buffer.begin(), buffer.begin() + size)));
                 buffer.erase(buffer.begin(), buffer.begin() + size);
             }
 
-            if (buffer.size() > 0)
-                std::cerr << "packet leftover\n";
+            if (buffer.size() > 0) {
+                std::cout << "packet leftover happened\n";
+                meta.m_remaining_buffer = buffer;
+            }
+
+            client->async_read({MAX_PACKET_LENGTH, [this, session_with_meta_ptr, client](const taco_read_result_t& res) {
+                on_new_message(session_with_meta_ptr, client, res);
+            }});
         }
         else
         {
             if (m_on_disconnected)
-                m_on_disconnected(session);
-            remove(client);
+                m_on_disconnected(session_with_meta_ptr->first);
+
+            // Remove the session.
+            std::lock_guard<std::mutex> lock(m_sessions_mtx);
+            size_t before_count = m_sessions.size();
+            if (before_count == 0)
+                throw std::logic_error("fatal error: session container is empty");
+            m_sessions.remove_if([&session_with_meta_ptr](const auto& e) { return e->first.get() == session_with_meta_ptr->first.get(); });
+            size_t after_count = m_sessions.size();
+            if (after_count != before_count - 1)
+                throw std::logic_error("fatal error: session has not been erased");
             client->disconnect();
         }
     }
 
     template<class T>
-    const std::shared_ptr<T>& server<T>::insert(const taco_client_t& client)
-    {
-        std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
-
-        auto result = m_sessions.insert(std::make_pair(
-            (int*) client.get(),
-            std::make_unique<T>(client)
-        ));
-
-        if (!result.second)
-            throw std::runtime_error("duplicate session");
-
-        return result.first->second;
-    }
-
-    template<class T>
-    void server<T>::remove(const taco_client_t& client)
-    {
-        std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
-
-        if (m_sessions.erase((int*) client.get()) == 0)
-            throw std::runtime_error("session removal of non existing client");
-    }
-
-    template<class T>
-    const std::shared_ptr<T>& server<T>::find(const taco_client_t& client)
-    {
-        std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
-
-        // BUG: returned value may be deleted from server later on
-        return m_sessions[(int*) client.get()];
-    }
-
-    template<class T>
     std::uint16_t server<T>::get_online() const
     {
-        //std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
-        // Is it really data race free?
-
         return m_sessions.size();
     }
 
@@ -183,21 +173,20 @@ namespace bango { namespace network {
     template<class T>
     void server<T>::when(unsigned char type, const std::function<void(const std::shared_ptr<T>&, packet&)>&& callback)
     {
-        //m_callbacks[type] = callback;
         m_callbacks.insert(std::make_pair(type, std::make_pair(callback, std::make_pair(0,0))));
     }
 
     template<class T>
     void server<T>::for_each(const std::function<void(const std::shared_ptr<T>&)>&& callback)
     {
-        std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
+        std::lock_guard<std::mutex> lock(m_sessions_mtx);
 
         for (auto& session : m_sessions)
-            callback(session.second);
+            callback(session->first);
     }
     
     template<class T>
-    void server<T>::grant(const std::map<unsigned char, int>&& roles)
+    void server<T>::grant(const std::unordered_map<unsigned char, int>&& roles)
     {
         for (auto& pair : roles) {
             auto event = m_callbacks.find(pair.first);
@@ -207,7 +196,7 @@ namespace bango { namespace network {
     }
 
     template<class T>
-    void server<T>::restrict(const std::map<unsigned char, int>&& roles)
+    void server<T>::restrict(const std::unordered_map<unsigned char, int>&& roles)
     {
         for (auto& pair : roles) {
             auto event = m_callbacks.find(pair.first);

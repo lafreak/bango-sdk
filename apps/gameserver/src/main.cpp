@@ -33,11 +33,13 @@ int main(int argc, char** argv)
     std::uint16_t db_port = 2999;
     std::string game_address{"0.0.0.0"};
     std::uint16_t game_port = 3000;
+    std::size_t processing_threads = 8;  // TODO: Default value should depend on nproc
 
     app.add_option("--db_address", db_address, "DB server address");
     app.add_option("--db_port", db_port, "DB server port");
     app.add_option("--game_address", game_address, "Game server address");
     app.add_option("--game_port", game_port, "Game server port");
+    app.add_option("--processing_threads", processing_threads, "Number of processing threads for incoming packets from players");
 
     try {
         app.parse(argc, argv);
@@ -54,6 +56,7 @@ int main(int argc, char** argv)
     using namespace std::placeholders;
 
     Socket::GameServer().set_max_online(1024);
+    Socket::GameServer().set_nb_workers(processing_threads);
     Socket::GameServer().on_max_online_exceeded([](const writable& client) {
         //BUG: Dead connection may stay alive using packet hack.
         client.write(S2C_CLOSE, "b", CC_OVERPOPULATION); 

@@ -37,7 +37,10 @@ int main(int argc, char** argv)
 
     manager.Initialize();
 
-    manager.ConnectToPool(db_address, db_port, db_user, db_password, db_schema);
+    if (!manager.ConnectToPool(db_address, db_port, db_user, db_password, db_schema)) {
+        std::cerr << "Cannot connect to database " << db_address << ":" << db_port << " (user: " << db_user << ")" << std::endl;
+        return 1;
+    }
     std::cout << "Connected to database " << db_address << ":" << db_port << " (user: " << db_user << ")" << std::endl;
 
     manager.StartDBServer(server_address, server_port);
