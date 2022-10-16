@@ -8,39 +8,46 @@
 #include <memory>
 #include <iostream>
 #include <algorithm>
+#include <list>
 
 namespace bango { namespace network {
 
     template<class T>
     class server
     {
+        struct client_metadata {
+            std::vector<char> m_remaining_buffer;
+        };
+
         typedef std::shared_ptr<tacopie::tcp_client> taco_client_t;
         typedef tacopie::tcp_client::read_result taco_read_result_t;
 
+        typedef const std::shared_ptr<std::pair<const std::shared_ptr<T>, client_metadata>> session_with_meta_t;
+
         tacopie::tcp_server m_server;
 
-        std::unordered_map<int*, const std::shared_ptr<T>> m_sessions;
-        std::recursive_mutex m_sessions_rmtx;
+        std::list<session_with_meta_t> m_sessions;
+        //std::unordered_map<int*, const std::shared_ptr<T>> m_sessions;
+        // on_new_message not always collects entire chunk of data but stops in the middle.
+        // Those buffers keep remaining chunk which are not fully received yet.
+        //std::unordered_map<int*, client_metadata> m_session_metadata;
+        std::mutex m_sessions_mtx;
 
         std::function<void(const std::shared_ptr<T>&)> m_on_connected;
         std::function<void(const std::shared_ptr<T>&)> m_on_disconnected;
 
-        void on_new_message(const taco_client_t& client, const taco_read_result_t& res);
+        void on_new_message(session_with_meta_t session_with_meta, const taco_client_t& client, const taco_read_result_t& res);
 
-        const std::shared_ptr<T>&   insert  (const taco_client_t& client);
-        void                        remove  (const taco_client_t& client);
-        const std::shared_ptr<T>&   find    (const taco_client_t& client);//BUG: Its not thread safe ?
+        // const std::shared_ptr<T>   insert  (const taco_client_t& client);
+        // void                        remove  (const taco_client_t& client);
+        // const std::shared_ptr<T>&   find    (const taco_client_t& client);//BUG: Its not thread safe ?
 
         std::unordered_map<unsigned char, std::pair<const std::function<void(const std::shared_ptr<T>&, packet&)>,std::pair<int,int>>> m_callbacks;
-        std::unordered_map<unsigned char, int> m_granted_roles;
-        std::unordered_map<unsigned char, int> m_restricted_roles;
 
         void execute(const std::shared_ptr<T>& session, packet&& p) const;
 
         std::uint16_t m_max_online=1024;
         std::function<void(const writable& client)> m_on_max_online_exceeded;
-
-        std::vector<char> m_remaining_buffer;
 
     public:
         void set_max_online(std::uint16_t max_online) { m_max_online = max_online; }
@@ -64,6 +71,7 @@ namespace bango { namespace network {
     {
         m_server.start(host, port, [&](const taco_client_t& client) -> bool 
         {
+            std::lock_guard<std::mutex> lock(m_sessions_mtx);
             if (get_online() >= m_max_online)
             {
                 if (m_on_max_online_exceeded)
@@ -71,95 +79,122 @@ namespace bango { namespace network {
                 return false;
             }
 
-            client->async_read({MAX_PACKET_LENGTH, [=](const taco_read_result_t& res) {
-                on_new_message(client, res);
-            }});
-
-            auto& session = insert(client);
+            //auto session = std::make_shared<session_with_meta_t>(std::make_pair(std::make_shared<T>(client), client_metadata{}));
+            m_sessions.emplace_back(std::make_shared<std::pair<const std::shared_ptr<T>, client_metadata>>(std::make_pair(std::make_shared<T>(client), client_metadata{})));
+            auto& session_with_meta = m_sessions.back();
 
             if (m_on_connected)
-                m_on_connected(session);
+                m_on_connected(session_with_meta->first);
+
+            client->async_read({MAX_PACKET_LENGTH, [this, session_with_meta, client](const taco_read_result_t& res) {
+                on_new_message(session_with_meta, client, res);
+            }});
 
             return false;
         });
     }
 
     template<class T>
-    void server<T>::on_new_message(const taco_client_t& client, const taco_read_result_t& res)
+    void server<T>::on_new_message(session_with_meta_t session_with_meta, const taco_client_t& client, const taco_read_result_t& res)
     {
-        auto& session = find(client);
+        // auto& session = find(client);
 
         if (res.success)
         {
-            client->async_read({MAX_PACKET_LENGTH, [=](const taco_read_result_t& res) {
-                on_new_message(client, res);
-            }});
-
             std::vector<char> buffer;
-            if (m_remaining_buffer.size() > 0) {
-                buffer = m_remaining_buffer;
+            auto& meta = session_with_meta->second;
+            //auto& meta = m_session_metadata[(int*) client.get()];  // TODO: Check for existence?
+            if (meta.m_remaining_buffer.size() > 0) {
+                buffer = meta.m_remaining_buffer;
                 std::copy(res.buffer.begin(), res.buffer.end(), std::back_inserter(buffer));
-                m_remaining_buffer.clear();
+                meta.m_remaining_buffer.clear();
             } else {
                 buffer = res.buffer;
             }
-            //auto buffer = res.buffer; //?
+
+            //auto buffer = res.buffer;
 
             while (((unsigned short*)buffer.data())[0] <= buffer.size())
             {
                 auto size = ((unsigned short*)buffer.data())[0];
-                execute(session, packet(std::vector<char>(buffer.begin(), buffer.begin() + size)));
+                execute(session_with_meta->first, packet(std::vector<char>(buffer.begin(), buffer.begin() + size)));
                 buffer.erase(buffer.begin(), buffer.begin() + size);
             }
 
             // TODO: Wrap around, wait for next packet to recover remaining buffer.
             if (buffer.size() > 0) {
-                std::cerr << "packet leftover\n";
-                m_remaining_buffer = buffer;
+                std::cout << "packet leftover\n";
+                //throw std::logic_error("packet leftover");
+                meta.m_remaining_buffer = buffer;
             }
+
+            client->async_read({MAX_PACKET_LENGTH, [this, session_with_meta, client](const taco_read_result_t& res) {
+                on_new_message(session_with_meta, client, res);
+            }});
         }
         else
         {
             if (m_on_disconnected)
-                m_on_disconnected(session);
-            remove(client);
+                m_on_disconnected(session_with_meta->first);
+            std::lock_guard<std::mutex> lock(m_sessions_mtx);
+            auto before_count = m_sessions.size();
+            m_sessions.remove_if([session_with_meta](const auto& e) { return e->first.get() == session_with_meta->first.get(); });
+            auto after_count = m_sessions.size();
+            if (after_count != before_count - 1)
+                throw std::logic_error("fatal error: session has not been erased");
+            //remove(client);
             client->disconnect();
         }
     }
 
-    template<class T>
-    const std::shared_ptr<T>& server<T>::insert(const taco_client_t& client)
-    {
-        std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
+    // template<class T>
+    // const std::shared_ptr<T> server<T>::insert(const taco_client_t& client)
+    // {
+    //     //std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
 
-        auto result = m_sessions.insert(std::make_pair(
-            (int*) client.get(),
-            std::make_unique<T>(client)
-        ));
+    //     auto result = m_sessions.insert(std::make_pair(
+    //         (int*) client.get(),
+    //         std::make_shared<T>(client)
+    //     ));
 
-        if (!result.second)
-            throw std::runtime_error("duplicate session");
+    //     if (!result.second)
+    //         throw std::runtime_error("duplicate session");
+        
+    //     auto result2 = m_session_metadata.insert(std::make_pair(
+    //         (int*) client.get(), client_metadata{}
+    //     ));
 
-        return result.first->second;
-    }
+    //     if (!result2.second)
+    //         throw std::runtime_error("duplicate session");
 
-    template<class T>
-    void server<T>::remove(const taco_client_t& client)
-    {
-        std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
+    //     return result.first->second;
+    // }
 
-        if (m_sessions.erase((int*) client.get()) == 0)
-            throw std::runtime_error("session removal of non existing client");
-    }
+    // template<class T>
+    // void server<T>::remove(const taco_client_t& client)
+    // {
+    //     std::lock_guard<std::mutex> lock(m_sessions_mtx);
 
-    template<class T>
-    const std::shared_ptr<T>& server<T>::find(const taco_client_t& client)
-    {
-        std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
+    //     if (m_sessions.erase((int*) client.get()) == 0)
+    //         throw std::runtime_error("session removal of non existing client");
+        
+    //     if (m_session_metadata.erase((int*) client.get()) == 0)
+    //         throw std::runtime_error("session removal of non existing client");
+    // }
 
-        // BUG: returned value may be deleted from server later on
-        return m_sessions[(int*) client.get()];
-    }
+    // template<class T>
+    // const std::shared_ptr<T>& server<T>::find(const taco_client_t& client)
+    // {
+    //     std::lock_guard<std::mutex> lock(m_sessions_mtx);
+
+    //     auto it = m_sessions.find((int*) client.get());
+    //     if (it == m_sessions.end()) {
+    //         throw std::runtime_error("cannot find the tacopie session");
+    //     }
+    
+    //     // BUG: returned value may be deleted from server later on
+    //     return it->second;
+    // }
 
     template<class T>
     std::uint16_t server<T>::get_online() const
@@ -168,6 +203,7 @@ namespace bango { namespace network {
         // Is it really data race free?
 
         return m_sessions.size();
+        //return 1;
     }
 
     template<class T>
@@ -204,10 +240,10 @@ namespace bango { namespace network {
     template<class T>
     void server<T>::for_each(const std::function<void(const std::shared_ptr<T>&)>&& callback)
     {
-        std::lock_guard<std::recursive_mutex> lock(m_sessions_rmtx);
+        std::lock_guard<std::mutex> lock(m_sessions_mtx);
 
         for (auto& session : m_sessions)
-            callback(session.second);
+            callback(session->first);
     }
     
     template<class T>

@@ -27,11 +27,12 @@ public:
 
 int main()
 {
-    //std::atomic<int> non_synchronized_var{20};
-    int non_synchronized_var{20};
+    std::atomic<int> non_synchronized_var{20};
+    //int non_synchronized_var{20};
     std::mutex mx;
     bool work_started = false;
     server<my_user> serv;
+    serv.set_nb_workers(40);
     serv.on_connected([](const std::shared_ptr<my_user>& user) {
         std::cout << "New user connected: " << user->id << std::endl;
     });
@@ -64,7 +65,7 @@ int main()
     client clt;
     clt.connect("localhost", 6969);
     
-    for (int i = 0; i < 80000; i++) {
+    for (int i = 0; i < 8000; i++) {
         struct TT {
             char d[893];
         };
@@ -90,6 +91,12 @@ int main()
             for (int j = 0; j < 50; j++) {
                 clients[i].write(packet(30));
             }
+            // for (int j = 0; j < 50; j++) {
+            //     client cc;
+            //     cc.connect("localhost", 6969);
+            //     cc.write(packet(30));
+            // }
+            
         }));
     }
 

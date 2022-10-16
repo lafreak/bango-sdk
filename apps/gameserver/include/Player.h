@@ -25,8 +25,8 @@ class Player : public Character, public User//, public Inventory
         m_last_attack;
 
 public:
-    Player(const bango::network::taco_client_t& client)
-        : User(client), Character(Character::PLAYER) {}
+    Player(const bango::network::taco_client_t& client);
+    ~Player();
 
     // Network I/O Endpoints
     void OnConnected        ();

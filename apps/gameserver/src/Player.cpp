@@ -8,6 +8,16 @@
 using namespace bango::network;
 using namespace bango::utils;
 
+Player::Player(const bango::network::taco_client_t& client) : User(client), Character(Character::PLAYER)
+{
+    std::cout << "Player [" << (int*)this << "] added" << std::endl;
+}
+
+Player::~Player()
+{
+    std::cout << "Player [" << (int*)this << "] removed" << std::endl;
+}
+
 void Player::OnConnected()
 {
     assign(User::CAN_REQUEST_PRIMARY);
