@@ -35,7 +35,7 @@ namespace bango { namespace network {
         std::function<void(const std::shared_ptr<T>&)> m_on_connected;
         std::function<void(const std::shared_ptr<T>&)> m_on_disconnected;
 
-        void on_new_message(session_with_meta_ptr_t session_with_meta, const taco_client_t& client, const taco_read_result_t& res);
+        void on_new_message(session_with_meta_ptr_t session_with_meta_ptr, const taco_client_t& client, const taco_read_result_t& res);
 
         std::unordered_map<unsigned char, std::pair<const std::function<void(const std::shared_ptr<T>&, packet&)>,std::pair<int,int>>> m_callbacks;
 
@@ -76,13 +76,13 @@ namespace bango { namespace network {
 
             // Add new session.
             m_sessions.emplace_back(std::make_shared<session_with_meta_t>(std::make_pair(std::make_shared<T>(client), client_metadata{})));
-            auto& session_with_meta = m_sessions.back();
+            auto& session_with_meta_ptr = m_sessions.back();
 
             if (m_on_connected)
-                m_on_connected(session_with_meta->first);
+                m_on_connected(session_with_meta_ptr->first);
 
-            client->async_read({MAX_PACKET_LENGTH, [this, session_with_meta, client](const taco_read_result_t& res) {
-                on_new_message(session_with_meta, client, res);
+            client->async_read({MAX_PACKET_LENGTH, [this, session_with_meta_ptr, client](const taco_read_result_t& res) {
+                on_new_message(session_with_meta_ptr, client, res);
             }});
 
             return false;
@@ -90,16 +90,17 @@ namespace bango { namespace network {
     }
 
     template<class T>
-    void server<T>::on_new_message(session_with_meta_ptr_t session_with_meta, const taco_client_t& client, const taco_read_result_t& res)
+    void server<T>::on_new_message(session_with_meta_ptr_t session_with_meta_ptr, const taco_client_t& client, const taco_read_result_t& res)
     {
         if (res.success)
         {
             // FIXME: This is slow.
             std::vector<char> buffer;
-            auto& meta = session_with_meta->second;
+            auto& meta = session_with_meta_ptr->second;
             if (meta.m_remaining_buffer.size() > 0) {
-                buffer = meta.m_remaining_buffer;
-                std::copy(res.buffer.begin(), res.buffer.end(), std::back_inserter(buffer));
+                buffer.reserve(meta.m_remaining_buffer.size() + res.buffer.size());
+                buffer.insert(buffer.end(), meta.m_remaining_buffer.begin(), meta.m_remaining_buffer.end());
+                buffer.insert(buffer.end(), res.buffer.begin(), res.buffer.end());
                 meta.m_remaining_buffer.clear();
             } else {
                 buffer = res.buffer;
@@ -108,7 +109,7 @@ namespace bango { namespace network {
             while (((unsigned short*)buffer.data())[0] <= buffer.size())
             {
                 auto size = ((unsigned short*)buffer.data())[0];
-                execute(session_with_meta->first, packet(std::vector<char>(buffer.begin(), buffer.begin() + size)));
+                execute(session_with_meta_ptr->first, packet(std::vector<char>(buffer.begin(), buffer.begin() + size)));
                 buffer.erase(buffer.begin(), buffer.begin() + size);
             }
 
@@ -117,20 +118,22 @@ namespace bango { namespace network {
                 meta.m_remaining_buffer = buffer;
             }
 
-            client->async_read({MAX_PACKET_LENGTH, [this, session_with_meta, client](const taco_read_result_t& res) {
-                on_new_message(session_with_meta, client, res);
+            client->async_read({MAX_PACKET_LENGTH, [this, session_with_meta_ptr, client](const taco_read_result_t& res) {
+                on_new_message(session_with_meta_ptr, client, res);
             }});
         }
         else
         {
             if (m_on_disconnected)
-                m_on_disconnected(session_with_meta->first);
+                m_on_disconnected(session_with_meta_ptr->first);
 
             // Remove the session.
             std::lock_guard<std::mutex> lock(m_sessions_mtx);
-            auto before_count = m_sessions.size();
-            m_sessions.remove_if([session_with_meta](const auto& e) { return e->first.get() == session_with_meta->first.get(); });
-            auto after_count = m_sessions.size();
+            size_t before_count = m_sessions.size();
+            if (before_count == 0)
+                throw std::logic_error("fatal error: session container is empty");
+            m_sessions.remove_if([&session_with_meta_ptr](const auto& e) { return e->first.get() == session_with_meta_ptr->first.get(); });
+            size_t after_count = m_sessions.size();
             if (after_count != before_count - 1)
                 throw std::logic_error("fatal error: session has not been erased");
             client->disconnect();

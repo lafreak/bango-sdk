@@ -9,7 +9,7 @@
 #include <chrono>
 #include <mutex>
 
-#define MULTI
+//#define MULTI
 
 using namespace bango::network;
 
@@ -18,7 +18,6 @@ static std::atomic<int> next_id{1};
 class my_user : public writable, public authorizable {
 public:
     int id;
-    // using writable::writable;
     my_user(const std::shared_ptr<tacopie::tcp_client>& client) 
             : writable(client) {
         this->id = next_id++;
@@ -27,20 +26,17 @@ public:
 
 int main()
 {
+    constexpr static char tested_packet_id = 30;
+
     std::atomic<int> non_synchronized_var{20};
-    //int non_synchronized_var{20};
+    //int non_synchronized_var{20};  // uncomment when testing unsafe code
     std::mutex mx;
-    bool work_started = false;
     server<my_user> serv;
     serv.set_nb_workers(40);
     serv.on_connected([](const std::shared_ptr<my_user>& user) {
         std::cout << "New user connected: " << user->id << std::endl;
     });
-    serv.when(30, [&non_synchronized_var, &work_started, &mx](const std::shared_ptr<my_user>& user, packet& pack) {
-        if (work_started) {
-            //throw std::logic_error("bad");
-        }
-        work_started = true;
+    serv.when(tested_packet_id, [&non_synchronized_var, &mx](const std::shared_ptr<my_user>& user, packet& pack) {
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(20ms);
         non_synchronized_var++;
@@ -52,22 +48,20 @@ int main()
         mx.lock();
         std::cout << "User id[" << user->id << "] Thread id[" << std::this_thread::get_id() << "] Time[" << millis << "] Incremented to " << after << std::endl;
         mx.unlock();
-        if (!work_started) {
-            //throw std::logic_error("bad");
-        }
-        work_started = false;
     } );
     serv.start("localhost", 6969);
 
 #ifndef MULTI
     client clt;
     clt.connect("localhost", 6969);
-    
-    for (int i = 0; i < 8000; i++) {
+    constexpr static size_t number_of_packets_to_be_sent_by_single_client = 8000;
+    constexpr static size_t packet_data_size = 893;
+
+    for (int i = 0; i < number_of_packets_to_be_sent_by_single_client; i++) {
         struct TT {
-            char d[893];
+            char d[packet_data_size];
         };
-        packet d(30);
+        packet d(tested_packet_id);
         d << TT();
         clt.write(d);
     }
@@ -75,26 +69,21 @@ int main()
     std::cout << "Result: " << non_synchronized_var << std::endl;
     std::cin.get();
 #else
-    const size_t numberOfWorkers = 30;
+    constexpr static size_t number_of_workers = 30;
     std::vector<std::unique_ptr<std::thread>> workers;
-    std::vector<std::promise<void>> signals(numberOfWorkers);
-    std::vector<client> clients{numberOfWorkers};
-    for (int i = 0; i < numberOfWorkers; i++) {
+    std::vector<std::promise<void>> signals(number_of_workers);
+    std::vector<client> clients{number_of_workers};
+    for (int i = 0; i < number_of_workers; i++) {
         clients[i].connect("localhost", 6969);
     }
 
-    for (int i = 0; i < numberOfWorkers; i++) {
+    constexpr static size_t number_of_packets_per_client = 50;
+    for (int i = 0; i < number_of_workers; i++) {
         workers.emplace_back(std::make_unique<std::thread>([i, &signals, &clients]() {
             signals[i].get_future().get();
-            for (int j = 0; j < 50; j++) {
-                clients[i].write(packet(30));
+            for (int j = 0; j < number_of_packets_per_client; j++) {
+                clients[i].write(packet(tested_packet_id));
             }
-            // for (int j = 0; j < 50; j++) {
-            //     client cc;
-            //     cc.connect("localhost", 6969);
-            //     cc.write(packet(30));
-            // }
-            
         }));
     }
 
