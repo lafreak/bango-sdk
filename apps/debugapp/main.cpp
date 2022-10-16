@@ -9,7 +9,7 @@
 #include <chrono>
 #include <mutex>
 
-//#define MULTI
+#define MULTI
 
 using namespace bango::network;
 
@@ -38,8 +38,7 @@ int main()
     });
     serv.when(30, [&non_synchronized_var, &work_started, &mx](const std::shared_ptr<my_user>& user, packet& pack) {
         if (work_started) {
-            //std::cout << "Wtf" << std::endl;
-            //throw std::logic_error("wtf?");
+            //throw std::logic_error("bad");
         }
         work_started = true;
         using namespace std::chrono_literals;
@@ -54,8 +53,7 @@ int main()
         std::cout << "User id[" << user->id << "] Thread id[" << std::this_thread::get_id() << "] Time[" << millis << "] Incremented to " << after << std::endl;
         mx.unlock();
         if (!work_started) {
-            //std::cout << "Wtf2" << std::endl;
-            //throw std::logic_error("wtf?");
+            //throw std::logic_error("bad");
         }
         work_started = false;
     } );
