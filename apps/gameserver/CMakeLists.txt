@@ -25,6 +25,7 @@ set(SOURCES
   src/main.cpp
   src/BeheadableMonster.cpp
   src/RegularMonster.cpp
+  src/Party.cpp
   )
 
 add_executable(gameserver ${SOURCES})

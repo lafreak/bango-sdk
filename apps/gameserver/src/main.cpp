@@ -74,21 +74,25 @@ int main(int argc, char** argv)
     Socket::GameServer().when(C2S_RESTOREPLAYER,    std::bind(&User::OnRestorePlayer,   _1, _2));
     Socket::GameServer().when(C2S_LOADPLAYER,       std::bind(&User::OnLoadPlayer,      _1, _2));
 
-    Socket::GameServer().when(C2S_START,            std::bind(&Player::OnStart,             _1, _2));
-    Socket::GameServer().when(C2S_RESTART,          std::bind(&Player::OnRestart,           _1, _2));
-    Socket::GameServer().when(C2S_GAMEEXIT,         std::bind(&Player::OnExit,              _1, _2));
-    Socket::GameServer().when(C2S_MOVE_ON,          std::bind(&Player::OnMove,              _1, _2, false));
-    Socket::GameServer().when(C2S_MOVE_END,         std::bind(&Player::OnMove,              _1, _2, true ));
-    Socket::GameServer().when(C2S_CHATTING,         std::bind(&Player::OnChatting,          _1, _2));
-    Socket::GameServer().when(C2S_PUTONITEM,        std::bind(&Player::OnPutOnItem,         _1, _2));
-    Socket::GameServer().when(C2S_PUTOFFITEM,       std::bind(&Player::OnPutOffItem,        _1, _2));
-    Socket::GameServer().when(C2S_USEITEM,          std::bind(&Player::OnUseItem,           _1, _2));
-    Socket::GameServer().when(C2S_TRASHITEM,        std::bind(&Player::OnTrashItem,         _1, _2));
-    Socket::GameServer().when(C2S_REST,             std::bind(&Player::OnRest,              _1, _2));
-    Socket::GameServer().when(C2S_TELEPORT,         std::bind(&Player::OnTeleportAnswer,    _1, _2));
-    Socket::GameServer().when(C2S_UPDATEPROPERTY,   std::bind(&Player::OnUpdateProperty,    _1, _2));
-    Socket::GameServer().when(C2S_PLAYER_ANIMATION, std::bind(&Player::OnPlayerAnimation,   _1, _2));
-    Socket::GameServer().when(C2S_ATTACK,           std::bind(&Player::OnAttack,            _1, _2));
+    Socket::GameServer().when(C2S_START,            std::bind(&Player::OnStart,              _1, _2));
+    Socket::GameServer().when(C2S_RESTART,          std::bind(&Player::OnRestart,            _1, _2));
+    Socket::GameServer().when(C2S_GAMEEXIT,         std::bind(&Player::OnExit,               _1, _2));
+    Socket::GameServer().when(C2S_MOVE_ON,          std::bind(&Player::OnMove,               _1, _2, false));
+    Socket::GameServer().when(C2S_MOVE_END,         std::bind(&Player::OnMove,               _1, _2, true ));
+    Socket::GameServer().when(C2S_CHATTING,         std::bind(&Player::OnChatting,           _1, _2));
+    Socket::GameServer().when(C2S_PUTONITEM,        std::bind(&Player::OnPutOnItem,          _1, _2));
+    Socket::GameServer().when(C2S_PUTOFFITEM,       std::bind(&Player::OnPutOffItem,         _1, _2));
+    Socket::GameServer().when(C2S_USEITEM,          std::bind(&Player::OnUseItem,            _1, _2));
+    Socket::GameServer().when(C2S_TRASHITEM,        std::bind(&Player::OnTrashItem,          _1, _2));
+    Socket::GameServer().when(C2S_REST,             std::bind(&Player::OnRest,               _1, _2));
+    Socket::GameServer().when(C2S_TELEPORT,         std::bind(&Player::OnTeleportAnswer,     _1, _2));
+    Socket::GameServer().when(C2S_UPDATEPROPERTY,   std::bind(&Player::OnUpdateProperty,     _1, _2));
+    Socket::GameServer().when(C2S_PLAYER_ANIMATION, std::bind(&Player::OnPlayerAnimation,    _1, _2));
+    Socket::GameServer().when(C2S_ATTACK,           std::bind(&Player::OnAttack,             _1, _2));
+    Socket::GameServer().when(C2S_ASKPARTY,         std::bind(&Player::OnPartyInvite,        _1, _2));
+    Socket::GameServer().when(C2S_ANS_ASKPARTY,     std::bind(&Player::OnPartyInviteResponse,_1, _2));
+    Socket::GameServer().when(C2S_LEAVEPARTY,       std::bind(&Player::OnPartyLeave,         _1, _2));
+    Socket::GameServer().when(C2S_EXILEPARTY,       std::bind(&Player::OnPartyExpel,         _1, _2));
 
     Socket::DBClient().when(D2S_LOGIN,              std::bind(&DBListener::OnLogin,             _1));
     Socket::DBClient().when(D2S_AUTHORIZED,         std::bind(&DBListener::OnAuthorized,        _1));
@@ -115,6 +119,32 @@ int main(int argc, char** argv)
         } catch (const std::exception&) {
             std::cout << "Monster Index doesnt exist " << index << std::endl;
         }
+    });
+
+    CommandDispatcher::Register("/party", [&](Player* player, CommandDispatcher::Token& token){
+        std::string player_name(token);
+        auto* invited_player = World::FindPlayerByName(player_name.c_str());
+        if(!invited_player || player->GetID() == invited_player->GetID())
+            return;
+        packet p(C2S_ASKPARTY,"d", player->GetID());
+        player->OnPartyInvite(p);
+    });
+
+    CommandDispatcher::Register("/expelparty", [&](Player* player, CommandDispatcher::Token& token){
+        if(!player->IsPartyLeader())
+            return;
+
+        std::string player_name(token);
+        auto* player_to_kick = World::FindPlayerByName(player_name.c_str());
+
+        if(!player_to_kick 
+            || !player_to_kick->IsInParty() 
+            || player_to_kick->GetID() == player->GetID()
+            || player->GetParty() != player_to_kick->GetParty())
+            return;
+
+        player_to_kick->LeaveParty(true);
+
     });
 
     CommandDispatcher::Register("/test", [&](Player* player, CommandDispatcher::Token& token) {
