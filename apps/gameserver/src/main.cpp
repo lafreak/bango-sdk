@@ -121,15 +121,6 @@ int main(int argc, char** argv)
         }
     });
 
-    CommandDispatcher::Register("/party", [&](Player* player, CommandDispatcher::Token& token){
-        std::string player_name(token);
-        auto* invited_player = World::FindPlayerByName(player_name.c_str());
-        if(!invited_player || player->GetID() == invited_player->GetID())
-            return;
-        packet p(C2S_ASKPARTY,"d", player->GetID());
-        player->OnPartyInvite(p);
-    });
-
     CommandDispatcher::Register("/expelparty", [&](Player* player, CommandDispatcher::Token& token){
         if(!player->IsPartyLeader())
             return;

@@ -685,6 +685,9 @@ void Player::OnPartyInvite(packet& p)
         return;
     }
     World::ForPlayer(invited_player_id, [&](Player* invited_player){
+        if(distance(invited_player->m_x, invited_player->m_y) > MAP_SIGHT)
+            return;
+
         if(invited_player->IsInParty())
         {
             write(S2C_MESSAGEV, "bs", MSG_JOINEDINOTHERPARTY, invited_player->GetName().c_str());
@@ -703,6 +706,8 @@ void Player::OnPartyInviteResponse(packet& p)
     if(inviter_id == GetID() || inviter_id != GetPartyInviterID() || IsInParty())
         return;
     World::ForPlayer(inviter_id, [&](Player* inviter){
+        if(distance(inviter->m_x, inviter->m_y) > MAP_SIGHT)
+            return;
 
         if(party_request_answer == false)
             inviter->write(S2C_MESSAGEV, "bs", MSG_REJECTJOINPARTY, GetName().c_str());
