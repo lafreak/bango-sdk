@@ -88,7 +88,6 @@ void Party::RemoveMember(Player* player, bool is_kicked)
     if(GetSize() == 1)
     {
         GetLeader()->write(S2C_MESSAGE, "b", MSG_ENDPARTY);
-        GetLeader()->write(S2C_PARTYINFO, "b", 0);
         GetLeader()->SetParty(nullptr);
         m_members_list.clear();
     }

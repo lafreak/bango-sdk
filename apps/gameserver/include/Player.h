@@ -11,7 +11,6 @@
 
 #include <bango/utils/time.h>
 
-
 class Player : public Character, public User//, public Inventory
 {
     PLAYERINFO m_data;

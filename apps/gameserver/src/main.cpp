@@ -185,7 +185,6 @@ int main(int argc, char** argv)
         {C2S_ANS_ASKPARTY,      User::INGAME},
         {C2S_LEAVEPARTY,        User::INGAME},
         {C2S_EXILEPARTY,        User::INGAME}
-
     });
 
     //Socket::GameServer().restrict({});
