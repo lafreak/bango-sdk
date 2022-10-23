@@ -56,6 +56,7 @@ void Player::OnRestart(packet& p)
         //m_inventory.Reset();
         m_inventory = Inventory();
         ResetStates();
+        PartyLeave();
         //World::Map(GetMap()).Remove(this);
         World::Remove(this);
         deny(User::INGAME);
@@ -204,6 +205,12 @@ void Player::OnChatting(packet& p)
             else
                 write(S2C_MESSAGE, "d", MSG_THEREISNOPLAYER);
 
+            break;
+        }
+        case '#':
+        {
+            if(IsInParty() && message.size() > 1)
+                GetParty()->WriteToAll(message_packet);
             break;
         }
         default:
@@ -663,6 +670,86 @@ void Player::OnAttack(packet& p)
 
         if(character->GetCurHP() <= 0)
             character->Die();
+    });
+}
+
+void Player::OnPartyInvite(packet& p)
+{
+    auto invited_player_id = p.pop<int>();
+    if(invited_player_id == GetID())
+        return;
+
+    if(IsInParty() && !IsPartyLeader())
+    {
+        write(S2C_MESSAGE, "b", MSG_NORIGHTOFPARTYHEAD);
+        return;
+    }
+    World::ForPlayer(invited_player_id, [&](Player* invited_player){
+        if(distance(invited_player->m_x, invited_player->m_y) > MAP_SIGHT)
+            return;
+
+        if(invited_player->IsInParty())
+        {
+            write(S2C_MESSAGEV, "bs", MSG_JOINEDINOTHERPARTY, invited_player->GetName().c_str());
+            return;
+        }
+        write(S2C_MESSAGEV, "bs", MSG_ASKJOINPARTY, invited_player->GetName().c_str());
+        invited_player->SetPartyInviterID(GetID());
+        invited_player->write(S2C_ASKPARTY, "d", GetID());
+    });
+}
+
+void Player::OnPartyInviteResponse(packet& p)
+{
+    auto party_request_answer = p.pop<bool>();
+    auto inviter_id = p.pop<int>();
+    if(inviter_id == GetID() || inviter_id != GetPartyInviterID() || IsInParty())
+        return;
+    World::ForPlayer(inviter_id, [&](Player* inviter){
+        if(distance(inviter->m_x, inviter->m_y) > MAP_SIGHT)
+            return;
+
+        if(party_request_answer == false)
+            inviter->write(S2C_MESSAGEV, "bs", MSG_REJECTJOINPARTY, GetName().c_str());
+        else if(!inviter->IsInParty())
+            inviter->m_party = new Party(inviter, this);
+        else if(inviter->IsPartyLeader())
+            inviter->GetParty()->AddMember(this);
+    });
+}
+
+void Player::OnPartyLeave()
+{
+    PartyLeave();
+}
+
+void Player::PartyLeave(bool is_kicked)
+{
+    if(!IsInParty())
+        return;
+    m_party->RemoveMember(this, is_kicked);
+
+    if(m_party && m_party->IsEmpty())
+        delete m_party;
+    SetParty(nullptr);
+}
+
+void Player::OnPartyExpel (bango::network::packet& p)
+{
+    PartyExpel(p.pop<int>());
+}
+
+void Player::PartyExpel(int expelled_player_id)
+{
+    if(!IsPartyLeader() || expelled_player_id == GetID() || !IsInParty())
+        return;
+
+    World::ForPlayer(expelled_player_id, [&](Player* expelled_player){
+        if(!expelled_player->IsInParty()
+            || GetParty() != expelled_player->GetParty())
+            return;
+        
+        expelled_player->PartyLeave(true);
     });
 }
 

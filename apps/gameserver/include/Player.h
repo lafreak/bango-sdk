@@ -3,6 +3,7 @@
 #include "Character.h"
 #include "User.h"
 #include "Inventory.h"
+#include "Party.h"
 
 #include "CommandDispatcher.h"
 
@@ -16,6 +17,8 @@ class Player : public Character, public User//, public Inventory
     std::string m_name;
 
     Inventory m_inventory;
+    Party* m_party;
+    int m_party_inviter_id;
 
     //! Teleportation coordinates waiting for Z coordinate from client.
     int m_teleport_x=0;
@@ -29,25 +32,29 @@ public:
     ~Player();
 
     // Network I/O Endpoints
-    void OnConnected        ();
-    void OnDisconnected     ();
-    void OnStart            (bango::network::packet& p);
-    void OnRestart          (bango::network::packet& p);
-    void OnExit             (bango::network::packet& p);
-    void OnMove             (bango::network::packet& p, bool end);
-    void OnLoadPlayer       (bango::network::packet& p);
-    void OnLoadItems        (bango::network::packet& p);
-    void OnLoadFinish       ();
-    void OnRest             (bango::network::packet& p);
-    void OnChatting         (bango::network::packet& p);
-    void OnPutOnItem        (bango::network::packet& p);
-    void OnPutOffItem       (bango::network::packet& p);
-    void OnUseItem          (bango::network::packet& p);
-    void OnTrashItem        (bango::network::packet& p);
-    void OnTeleportAnswer   (bango::network::packet& p);
-    void OnUpdateProperty   (bango::network::packet& p);
-    void OnPlayerAnimation  (bango::network::packet& p);
-    void OnAttack           (bango::network::packet& p);
+    void OnConnected            ();
+    void OnDisconnected         ();
+    void OnStart                (bango::network::packet& p);
+    void OnRestart              (bango::network::packet& p);
+    void OnExit                 (bango::network::packet& p);
+    void OnMove                 (bango::network::packet& p, bool end);
+    void OnLoadPlayer           (bango::network::packet& p);
+    void OnLoadItems            (bango::network::packet& p);
+    void OnLoadFinish           ();
+    void OnRest                 (bango::network::packet& p);
+    void OnChatting             (bango::network::packet& p);
+    void OnPutOnItem            (bango::network::packet& p);
+    void OnPutOffItem           (bango::network::packet& p);
+    void OnUseItem              (bango::network::packet& p);
+    void OnTrashItem            (bango::network::packet& p);
+    void OnTeleportAnswer       (bango::network::packet& p);
+    void OnUpdateProperty       (bango::network::packet& p);
+    void OnPlayerAnimation      (bango::network::packet& p);
+    void OnAttack               (bango::network::packet& p);
+    void OnPartyInvite          (bango::network::packet& p);
+    void OnPartyInviteResponse  (bango::network::packet& p);
+    void OnPartyLeave           ();
+    void OnPartyExpel           (bango::network::packet& p);
 
     // Command Endpoints
     void OnGetItem(CommandDispatcher::Token& token);
@@ -124,6 +131,16 @@ public:
     void InsertItem(unsigned short index, unsigned int num=1);
     bool TrashItem(unsigned int local);
     void Teleport(int x, int y, int z=0);
+
+    void       PartyLeave(bool is_kicked = false);
+    void       PartyExpel(int expelled_player_id);
+    void       SetParty(Party* party)                     { m_party = party; }
+    void       SetPartyInviterID(int id)                  { m_party_inviter_id = id; }
+    void       ResetPartyInviterID()                      { m_party_inviter_id = 0; }
+    int        GetPartyInviterID()                  const { return m_party_inviter_id; }
+    Party*     GetParty()                           const { return IsInParty() ? m_party : nullptr; }
+    bool       IsPartyLeader()                      const { return IsInParty() && m_party->GetLeader() == this; }
+    bool       IsInParty()                          const { return m_party && m_party->IsValid(); }
 
     std::uint16_t   GetReqPU(std::uint8_t* stats);
 
