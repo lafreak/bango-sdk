@@ -83,7 +83,11 @@ public:
         m_map = map;
         m_curhp = GetMaxHP();
         m_curmp = GetMaxMP();
+
+        std::cout << "Monster ptr [" << (int*)this << "] constructor" << std::endl;
     }
+
+    ~Monster();
 
     std::uint16_t   GetIndex()      const { return m_init->Index; }
     std::uint8_t    GetRace()       const { return m_init->Race; }

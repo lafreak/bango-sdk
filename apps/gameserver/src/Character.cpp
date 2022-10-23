@@ -1,6 +1,9 @@
 #include "Character.h"
 #include <exception>
 
+#include "World.h"
+
+using namespace bango::network;
 using namespace bango::utils;
 
 void Character::SetDirection(std::int8_t delta_x, std::int8_t delta_y)
@@ -118,4 +121,9 @@ void Character::ReduceHP(std::uint32_t reduce)
     if(reduce > m_curhp)
         throw std::logic_error("reduce is higher than current HP");
     m_curhp -= reduce;
+}
+
+void Character::WriteInSight(const packet& p) const
+{
+    World::Map(GetMap()).WriteInSight(*this, p);
 }

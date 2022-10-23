@@ -8,6 +8,7 @@
 #include <inix/structures.h>
 
 #include <set>
+#include <mutex>
 
 using namespace bango::network;
 using namespace bango::persistence;
@@ -26,6 +27,7 @@ private:
     pool m_pool;
 
     std::set<int> m_active_users;
+    std::mutex m_mtx_users;
 
     bool Validate(const std::string& password) const;
 
@@ -36,7 +38,7 @@ public:
     bool ConnectToPool(const std::string& host, const std::string& port, const std::string& user, const std::string& password, const std::string& schema);
     void StartDBServer(const std::string& host, const std::int32_t port);
 
-    void FlagDisconnected(int id) { m_active_users.erase(id); }
+    void FlagDisconnected(int id) { std::unique_lock<std::mutex> lock(m_mtx_users); m_active_users.erase(id); }
 
     void SendPlayerList (const std::shared_ptr<GameServer>& s, unsigned int id, int idaccount);
     void SendDeletedList(const std::shared_ptr<GameServer>& s, unsigned int id, int idaccount);

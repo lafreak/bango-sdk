@@ -61,9 +61,9 @@ public:
     void OnMoveTo(CommandDispatcher::Token& token);
 
     // Map Endpoints
-    void OnCharacterAppear(Character * subject, bool hero);
-    void OnCharacterDisappear(Character * subject);
-    void OnCharacterMove(Character * subject, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop);
+    void OnCharacterAppear(Character& subject, bool hero);
+    void OnCharacterDisappear(Character& subject);
+    void OnCharacterMove(Character& subject, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop);
 
     bango::network::packet BuildAppearPacket(bool hero=false) const override;
     bango::network::packet BuildDisappearPacket() const override;

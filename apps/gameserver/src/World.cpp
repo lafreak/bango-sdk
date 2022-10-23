@@ -63,9 +63,9 @@ void WorldMap::Add(Character* entity)
 
             if (player->distance(center) <= m_sight)
             {
-                m_on_appear(player, entity, entity->GetType() == Character::MONSTER);
+                m_on_appear(*player, *entity, entity->GetType() == Character::MONSTER);
                 if (entity->GetType() == Character::PLAYER)
-                    m_on_appear((Player*) entity, player, false);
+                    m_on_appear(*(Player*) entity, *player, false);
             }
         }
         if (entity->GetType() != Character::PLAYER)
@@ -76,7 +76,7 @@ void WorldMap::Add(Character* entity)
             auto npc = p.second;
 
             if (npc->distance(center) <= m_sight)
-                m_on_appear((Player*) entity, npc, false);
+                m_on_appear(*(Player*) entity, *npc, false);
         }
 
         for (auto& p : container->monsters())
@@ -84,7 +84,7 @@ void WorldMap::Add(Character* entity)
             auto monster = p.second;
 
             if (monster->distance(center) <= m_sight)
-                m_on_appear((Player*) entity, monster, false);
+                m_on_appear(*(Player*) entity, *monster, false);
         }
     });
 
@@ -118,7 +118,7 @@ void WorldMap::Remove(Character* entity)
             auto player = (Player*) p.second;
 
             if (player->distance(center) <= m_sight)
-                m_on_disappear(player, entity);
+                m_on_disappear(*player, *entity);
         }
     });
 }
@@ -151,9 +151,9 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
 
             if (player->distance(old_center) <= m_sight && player->distance(new_center) > m_sight) 
             {
-                m_on_disappear(player, entity);
+                m_on_disappear(*player, *entity);
                 if (entity->GetType() == Character::PLAYER)
-                    m_on_disappear((Player*) entity, player);
+                    m_on_disappear(*(Player*) entity, *player);
             }
         }
 
@@ -165,7 +165,7 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
             auto npc = p.second;
 
             if (npc->distance(old_center) <= m_sight && npc->distance(new_center) > m_sight) 
-                m_on_disappear((Player*) entity, npc);
+                m_on_disappear(*(Player*) entity, *npc);
         }
 
         for (auto& p : container->monsters())
@@ -173,7 +173,7 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
             auto monster = p.second;
 
             if (monster->distance(old_center) <= m_sight && monster->distance(new_center) > m_sight) 
-                m_on_disappear((Player*) entity, monster);
+                m_on_disappear(*(Player*) entity, *monster);
         }
     });
 
@@ -183,12 +183,12 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
             auto player = (Player*) p.second;
 
             if (player->distance(old_center) <= m_sight && player->distance(new_center) <= m_sight) 
-                m_on_move(player, entity, delta_x, delta_y, delta_z, stop);
+                m_on_move(*player, *entity, delta_x, delta_y, delta_z, stop);
             else if (player->distance(old_center) > m_sight && player->distance(new_center) <= m_sight) 
             {
-                m_on_appear(player, entity, false);
+                m_on_appear(*player, *entity, false);
                 if (entity->GetType() == Character::PLAYER)
-                    m_on_appear((Player*) entity, player, false);
+                    m_on_appear(*(Player*) entity, *player, false);
             }
         }
 
@@ -200,7 +200,7 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
             auto npc = p.second;
 
             if (npc->distance(old_center) > m_sight && npc->distance(new_center) <= m_sight) 
-                m_on_appear((Player*) entity, npc, false);
+                m_on_appear(*(Player*) entity, *npc, false);
         }
 
         for (auto& p : container->monsters())
@@ -208,7 +208,7 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
             auto monster = p.second;
 
             if (monster->distance(old_center) > m_sight && monster->distance(new_center) <= m_sight) 
-                m_on_appear((Player*) entity, monster, false);
+                m_on_appear(*(Player*) entity, *monster, false);
         }
     });
 
@@ -219,58 +219,94 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
     }
 }
 
-void WorldMap::For(QUERY_KIND kind, Character::id_t id, const std::function<void(Character*)>&& callback)
+void WorldMap::For(QUERY_KIND kind, Character::id_t id, const std::function<void(Character&)>&& callback)
 {
     std::lock_guard<std::recursive_mutex> lock(m_rmtx);
 
     if (kind & QK_PLAYER)
     {
-        try {
-            return callback(m_entities[Character::PLAYER].at(id));
-        } catch (const std::exception&) {}
+        auto it = Players().find(id);
+        if (it != Players().end())
+            return callback(*(it->second));
     }
 
     if (kind & QK_NPC)
     {
-        try {
-            return callback(m_entities[Character::NPC].at(id));
-        } catch (const std::exception&) {}
+        auto it = Npcs().find(id);
+        if (it != Npcs().end())
+            return callback(*(it->second));
     }
 
     if (kind & QK_LOOT)
     {
-        try {
-            return callback(m_entities[Character::LOOT].at(id));
-        } catch (const std::exception&) {}
+        auto it = Loots().find(id);
+        if (it != Loots().end())
+            return callback(*(it->second));
     }
 
     if (kind & QK_MONSTER)
     {
-        try {
-            return callback(m_entities[Character::MONSTER].at(id));
-        } catch (const std::exception&) {}
+        auto it = Monsters().find(id);
+        if (it != Monsters().end())
+            return callback(*(it->second));
     }
 }
 
-void WorldMap::ForEachPlayerAround(const quad_entity* qe, unsigned int radius, const std::function<void(Player*)>&& callback)
+void WorldMap::ForEachPlayerAround(const quad_entity& qe, unsigned int radius, const std::function<void(Player&)>&& callback)
 {
     std::lock_guard<std::recursive_mutex> lock(m_rmtx);
 
-    auto center = point{qe->m_x, qe->m_y};
+    auto center = point{qe.m_x, qe.m_y};
     m_quad.query(center, radius, [&](const Container* container) {
         for (auto& p : container->players()) {
             auto player = (Player*) p.second;
 
             if (player->distance(center) <= radius)
-                callback(player);
+                callback(*player);
         }
     });
 }
 
-void WorldMap::WriteInSight(const quad_entity* qe, const packet& p)
+void WorldMap::ForEachAround(const quad_entity& qe, unsigned int radius, QUERY_KIND kind, const std::function<void(Character&)>&& callback)
 {
-    ForEachPlayerAround(qe, m_sight, [&](Player* player) {
-        player->write(p);
+    std::lock_guard<std::recursive_mutex> lock(m_rmtx);
+
+    auto center = point{qe.m_x, qe.m_y};
+    m_quad.query(center, radius, [&](const Container* container) {
+        if (kind & QK_PLAYER)
+        {
+            for (auto& p : container->players()) {
+                auto player = (Player*) p.second;
+
+                if (player->distance(center) <= radius)
+                    callback(*player);
+            }
+        }
+        if (kind & QK_MONSTER)
+        {
+            for (auto& p : container->monsters()) {
+                auto monster = (Monster*) p.second;
+
+                if (monster->distance(center) <= radius)
+                    callback(*monster);
+            }
+        }
+        if (kind & QK_NPC)
+        {
+            for (auto& p : container->npcs()) {
+                auto npc = (NPC*) p.second;
+
+                if (npc->distance(center) <= radius)
+                    callback(*npc);
+            }
+        }
+    });
+}
+
+void WorldMap::WriteInSight(const quad_entity& qe, const packet& p)
+{
+    ForEachPlayerAround(qe, m_sight, [&](Player& player) {
+        player.write(p);
     });
 }
 

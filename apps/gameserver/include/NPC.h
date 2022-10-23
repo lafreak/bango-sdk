@@ -59,6 +59,8 @@ public:
         LookAt(init->DirX, init->DirY);
     }
 
+    ~NPC();
+
     unsigned short  GetIndex() const { return m_init->Index; }
     unsigned char   GetShape() const { return m_init->Shape; }
 

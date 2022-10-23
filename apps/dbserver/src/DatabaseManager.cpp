@@ -66,6 +66,7 @@ void DatabaseManager::Initialize()
     });
 
     m_dbserver.on_disconnected([&](const std::shared_ptr<GameServer>& s) {
+        std::unique_lock<std::mutex> lock(m_mtx_users);
         m_active_users.clear();
     });
 }
@@ -131,11 +132,14 @@ void DatabaseManager::Login(const std::shared_ptr<GameServer>& s, packet& p)
     }
 
     auto idaccount = query.get_int();
+
+    std::unique_lock<std::mutex> lock(m_mtx_users);
     if (!m_active_users.insert(idaccount).second)
     {
         s->write(D2S_LOGIN, "db", id, LA_SAMEUSER);
         return;
     }
+    lock.unlock();
 
     s->write(D2S_AUTHORIZED, "dd", id, idaccount);
 
