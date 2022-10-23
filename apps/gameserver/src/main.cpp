@@ -127,10 +127,13 @@ int main(int argc, char** argv)
             return;
 
         std::string player_name(token);
-        auto* player_to_kick = World::FindPlayerByName(player_name.c_str());
-        if(player_to_kick)
-            player_to_kick->PartyExpel(player_to_kick->GetID());
+        World::ForPlayerWithName(player_name, [&](Player& player_to_kick) {
+            player_to_kick.PartyExpel(player_to_kick.GetID());
+        });
+    });
 
+    CommandDispatcher::Register("/fort", [&](Player& player, CommandDispatcher::Token& token) {
+        player.Teleport(268622, 242944);
     });
 
     CommandDispatcher::Register("/test", [&](Player& player, CommandDispatcher::Token& token) {

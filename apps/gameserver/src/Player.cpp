@@ -677,18 +677,18 @@ void Player::OnPartyInvite(packet& p)
         write(S2C_MESSAGE, "b", MSG_NORIGHTOFPARTYHEAD);
         return;
     }
-    World::ForPlayer(invited_player_id, [&](Player* invited_player){
-        if(distance(invited_player->m_x, invited_player->m_y) > MAP_SIGHT)
+    World::ForPlayer(invited_player_id, [&](Player& invited_player){
+        if(distance(invited_player.m_x, invited_player.m_y) > MAP_SIGHT)
             return;
 
-        if(invited_player->IsInParty())
+        if(invited_player.IsInParty())
         {
-            write(S2C_MESSAGEV, "bs", MSG_JOINEDINOTHERPARTY, invited_player->GetName().c_str());
+            write(S2C_MESSAGEV, "bs", MSG_JOINEDINOTHERPARTY, invited_player.GetName().c_str());
             return;
         }
-        write(S2C_MESSAGEV, "bs", MSG_ASKJOINPARTY, invited_player->GetName().c_str());
-        invited_player->SetPartyInviterID(GetID());
-        invited_player->write(S2C_ASKPARTY, "d", GetID());
+        write(S2C_MESSAGEV, "bs", MSG_ASKJOINPARTY, invited_player.GetName().c_str());
+        invited_player.SetPartyInviterID(GetID());
+        invited_player.write(S2C_ASKPARTY, "d", GetID());
     });
 }
 
@@ -698,16 +698,16 @@ void Player::OnPartyInviteResponse(packet& p)
     auto inviter_id = p.pop<int>();
     if(inviter_id == GetID() || inviter_id != GetPartyInviterID() || IsInParty())
         return;
-    World::ForPlayer(inviter_id, [&](Player* inviter){
-        if(distance(inviter->m_x, inviter->m_y) > MAP_SIGHT)
+    World::ForPlayer(inviter_id, [&](Player& inviter){
+        if(distance(inviter.m_x, inviter.m_y) > MAP_SIGHT)
             return;
 
         if(party_request_answer == false)
-            inviter->write(S2C_MESSAGEV, "bs", MSG_REJECTJOINPARTY, GetName().c_str());
-        else if(!inviter->IsInParty())
-            inviter->m_party = new Party(inviter, this);
-        else if(inviter->IsPartyLeader())
-            inviter->GetParty()->AddMember(this);
+            inviter.write(S2C_MESSAGEV, "bs", MSG_REJECTJOINPARTY, GetName().c_str());
+        else if(!inviter.IsInParty())
+            inviter.m_party = new Party(&inviter, this);
+        else if(inviter.IsPartyLeader())
+            inviter.GetParty()->AddMember(this);
     });
 }
 
@@ -737,12 +737,12 @@ void Player::PartyExpel(int expelled_player_id)
     if(!IsPartyLeader() || expelled_player_id == GetID() || !IsInParty())
         return;
 
-    World::ForPlayer(expelled_player_id, [&](Player* expelled_player){
-        if(!expelled_player->IsInParty()
-            || GetParty() != expelled_player->GetParty())
+    World::ForPlayer(expelled_player_id, [&](Player& expelled_player){
+        if(!expelled_player.IsInParty()
+            || GetParty() != expelled_player.GetParty())
             return;
         
-        expelled_player->PartyLeave(true);
+        expelled_player.PartyLeave(true);
     });
 }
 
