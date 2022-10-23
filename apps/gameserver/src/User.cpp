@@ -3,8 +3,10 @@
 #include "Socket.h"
 #include "World.h"
 
-using namespace bango::network;
+#include <bango/network/packet.h>
+#include <inix.h>
 
+using namespace bango::network;
 
 void User::OnConnect(packet& p)
 {

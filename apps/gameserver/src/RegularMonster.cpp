@@ -2,6 +2,7 @@
 #include "World.h"
 
 #include <bango/network/packet.h>
+#include <inix.h>
 
 using namespace bango::network;
 

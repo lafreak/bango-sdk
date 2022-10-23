@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <bango/space/quadtree.h>
 #include <bango/network/packet.h>
 #include <bango/utils/random.h>

@@ -1,9 +1,14 @@
 #include "Monster.h"
+
+#include <iostream>
+#include <cstdint>
+#include <memory>
+
 #include "World.h"
 #include "RegularMonster.h"
 #include "BeheadableMonster.h"
 
-#include <iostream>
+#include <bango/network/packet.h>
 
 using namespace bango::network;
 
@@ -44,9 +49,8 @@ packet Monster::BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::i
 {
     return packet();
 }
-// World::Add(new RegularMonster(InitMonster::DB().at(index), player->GetX()+10, player->GetY()+10, player->GetMap()));
 
-void Monster::CreateMonster(uint32_t index, int32_t x, int32_t y, int32_t map)
+void Monster::CreateMonster(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map)
 {
     switch(InitMonster::DB().at(index)->Race)
     {

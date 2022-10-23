@@ -1,6 +1,8 @@
 #pragma once
 // Class representing non-beheadable monster.
 
+#include <memory>
+
 #include "Monster.h"
 
 class RegularMonster : public Monster

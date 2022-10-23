@@ -1,12 +1,13 @@
 #pragma once
 
 #include <unordered_map>
-
-#include <bango/space/quadtree.h>
+#include <functional>
 
 #include "Player.h"
 #include "Monster.h"
 #include "NPC.h"
+
+#include <bango/space/quadtree.h>
 
 #define MAP_WIDTH 50*8192
 #define MAP_SIGHT 1024

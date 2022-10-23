@@ -1,12 +1,13 @@
 #pragma once
 
+#include <unordered_map>
+#include <memory>
+#include <cstdint>
+
 #include <bango/network/packet.h>
 #include <bango/processor/db.h>
 
 #include <inix.h>
-
-#include <map>
-#include <memory>
 
 struct InitItem : public bango::processor::db_object<InitItem>
 {
@@ -77,7 +78,7 @@ public:
     Inventory() { Reset(); }
 
 private:
-    std::map<unsigned int, const Item::Ptr> m_items;
+    std::unordered_map<unsigned int, const Item::Ptr> m_items;
 
     EQUIPMENT m_equipment;
 
