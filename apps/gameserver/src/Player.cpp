@@ -37,7 +37,7 @@ void Player::OnStart(packet& p)
     auto height = p.pop<int>();
 
     //write(BuildAppearPacket(true));
-    OnCharacterAppear(this, true);
+    OnCharacterAppear(*this, true);
 
     World::Add(this);
 
@@ -147,7 +147,7 @@ void Player::OnLoadFinish()
 void Player::OnRest(packet& p)
 {
     auto action = p.pop<char>();
-    packet restPacket(S2C_ACTION,"dbb", GetID(), AT_REST, action);
+    packet out(S2C_ACTION,"dbb", GetID(), AT_REST, action);
 
 	if (action)
 	{
@@ -155,7 +155,7 @@ void Player::OnRest(packet& p)
             return;
 
         AddGState(CGS_REST);
-        World::Map(GetMap()).WriteInSight(this, restPacket);
+        WriteInSight(out);
 	}
 	else
 	{
@@ -163,7 +163,7 @@ void Player::OnRest(packet& p)
             return;
 
         SubGState(CGS_REST);
-        World::Map(GetMap()).WriteInSight(this, restPacket);
+        WriteInSight(out);
 	}
 }
 
@@ -181,7 +181,7 @@ void Player::OnChatting(packet& p)
     {
         case '/':
         {
-            CommandDispatcher::Dispatch(this, message);
+            CommandDispatcher::Dispatch(*this, message);
             break;
         }
         case '@':
@@ -196,13 +196,10 @@ void Player::OnChatting(packet& p)
             if(receiver_name == GetName())
                 return;
 
-            auto* receiver = World::FindPlayerByName(receiver_name);
-            if(receiver)
-            {
+            if (!World::ForPlayerWithName(receiver_name, [&](Player& receiver) {
                 write(message_packet);
-                receiver->write(message_packet);
-            }
-            else
+                receiver.write(message_packet);
+            }))
                 write(S2C_MESSAGE, "d", MSG_THEREISNOPLAYER);
 
             break;
@@ -215,7 +212,7 @@ void Player::OnChatting(packet& p)
         }
         default:
         {
-            World::Map(GetMap()).WriteInSight(this, message_packet);
+            WriteInSight(message_packet);
             break;
         }
     }
@@ -237,11 +234,10 @@ void Player::OnPutOnItem(packet& p)
     if (!m_inventory.PutOn(local_id))
         return;
 
-    World::Map(GetMap()).WriteInSight(this, 
-        packet(S2C_PUTONITEM, "ddw", 
-            GetID(), 
-            item->GetLocalID(), 
-            item->GetInit().Index));
+    WriteInSight(packet(S2C_PUTONITEM, "ddw", 
+        GetID(), 
+        item->GetLocalID(), 
+        item->GetInit().Index));
 
     Socket::DBClient().write(S2D_UPDATEITEMINFO, "dd", item->GetInfo().IID, item->GetInfo().Info);
 
@@ -256,11 +252,10 @@ void Player::OnPutOffItem(packet& p)
     if (!item)
         return;
 
-    World::Map(GetMap()).WriteInSight(this,
-        packet(S2C_PUTOFFITEM, "ddw", 
-            GetID(), 
-            item->GetLocalID(), 
-            item->GetInit().Index));
+    WriteInSight(packet(S2C_PUTOFFITEM, "ddw", 
+        GetID(), 
+        item->GetLocalID(), 
+        item->GetInit().Index));
 
     Socket::DBClient().write(S2D_UPDATEITEMINFO, "dd", item->GetInfo().IID, item->GetInfo().Info);
 
@@ -275,11 +270,8 @@ void Player::OnUseItem(packet& p)
     if (!item) return;
 
     if (item->GetInit().Class == IC_RIDE)
-        World::Map(GetMap()).WriteInSight(this, 
-            packet(S2C_RIDING, "bdd", 
-                0, 
-                GetID(), 
-                item->GetInit().RidingType)); // TODO: Change to buff.
+        WriteInSight(packet(S2C_RIDING, "bdd", 0, GetID(), 
+            item->GetInit().RidingType)); // TODO: Change to buff.
 }
 
 void Player::OnTrashItem(bango::network::packet& p)
@@ -295,19 +287,19 @@ void Player::OnGetItem(CommandDispatcher::Token& token)
     InsertItem(index, num <= 0 ? 1 : num);
 }
 
-void Player::OnCharacterAppear(Character * subject, bool hero)
+void Player::OnCharacterAppear(Character& subject, bool hero)
 {
-    write(subject->BuildAppearPacket(hero));
+    write(subject.BuildAppearPacket(hero));
 }
 
-void Player::OnCharacterDisappear(Character * subject)
+void Player::OnCharacterDisappear(Character& subject)
 {
-    write(subject->BuildDisappearPacket());
+    write(subject.BuildDisappearPacket());
 }
 
-void Player::OnCharacterMove(Character * subject, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop)
+void Player::OnCharacterMove(Character& subject, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop)
 {
-    write(subject->BuildMovePacket(delta_x, delta_y, delta_z, stop));
+    write(subject.BuildMovePacket(delta_x, delta_y, delta_z, stop));
 }
 
 void Player::InsertItem(unsigned short index, unsigned int num)
@@ -515,19 +507,20 @@ void Player::SendProperty(std::uint8_t kind)
 
 void Player::SaveAllProperty()
 {
-    Socket::DBClient().write(S2D_SAVEALLPROPERTY, "dbdddwddIwwd",
-    GetPID(),
-    GetLevel(),
-    GetX(),
-    GetY(),
-    GetZ(),
-    GetContribute(),
-    GetCurHP(),
-    GetCurMP(),
-    GetExp(),
-    GetPUPoint(),
-    GetSUPoint(),
-    GetRage());
+    packet p(S2D_SAVEALLPROPERTY);
+    p   << GetPID()
+        << GetLevel()
+        << GetX()
+        << GetY()
+        << GetZ()
+        << GetContribute()
+        << GetCurHP()
+        << GetCurMP()
+        << GetExp()
+        << GetPUPoint()
+        << GetSUPoint()
+        << GetRage();
+    Socket::DBClient().write(p);
 }
 std::uint16_t Player::GetReqPU(std::uint8_t* stats)
 {
@@ -605,7 +598,7 @@ void Player::OnPlayerAnimation(packet& p)
     auto animation = p.pop<unsigned char>();
 
     if (animation >= 0 && animation < 20)
-        World::Map(GetMap()).WriteInSight(this, packet(S2C_PLAYER_ANIMATION, "db", GetID(), animation));
+        WriteInSight(packet(S2C_PLAYER_ANIMATION, "db", GetID(), animation));
 }
 
 void Player::OnAttack(packet& p)
@@ -614,7 +607,7 @@ void Player::OnAttack(packet& p)
     auto id = p.pop<Character::id_t>();
     auto z = p.pop<unsigned int>();
 
-    World::Map(GetMap()).For(WorldMap::QK_PLAYER | WorldMap::QK_MONSTER, id, [&](Character* character) 
+    World::Map(GetMap()).For(WorldMap::QK_PLAYER | WorldMap::QK_MONSTER, id, [&](Character& character) 
     {
         // Check if is both actors are valid
         // Check for GState 4?+
@@ -638,38 +631,38 @@ void Player::OnAttack(packet& p)
 
         m_last_attack=now;
 
-        LookAt(character);
+        LookAt(&character);
 
         // CheckBlock
-        if (!CheckHit(character))
+        if (!CheckHit(&character))
         {
-            World::Map(GetMap()).WriteInSight(this, packet(S2C_ATTACK, "ddddb",
-                GetID(), character->GetID(), 0, 0, ATF_MISS));
+            WriteInSight(packet(S2C_ATTACK, "ddddb",
+                GetID(), character.GetID(), 0, 0, ATF_MISS));
             return;
         }
 
         std::int64_t damage = GetAttack();
         damage *= damage_reduce;
         // Something with mage
-        damage = character->GetFinalDamage(this, damage);
+        damage = character.GetFinalDamage(this, damage);
         // Apply Mix Effects
 
         if (damage < 0)
             return;
-        if ((uint64_t)damage > character->GetCurHP())
-            damage = character->GetCurHP();
+        if ((uint64_t)damage > character.GetCurHP())
+            damage = character.GetCurHP();
 
-        World::Map(GetMap()).WriteInSight(this, packet(S2C_ATTACK, "ddddb", 
+        WriteInSight(packet(S2C_ATTACK, "ddddb", 
             GetID(), 
-            character->GetID(), 
+            character.GetID(), 
             damage,
             0,//EB
             damage == 0 ? ATF_IGNORE : ATF_HIT));
 
-        character->ReduceHP(damage);
+        character.ReduceHP(damage);
 
-        if(character->GetCurHP() <= 0)
-            character->Die();
+        if (character.GetCurHP() <= 0)
+            character.Die();
     });
 }
 
@@ -684,18 +677,18 @@ void Player::OnPartyInvite(packet& p)
         write(S2C_MESSAGE, "b", MSG_NORIGHTOFPARTYHEAD);
         return;
     }
-    World::ForPlayer(invited_player_id, [&](Player* invited_player){
-        if(distance(invited_player->m_x, invited_player->m_y) > MAP_SIGHT)
+    World::ForPlayer(invited_player_id, [&](Player& invited_player){
+        if(distance(invited_player.m_x, invited_player.m_y) > MAP_SIGHT)
             return;
 
-        if(invited_player->IsInParty())
+        if(invited_player.IsInParty())
         {
-            write(S2C_MESSAGEV, "bs", MSG_JOINEDINOTHERPARTY, invited_player->GetName().c_str());
+            write(S2C_MESSAGEV, "bs", MSG_JOINEDINOTHERPARTY, invited_player.GetName().c_str());
             return;
         }
-        write(S2C_MESSAGEV, "bs", MSG_ASKJOINPARTY, invited_player->GetName().c_str());
-        invited_player->SetPartyInviterID(GetID());
-        invited_player->write(S2C_ASKPARTY, "d", GetID());
+        write(S2C_MESSAGEV, "bs", MSG_ASKJOINPARTY, invited_player.GetName().c_str());
+        invited_player.SetPartyInviterID(GetID());
+        invited_player.write(S2C_ASKPARTY, "d", GetID());
     });
 }
 
@@ -705,16 +698,16 @@ void Player::OnPartyInviteResponse(packet& p)
     auto inviter_id = p.pop<int>();
     if(inviter_id == GetID() || inviter_id != GetPartyInviterID() || IsInParty())
         return;
-    World::ForPlayer(inviter_id, [&](Player* inviter){
-        if(distance(inviter->m_x, inviter->m_y) > MAP_SIGHT)
+    World::ForPlayer(inviter_id, [&](Player& inviter){
+        if(distance(inviter.m_x, inviter.m_y) > MAP_SIGHT)
             return;
 
         if(party_request_answer == false)
-            inviter->write(S2C_MESSAGEV, "bs", MSG_REJECTJOINPARTY, GetName().c_str());
-        else if(!inviter->IsInParty())
-            inviter->m_party = new Party(inviter, this);
-        else if(inviter->IsPartyLeader())
-            inviter->GetParty()->AddMember(this);
+            inviter.write(S2C_MESSAGEV, "bs", MSG_REJECTJOINPARTY, GetName().c_str());
+        else if(!inviter.IsInParty())
+            inviter.m_party = new Party(&inviter, this);
+        else if(inviter.IsPartyLeader())
+            inviter.GetParty()->AddMember(this);
     });
 }
 
@@ -744,12 +737,12 @@ void Player::PartyExpel(int expelled_player_id)
     if(!IsPartyLeader() || expelled_player_id == GetID() || !IsInParty())
         return;
 
-    World::ForPlayer(expelled_player_id, [&](Player* expelled_player){
-        if(!expelled_player->IsInParty()
-            || GetParty() != expelled_player->GetParty())
+    World::ForPlayer(expelled_player_id, [&](Player& expelled_player){
+        if(!expelled_player.IsInParty()
+            || GetParty() != expelled_player.GetParty())
             return;
         
-        expelled_player->PartyLeave(true);
+        expelled_player.PartyLeave(true);
     });
 }
 
@@ -760,5 +753,5 @@ void Player::Tick()
 void Player::Die()
 {
     AddGState(CGS_KO);
-    World::Map(GetMap()).WriteInSight(this, bango::network::packet(S2C_ACTION, "db", GetID(), AT_DIE));
+    WriteInSight(bango::network::packet(S2C_ACTION, "db", GetID(), AT_DIE));
 }

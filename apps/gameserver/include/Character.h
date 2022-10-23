@@ -125,6 +125,8 @@ public:
     bool            CheckHit(Character* target, int bonus=0);
     std::int64_t    GetFinalDamage(Character* attacker, std::int64_t damage, bool magical=false);
 
+    void WriteInSight(const bango::network::packet& p) const;
+
     virtual void Tick() = 0;
     virtual void Die() = 0;
 };

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_map>
+
 #include <bango/space/quadtree.h>
 
 #include "Player.h"
@@ -15,9 +17,9 @@ public:
     class Container : public bango::space::quad_entity_container<Container>
     {
     public:
-        typedef std::map<unsigned int, Character*> CharacterContainer;
+        typedef std::unordered_map<unsigned int, Character*> CharacterContainer;
     private:
-        std::map<char, CharacterContainer> m_entities;
+        std::unordered_map<char, CharacterContainer> m_entities;
 
     public:
 
@@ -40,10 +42,10 @@ private:
     const int m_sight;
 
 public:
-    typedef std::function<void(Player*, Character*, bool)>    AppearEvent;
-    typedef std::function<void(Player*, Character*)>    DisappearEvent;
-    typedef std::function<void(Player*, Character*, 
-        std::int8_t, std::int8_t, std::int8_t, bool)>   MoveEvent;
+    typedef std::function<void(Player&, Character&, bool)>  AppearEvent;
+    typedef std::function<void(Player&, Character&)>        DisappearEvent;
+    typedef std::function<void(Player&, Character&, 
+        std::int8_t, std::int8_t, std::int8_t, bool)>       MoveEvent;
 
 private:
     bango::space::quad<Container> m_quad;
@@ -53,7 +55,7 @@ private:
     DisappearEvent  m_on_disappear;// =[](const Player*, const Character*){};
     MoveEvent       m_on_move;//      =[](const Player*, const Character*, std::int8_t, std::int8_t, std::int8_t, bool){};
 
-    std::map<char, Container::CharacterContainer> m_entities;
+    std::unordered_map<char, Container::CharacterContainer> m_entities;
 
     std::recursive_mutex m_rmtx;
 
@@ -93,15 +95,19 @@ public:
     //! Thread-safe.
     void Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z=0, bool stop=false);
 
-    void For(QUERY_KIND kind, Character::id_t id, const std::function<void(Character*)>&& callback);
+    void For(QUERY_KIND kind, Character::id_t id, const std::function<void(Character&)>&& callback);
 
     //! Executes callback for all players around in given radius.
     //! Thread-safe.
-    void ForEachPlayerAround(const bango::space::quad_entity* qe, unsigned int radius, const std::function<void(Player*)>&& callback);
+    void ForEachPlayerAround(const bango::space::quad_entity& qe, unsigned int radius, const std::function<void(Player&)>&& callback);
+
+    //! Executes callback for all queried entities around in given radius.
+    //! Thread-safe.
+    void ForEachAround(const bango::space::quad_entity& qe, unsigned int radius, QUERY_KIND kind, const std::function<void(Character&)>&& callback);
 
     //! Writes packet to players in sight.
     //! Thread-safe.
-    void WriteInSight(const bango::space::quad_entity* qe, const bango::network::packet& p);
+    void WriteInSight(const bango::space::quad_entity& qe, const bango::network::packet& p);
     
     //! Writes packet to all players on this WorldMap.
     //! Thread-safe.
@@ -119,7 +125,14 @@ class World
 
     std::vector<std::unique_ptr<WorldMap>> m_maps;
 
-    std::unordered_map<char, WorldMap::Container::CharacterContainer> m_entities;
+    typedef std::unordered_map<Character::id_t, Player*>                    PlayerContainer;
+    typedef std::unordered_map<Character::id_t, std::shared_ptr<Monster>>   MonsterContainer;
+    typedef std::unordered_map<Character::id_t, std::shared_ptr<NPC>>       NpcContainer;
+
+    PlayerContainer m_players;
+    MonsterContainer m_monsters;
+    NpcContainer m_npcs;
+
     std::recursive_mutex m_entities_rmtx;
 
     World()
@@ -141,7 +154,6 @@ public:
         return *Get().m_maps[id >= MAP_COUNT ? 0 : id].get();
     }
 
-    // TODO: Change
     static void OnAppear(const WorldMap::AppearEvent& callback)
     {
         for (auto& map : Get().m_maps)
@@ -163,44 +175,72 @@ public:
     static void SpawnNpcs()
     {
         for (const auto& init : InitNPC::DB())
-            //Add(new NPC(init.second.get()));
-            Add(new NPC(init.second));
+            Add(std::make_shared<NPC>(init.second));
     }
 
     static void Cleanup()
     {
-        ForEachNpc([](NPC* npc) { delete npc; });
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+        Get().m_players.clear();
+        Get().m_monsters.clear();
+        Get().m_npcs.clear();
     }
 
-    static void EraseIfMonsterDead()
+    static void RemoveDeadMonsters()
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-        auto& monsters = Get().m_entities[Character::MONSTER];
-        for(auto it = monsters.begin(); it != monsters.end(); )
+
+        for (auto it = Get().m_monsters.begin(); it != Get().m_monsters.end(); )
         {
-            if(it->second->IsGState(CGS_KO))
-                it = monsters.erase(it);
+            auto& monster = it->second;
+            if (monster->IsGState(CGS_KO)) {
+                Map(monster->GetMap()).Remove(monster.get());
+                it = Get().m_monsters.erase(it);
+            }
             else
                 ++it;
         }
     }
 
-    static void Add(Character* entity)
+    //! Adds player to the world without ownership. 
+    static void Add(Player* entity)
     {
         {
             std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-            Get().m_entities[entity->GetType()].insert(std::make_pair(entity->GetID(), entity));
+            Get().m_players.insert(std::make_pair(entity->GetID(), entity));
         }
         Map(entity->GetMap()).Add(entity);
     }
 
-    static void Remove(Character* entity)
+    //! Adds characters to the world with ownership.
+    static void Add(std::shared_ptr<Character> entity)
     {
+        if (entity->GetType() == Character::PLAYER)
+            throw std::logic_error("player should be added to the world by reference");
+
         {
             std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-            Get().m_entities[entity->GetType()].erase(entity->GetID());
+        
+            switch(entity->GetType())
+            {
+            case Character::MONSTER:
+                Get().m_monsters.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Monster>(entity)));
+            case Character::NPC:
+                Get().m_npcs.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<NPC>(entity)));
+            }
+
         }
+        Map(entity->GetMap()).Add(entity.get());
+    }
+
+    // Removes player from the world.
+    static void Remove(Player* entity)
+    {
         Map(entity->GetMap()).Remove(entity);
+        {
+            std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+            Get().m_players.erase(entity->GetID());
+        }
     }
 
     static void Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z=0, bool stop=false)
@@ -223,87 +263,80 @@ public:
         Map(entity->GetMap()).Add(entity);
     }
 
-    static const WorldMap::Container::CharacterContainer& Players()  { return Get().m_entities[Character::PLAYER];   }//Unsafe
-    static void ForEachPlayer(const std::function<void(Player*)>& callback)
+    static void ForEachPlayer(const std::function<void(Player&)>& callback)
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
 
-        for (auto& p : Get().m_entities[Character::PLAYER])
-            callback((Player*) p.second);
+        for (auto it : Get().m_players)
+            callback(*it.second);
     }
-    static Player* FindPlayerByName(const std::string& player_name)
+
+    static bool ForPlayerWithName(const std::string& name, const std::function<void(Player&)>& callback)
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-        auto& players = Get().m_entities[Character::PLAYER];
 
-        auto player_iterator = std::find_if(players.begin(),players.end(), [&](auto& p){
-            auto* player = dynamic_cast<Player*>(p.second);
-
-            return player && player_name == player->GetName();
+        auto it = std::find_if(Get().m_players.begin(), Get().m_players.end(), [&](auto& p){
+            return p.second->GetName() == name;
         });
 
-        return player_iterator!= players.end() ? dynamic_cast<Player*>(player_iterator->second) : nullptr;
+        if (it == Get().m_players.end())
+            return false;
+
+        callback(*(it->second));
+        return true;
     }
 
-    static void ForPlayer(Character::id_t id, const std::function<void(Player*)>& callback)
+    static bool ForPlayer(Character::id_t id, const std::function<void(Player&)>& callback)
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
 
-        try {
-            callback( (Player*) Get().m_entities[Character::PLAYER].at(id));
-        } catch (const std::exception&) {}
+        auto it = Get().m_players.find(id);
+        if (it == Get().m_players.end())
+            return false;
+        
+        callback(*it->second);
+        return true;
     }
 
-    static const WorldMap::Container::CharacterContainer& Monsters() { return Get().m_entities[Character::MONSTER];  }//Unsafe
-    static void ForEachMonster(const std::function<void(Monster*)>& callback)
+    static void ForEachMonster(const std::function<void(Monster&)>& callback)
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
 
-        for (auto& p : Get().m_entities[Character::MONSTER])
-            callback((Monster*) p.second);
+        for (auto it : Get().m_monsters)
+            callback(*it.second);
     }
-    static void ForMonster(Character::id_t id, const std::function<void(Monster*)>& callback)
+
+    static bool ForMonster(Character::id_t id, const std::function<void(Monster&)>& callback)
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);  // TODO: Possibly have separate mutex for each container?
+
+        auto it = Get().m_monsters.find(id);
+        if (it == Get().m_monsters.end())
+            return false;
+        
+        callback(*it->second);
+        return true;
+    }
+
+    static void ForEachNpc(const std::function<void(NPC&)>& callback)
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
 
-        try {
-            callback( (Monster*) Get().m_entities[Character::MONSTER].at(id));
-        } catch (const std::exception&) {}
+        for (auto it : Get().m_npcs)
+            callback(*it.second);
     }
 
-    static const WorldMap::Container::CharacterContainer& Npcs()     { return Get().m_entities[Character::NPC];      }//Unsafe
-    static void ForEachNpc(const std::function<void(NPC*)>& callback)
+    static bool ForNpc(Character::id_t id, const std::function<void(NPC&)>& callback)
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
 
-        for (auto& p : Get().m_entities[Character::NPC])
-            callback((NPC*) p.second);
+        auto it = Get().m_npcs.find(id);
+        if (it == Get().m_npcs.end())
+            return false;
+        
+        callback(*it->second);
+        return true;
     }
-    static void ForNpc(Character::id_t id, const std::function<void(NPC*)>& callback)
-    {
-        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-
-        try {
-            callback( (NPC*) Get().m_entities[Character::NPC].at(id));
-        } catch (const std::exception&) {}
-    }
-
-    static const WorldMap::Container::CharacterContainer& Loots()    { return Get().m_entities[Character::LOOT];     }//Unsafe
-    // static void ForEachLoot(const std::function<void(Loot*)>& callback)
-    // {
-    //     std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-
-    //     for (auto& p : Get().m_entities[Character::LOOT])
-    //         callback((Loot*) p.second);
-    // }
-    // static void ForLoot(Character::id_t id, const std::function<void(Loot*)>& callback)
-    // {
-    //     std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-
-    //     try {
-    //         callback( (Loot*) Get().m_entities[Character::LOOT].at(id));
-    //     } catch (const std::exception&) {}
-    // }
 };
 
 inline WorldMap::QUERY_KIND operator|(WorldMap::QUERY_KIND a, WorldMap::QUERY_KIND b)

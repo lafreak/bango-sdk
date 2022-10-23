@@ -49,7 +49,7 @@ public:
     };
 
 public:
-    typedef const std::function<void(Player*, Token&)> Task;
+    typedef const std::function<void(Player&, Token&)> Task;
 private:
     std::map<std::string, Task> m_commands;
 
@@ -60,5 +60,5 @@ private:
 
 public:
     static void Register(const std::string& command, Task&& task);
-    static void Dispatch(Player* player, const std::string& message);
+    static void Dispatch(Player& player, const std::string& message);
 };

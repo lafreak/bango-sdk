@@ -7,6 +7,11 @@
 
 using namespace bango::network;
 
+Monster::~Monster()
+{
+    std::cout << "Monster ptr [" << (int*)this << "] destructor" << std::endl;
+}
+
 packet Monster::BuildAppearPacket(bool hero) const
 {
     //                                wdddwddIIsbdsIIb
@@ -47,17 +52,17 @@ void Monster::CreateMonster(uint32_t index, int32_t x, int32_t y, int32_t map)
     {
         case MR_NOTMAGUNI:
         {
-            World::Add(new RegularMonster(InitMonster::DB().at(index), x, y, map));
+            World::Add(std::make_shared<RegularMonster>(InitMonster::DB().at(index), x, y, map));
             break;
         }
         case MR_MAGUNI:
         { 
-            World::Add(new BeheadableMonster(InitMonster::DB().at(index), x, y, map));
+            World::Add(std::make_shared<BeheadableMonster>(InitMonster::DB().at(index), x, y, map));
             break;
         }
         default:
         {
-            World::Add(new RegularMonster(InitMonster::DB().at(index), x, y, map));
+            World::Add(std::make_shared<RegularMonster>(InitMonster::DB().at(index), x, y, map));
             break;
         }
     }

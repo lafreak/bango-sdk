@@ -107,34 +107,49 @@ int main(int argc, char** argv)
     CommandDispatcher::Register("/get",             std::bind(&Player::OnGetItem,           _1, _2));
     CommandDispatcher::Register("/move2",           std::bind(&Player::OnMoveTo,            _1, _2));
 
-    CommandDispatcher::Register("/online", [&](Player* player, CommandDispatcher::Token& token) {
-        std::cout << "Current Online: " << Socket::GameServer().get_online() << std::endl;
+    CommandDispatcher::Register("/online", [&](Player& player, CommandDispatcher::Token& token) {
+        std::string message = std::string{"Current Online: "} + std::to_string(Socket::GameServer().get_online());
+        player.write(packet(S2C_NOTICE, "s", message.c_str()));
     });
 
-    CommandDispatcher::Register("/mob", [&](Player* player, CommandDispatcher::Token& token) {
+    CommandDispatcher::Register("/mob", [&](Player& player, CommandDispatcher::Token& token) {
         int index = token;
 
         try {
-            Monster::CreateMonster(index, player->GetX(), player->GetY(), player->GetMap());
+            Monster::CreateMonster(index, player.GetX(), player.GetY(), player.GetMap());
         } catch (const std::exception&) {
             std::cout << "Monster Index doesnt exist " << index << std::endl;
         }
     });
 
-    CommandDispatcher::Register("/expelparty", [&](Player* player, CommandDispatcher::Token& token){
-        if(!player->IsPartyLeader())
+    CommandDispatcher::Register("/expelparty", [&](Player& player, CommandDispatcher::Token& token){
+        if(!player.IsPartyLeader())
             return;
 
         std::string player_name(token);
-        auto* player_to_kick = World::FindPlayerByName(player_name.c_str());
-        if(player_to_kick)
-            player_to_kick->PartyExpel(player_to_kick->GetID());
-
+        World::ForPlayerWithName(player_name, [&](Player& player_to_kick) {
+            player_to_kick.PartyExpel(player_to_kick.GetID());
+        });
     });
 
-    CommandDispatcher::Register("/test", [&](Player* player, CommandDispatcher::Token& token) {
-        int id = token;
-        int type = token;
+    CommandDispatcher::Register("/fort", [&](Player& player, CommandDispatcher::Token& token) {
+        player.Teleport(268622, 242944);
+    });
+
+    CommandDispatcher::Register("/test", [&](Player& player, CommandDispatcher::Token& token) {
+        //int id = token;
+        //int type = token;
+        int radius = token;
+
+        auto query = WorldMap::QK_PLAYER|WorldMap::QK_MONSTER|WorldMap::QK_NPC;
+        World::Map(player.GetMap()).ForEachAround(player, radius, query, [&](Character& character) {
+            int distance = player.distance(&character);
+            std::cout << "Character ID: " << character.GetID()
+                << "; distance: " << distance
+                << "; coords: (" << character.GetX()
+                << "," << character.GetY()
+                << "," << character.GetZ() << ")" << std::endl;
+        });
         //player->write(S2C_ATTACK, "ddddb", player->GetID(), id, 0, 0, type);
         //player->write(S2C_ACTION, "bdd", AT_THROWITEM, id, type);
         //player->write(S2C_INFODIE, "db", id, type);
@@ -206,13 +221,13 @@ int main(int argc, char** argv)
         do {
             status = done_future.wait_for(1s);
             if (status == std::future_status::timeout) {
-                World::ForEachPlayer([](Player* player) {
-                    player->Tick();
+                World::ForEachPlayer([](Player& player) {
+                    player.Tick();
                 });
-                World::ForEachMonster([](Monster* monster) {
-                    monster->Tick();
+                World::ForEachMonster([](Monster& monster) {
+                    monster.Tick();
                 });
-                World::EraseIfMonsterDead();
+                World::RemoveDeadMonsters();
             }
         } while (status != std::future_status::ready);
     });
