@@ -5,7 +5,6 @@
 #include <bango/network/writable.h>
 
 /*TODO list: (future commits)
-range-check
 update player position(Tick function in Player?)
 Add MSG_OFFLINE_OUTOFRANGE to Player::OnPartyInvite and OnPartyInviteResponse
 */
