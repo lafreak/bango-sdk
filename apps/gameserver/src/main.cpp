@@ -91,8 +91,8 @@ int main(int argc, char** argv)
     Socket::GameServer().when(C2S_ATTACK,           std::bind(&Player::OnAttack,             _1, _2));
     Socket::GameServer().when(C2S_ASKPARTY,         std::bind(&Player::OnPartyInvite,        _1, _2));
     Socket::GameServer().when(C2S_ANS_ASKPARTY,     std::bind(&Player::OnPartyInviteResponse,_1, _2));
-    Socket::GameServer().when(C2S_LEAVEPARTY,       std::bind(&Player::OnPartyLeave,         _1, _2));
     Socket::GameServer().when(C2S_EXILEPARTY,       std::bind(&Player::OnPartyExpel,         _1, _2));
+    Socket::GameServer().when(C2S_LEAVEPARTY,       std::bind(&Player::OnPartyLeave,         _1));
 
     Socket::DBClient().when(D2S_LOGIN,              std::bind(&DBListener::OnLogin,             _1));
     Socket::DBClient().when(D2S_AUTHORIZED,         std::bind(&DBListener::OnAuthorized,        _1));
@@ -136,14 +136,8 @@ int main(int argc, char** argv)
 
         std::string player_name(token);
         auto* player_to_kick = World::FindPlayerByName(player_name.c_str());
-
-        if(!player_to_kick 
-            || !player_to_kick->IsInParty() 
-            || player_to_kick->GetID() == player->GetID()
-            || player->GetParty() != player_to_kick->GetParty())
-            return;
-
-        player_to_kick->LeaveParty(true);
+        if(player_to_kick)
+            player_to_kick->PartyExpel(player_to_kick->GetID());
 
     });
 
@@ -187,6 +181,11 @@ int main(int argc, char** argv)
         {C2S_UPDATEPROPERTY,    User::INGAME},
         {C2S_PLAYER_ANIMATION,  User::INGAME},
         {C2S_ATTACK,            User::INGAME},
+        {C2S_ASKPARTY,          User::INGAME},
+        {C2S_ANS_ASKPARTY,      User::INGAME},
+        {C2S_LEAVEPARTY,        User::INGAME},
+        {C2S_EXILEPARTY,        User::INGAME}
+
     });
 
     //Socket::GameServer().restrict({});

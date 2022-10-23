@@ -54,7 +54,7 @@ public:
     void OnAttack               (bango::network::packet& p);
     void OnPartyInvite          (bango::network::packet& p);
     void OnPartyInviteResponse  (bango::network::packet& p);
-    void OnPartyLeave           (bango::network::packet& p);
+    void OnPartyLeave           ();
     void OnPartyExpel           (bango::network::packet& p);
 
     // Command Endpoints
@@ -133,7 +133,8 @@ public:
     bool TrashItem(unsigned int local);
     void Teleport(int x, int y, int z=0);
 
-    void       LeaveParty(bool is_kicked = false);
+    void       PartyLeave(bool is_kicked = false);
+    void       PartyExpel(int expelled_player_id);
     void       SetParty(Party* party)                     { m_party = party; }
     void       SetPartyInviterID(int id)                  { m_party_inviter_id = id; }
     void       ResetPartyInviterID()                      { m_party_inviter_id = 0; }

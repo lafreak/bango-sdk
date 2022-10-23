@@ -9,10 +9,7 @@ range-check
 update player position(Tick function in Player?)
 */
 
-class Party;
-
 class Player;
-using namespace bango::network;
 
 class Party
 {
@@ -32,7 +29,7 @@ public:
     bool         IsFull()                      const;
     bool         IsEmpty()                     const;
     void         SendPartyInfo()               const;
-    void         WriteToAll(const packet& p)   const;
+    void         WriteToAll(const bango::network::packet& p)   const;
     void         AddMember(Player* player);
     void         RemoveMember(Player* player, bool is_kicked = false);
 };

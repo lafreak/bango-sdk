@@ -56,7 +56,7 @@ void Player::OnRestart(packet& p)
         //m_inventory.Reset();
         m_inventory = Inventory();
         ResetStates();
-        LeaveParty();
+        PartyLeave();
         //World::Map(GetMap()).Remove(this);
         World::Remove(this);
         deny(User::INGAME);
@@ -676,7 +676,6 @@ void Player::OnAttack(packet& p)
 void Player::OnPartyInvite(packet& p)
 {
     auto invited_player_id = p.pop<int>();
-
     if(invited_player_id == GetID())
         return;
 
@@ -714,12 +713,12 @@ void Player::OnPartyInviteResponse(packet& p)
     });
 }
 
-void Player::OnPartyLeave(packet& p)
+void Player::OnPartyLeave()
 {
-    LeaveParty();
+    PartyLeave();
 }
 
-void Player::LeaveParty(bool is_kicked)
+void Player::PartyLeave(bool is_kicked)
 {
     if(!IsInParty())
         return;
@@ -732,21 +731,20 @@ void Player::LeaveParty(bool is_kicked)
 
 void Player::OnPartyExpel (bango::network::packet& p)
 {
-    if(!IsPartyLeader())
-        return;
+    PartyExpel(p.pop<int>());
+}
 
-    auto expelled_player_id = p.pop<int>();
-
-    if(expelled_player_id == GetID())
+void Player::PartyExpel(int expelled_player_id)
+{
+    if(!IsPartyLeader() || expelled_player_id == GetID() || !IsInParty())
         return;
 
     World::ForPlayer(expelled_player_id, [&](Player* expelled_player){
-        if(!IsInParty() 
-            || !expelled_player->IsInParty() 
+        if(!expelled_player->IsInParty()
             || GetParty() != expelled_player->GetParty())
             return;
         
-        expelled_player->LeaveParty(true);
+        expelled_player->PartyLeave(true);
     });
 }
 
