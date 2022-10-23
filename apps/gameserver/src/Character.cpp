@@ -1,5 +1,7 @@
 #include "Character.h"
+
 #include <exception>
+#include <cstdint>
 
 #include "World.h"
 

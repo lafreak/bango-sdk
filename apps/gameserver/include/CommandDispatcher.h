@@ -1,7 +1,7 @@
 #pragma once
 
 #include <sstream>
-#include <map>
+#include <unordered_map>
 #include <functional>
 
 class Player;
@@ -51,7 +51,7 @@ public:
 public:
     typedef const std::function<void(Player&, Token&)> Task;
 private:
-    std::map<std::string, Task> m_commands;
+    std::unordered_map<std::string, Task> m_commands;
 
     static CommandDispatcher& Get();
 

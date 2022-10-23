@@ -19,10 +19,9 @@
 #include "DBListener.h"
 
 #include <bango/utils/random.h>
+#include <bango/network/writable.h>
 
 using namespace bango::network;
-using namespace bango::space;
-using namespace bango::processor;
 using namespace bango::utils;
 
 int main(int argc, char** argv)

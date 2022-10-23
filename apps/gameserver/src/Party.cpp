@@ -1,5 +1,12 @@
 #include "Party.h"
+
+#include <exception>
+#include <mutex>
+
 #include "Player.h"
+
+#include <bango/network/packet.h>
+#include <inix.h>
 
 using namespace bango::network;
 
@@ -75,7 +82,6 @@ void Party::RemoveMember(Player* player, bool is_kicked)
     {
         player->write(S2C_MESSAGE, "b", MSG_EXILEDFROMPARTY);
         WriteToAll(packet(S2C_MESSAGEV, "bd", MSG_EXILEDFROMPARTY, player->GetID()));
-
     }
     else
     {

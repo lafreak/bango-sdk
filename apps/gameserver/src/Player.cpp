@@ -1,9 +1,15 @@
 #include "Player.h"
+
+#include <iostream>
+#include <string>
+
 #include "Socket.h"
 #include "World.h"
 #include "Monster.h"
 
 #include <bango/utils/random.h>
+#include <bango/network/packet.h>
+#include <inix.h>
 
 using namespace bango::network;
 using namespace bango::utils;
@@ -31,6 +37,7 @@ void Player::OnDisconnected()
     if (authorized(User::AUTHORIZED))
         Socket::DBClient().write(S2D_DISCONNECT, "d", GetAID());
 }
+
 void Player::OnStart(packet& p)
 {
     auto unknown = p.pop<char>();
@@ -200,7 +207,7 @@ void Player::OnChatting(packet& p)
                 write(message_packet);
                 receiver.write(message_packet);
             }))
-                write(S2C_MESSAGE, "d", MSG_THEREISNOPLAYER);
+            write(S2C_MESSAGE, "d", MSG_THEREISNOPLAYER);
 
             break;
         }

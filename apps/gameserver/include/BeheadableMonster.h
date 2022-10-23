@@ -1,6 +1,8 @@
 #pragma once
 // Class representing beheadable monster.
 
+#include <memory>
+
 #include "Monster.h"
 #include <bango/utils/time.h>
 

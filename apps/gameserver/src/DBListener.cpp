@@ -1,6 +1,11 @@
 #include "DBListener.h"
+
+#include <memory>
+
 #include "Socket.h"
 #include "Player.h"
+
+#include <bango/network/packet.h>
 
 using namespace bango::network;
 

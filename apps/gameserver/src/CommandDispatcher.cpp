@@ -1,5 +1,7 @@
 #include "CommandDispatcher.h"
 
+#include <string>
+
 CommandDispatcher& CommandDispatcher::Get()
 {
     static CommandDispatcher instance;

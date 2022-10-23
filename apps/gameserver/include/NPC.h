@@ -1,11 +1,12 @@
 #pragma once
 
+#include <cstdint>
+#include <memory>
+
 #include "Character.h"
 
 #include <bango/processor/db.h>
 #include <inix.h>
-
-#include <memory>
 
 struct InitNPC : public bango::processor::db_object<InitNPC>
 {

@@ -3,9 +3,11 @@
 #include <cassert>
 #include <algorithm>
 
-#include <iostream>
+#include <bango/processor/db.h>
+#include <bango/network/packet.h>
 
 using namespace bango::processor;
+using namespace bango::network;
 
 void InitItem::set(lisp::var param)
 {
@@ -73,9 +75,9 @@ Item::Item(const InitItem* init, const ITEMINFO& info)
     m_local_id = ++g_max_local_id;
 }
 
-Item::operator bango::network::packet() const
+Item::operator packet() const
 {
-    bango::network::packet p;
+    packet p;
 
     p   << m_info.Index 
         << GetLocalID() 
@@ -300,13 +302,13 @@ const Item::Ptr Inventory::PutOff(const std::uint32_t local)
     return item;
 }
 
-Inventory::operator bango::network::packet() const
+Inventory::operator packet() const
 {
-    bango::network::packet p(S2C_ITEMINFO);
+    packet p(S2C_ITEMINFO);
     p << (unsigned short) m_items.size();
 
     for (const auto& pair : m_items)
-        p << (bango::network::packet) *(pair.second.get());
+        p << (packet) *(pair.second.get());
 
     return p;
 }

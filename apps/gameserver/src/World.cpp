@@ -1,5 +1,13 @@
 #include "World.h"
 
+#include <cstdint>
+
+#include "Player.h"
+#include "Monster.h"
+#include "NPC.h"
+
+#include <bango/space/quadtree.h>
+
 using namespace bango::space;
 using namespace bango::network;
 

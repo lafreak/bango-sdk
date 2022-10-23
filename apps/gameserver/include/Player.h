@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "Character.h"
 #include "User.h"
 #include "Inventory.h"
@@ -10,8 +12,9 @@
 #include <inix.h>
 
 #include <bango/utils/time.h>
+#include <bango/network/server.h>
 
-class Player : public Character, public User//, public Inventory
+class Player : public Character, public User
 {
     PLAYERINFO m_data;
     std::string m_name;

@@ -1,7 +1,9 @@
 #pragma once
+
+#include <cstdint>
 #include <list>
 #include <mutex>
-#include <algorithm>
+
 #include <bango/network/writable.h>
 
 /*TODO list: (future commits)
