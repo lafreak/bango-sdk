@@ -252,7 +252,6 @@ public:
     static void Teleport(Player* entity, int x, int y, int z, int spread=0, int map=-1)
     {
         // TODO: Add random spread.
-        
         Map(entity->GetMap()).Remove(entity);
         entity->m_x = x;
         entity->m_y = y;

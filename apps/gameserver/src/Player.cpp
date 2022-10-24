@@ -43,7 +43,6 @@ void Player::OnStart(packet& p)
     auto unknown = p.pop<char>();
     auto height = p.pop<int>();
 
-    //write(BuildAppearPacket(true));
     OnCharacterAppear(*this, true);
 
     World::Add(this);
@@ -207,7 +206,7 @@ void Player::OnChatting(packet& p)
                 write(message_packet);
                 receiver.write(message_packet);
             }))
-            write(S2C_MESSAGE, "d", MSG_THEREISNOPLAYER);
+                write(S2C_MESSAGE, "d", MSG_THEREISNOPLAYER);
 
             break;
         }
