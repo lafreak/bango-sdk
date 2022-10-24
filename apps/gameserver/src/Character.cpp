@@ -129,3 +129,8 @@ void Character::WriteInSight(const packet& p) const
 {
     World::Map(GetMap()).WriteInSight(*this, p);
 }
+
+std::mutex& Character::GetMtx()
+{
+    return m_mtx;
+}

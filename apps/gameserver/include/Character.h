@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <mutex>
 
 #include <bango/space/quadtree.h>
 #include <bango/network/packet.h>
@@ -25,10 +26,13 @@ public:
     int             m_z;
     std::uint8_t    m_map;
 
+private:
     std::uint64_t   m_gstate;
     std::uint64_t   m_mstate;
     std::uint64_t   m_gstate_ex;
     std::uint64_t   m_mstate_ex;
+
+    std::mutex      m_mtx;
 
 public:
     Character(std::uint8_t type) : m_type(type)
@@ -131,4 +135,6 @@ public:
 
     virtual void Tick() = 0;
     virtual void Die() = 0;
+
+    std::mutex& GetMtx();
 };
