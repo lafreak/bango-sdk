@@ -136,5 +136,5 @@ public:
     virtual void Tick() = 0;
     virtual void Die() = 0;
 
-    std::mutex& GetMtx();
+    std::unique_lock<std::mutex> Lock();
 };

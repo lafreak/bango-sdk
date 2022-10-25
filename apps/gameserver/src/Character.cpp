@@ -130,7 +130,7 @@ void Character::WriteInSight(const packet& p) const
     World::Map(GetMap()).WriteInSight(*this, p);
 }
 
-std::mutex& Character::GetMtx()
+std::unique_lock<std::mutex> Character::Lock()
 {
-    return m_mtx;
+    return std::unique_lock<std::mutex>(m_mtx);
 }

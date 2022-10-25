@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 
 #include "Character.h"
 #include "User.h"
@@ -20,7 +21,7 @@ class Player : public Character, public User
     std::string m_name;
 
     Inventory m_inventory;
-    Party* m_party;
+    std::shared_ptr<Party> m_party;
     int m_party_inviter_id;
 
     //! Teleportation coordinates waiting for Z coordinate from client.
@@ -135,15 +136,16 @@ public:
     bool TrashItem(unsigned int local);
     void Teleport(int x, int y, int z=0);
 
-    void       PartyLeave(bool is_kicked = false);
-    void       PartyExpel(int expelled_player_id);
-    void       SetParty(Party* party)                     { m_party = party; }
-    void       SetPartyInviterID(int id)                  { m_party_inviter_id = id; }
-    void       ResetPartyInviterID()                      { m_party_inviter_id = 0; }
-    int        GetPartyInviterID()                  const { return m_party_inviter_id; }
-    Party*     GetParty()                           const { return IsInParty() ? m_party : nullptr; }
-    bool       IsPartyLeader()                      const { return IsInParty() && m_party->GetLeader() == this; }
-    bool       IsInParty()                          const { return m_party && m_party->IsValid(); }
+    void PartyLeave(bool is_kicked = false);
+    void PartyExpel(int expelled_player_id);
+    void SetParty(const std::shared_ptr<Party>& party)    { m_party = party; }
+    void ResetParty()                                     { m_party = nullptr; }
+    void SetPartyInviterID(int id)                        { m_party_inviter_id = id; }
+    void ResetPartyInviterID()                            { m_party_inviter_id = 0; }
+    int  GetPartyInviterID()                  const       { return m_party_inviter_id; }
+    bool IsPartyLeader()                      const       { return IsInParty() && m_party->GetLeader() == this; }
+    bool IsInParty()                          const       { return m_party && m_party->IsValid(); }
+    std::shared_ptr<Party>  GetParty()        const       { return IsInParty() ? m_party : nullptr; }
 
     std::uint16_t   GetReqPU(std::uint8_t* stats);
 

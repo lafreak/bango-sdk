@@ -65,7 +65,7 @@ void Party::AddMember(Player* player)
     }
 
     m_members_list.push_back(player);
-    player->SetParty(this);
+    //player->SetParty(this);
     SendPartyInfo();
 }
 

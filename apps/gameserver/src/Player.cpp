@@ -55,9 +55,10 @@ void Player::OnRestart(packet& p)
 {
     if (p.pop<char>() == 1) // Can I logout?
         // 1=Yes, 0=No -> In Fight? PVP? Etc
-        write(S2C_ANS_RESTART, "b", CanLogout() ? 1 : 0); 
+        write(S2C_ANS_RESTART, "b", CanLogout() ? 1 : 0); // Yes, you can
     else
     {
+        auto lock = Lock();
         SaveAllProperty();
         //m_inventory.Reset();
         m_inventory = Inventory();
@@ -177,13 +178,13 @@ void Player::OnChatting(packet& p)
 {
     auto message = p.pop_str();
 
-    if(message.empty())
+    if (message.empty())
         return;
 
     packet message_packet(S2C_CHATTING);
     message_packet << GetName() << message;
 
-    switch(message.at(0))
+    switch (message.at(0))
     {
         case '/':
         {
@@ -199,7 +200,7 @@ void Player::OnChatting(packet& p)
 
             std::string receiver_name = message.substr(1, space_pos - 1);
 
-            if(receiver_name == GetName())
+            if (receiver_name == GetName())
                 return;
 
             if (!World::ForPlayerWithName(receiver_name, [&](Player& receiver) {
@@ -212,7 +213,10 @@ void Player::OnChatting(packet& p)
         }
         case '#':
         {
-            if(IsInParty() && message.size() > 1)
+            if (message.size() <= 1)
+                break;
+            auto lock = Lock();
+            if (IsInParty())
                 GetParty()->WriteToAll(message_packet);
             break;
         }
@@ -702,18 +706,26 @@ void Player::OnPartyInviteResponse(packet& p)
 {
     auto party_request_answer = p.pop<bool>();
     auto inviter_id = p.pop<int>();
-    if(inviter_id == GetID() || inviter_id != GetPartyInviterID() || IsInParty())
+
+    if (inviter_id == GetID() || inviter_id != GetPartyInviterID() || IsInParty())
         return;
+
     World::ForPlayer(inviter_id, [&](Player& inviter){
-        if(distance(inviter.m_x, inviter.m_y) > MAP_SIGHT)
+        if (distance(inviter.m_x, inviter.m_y) > MAP_SIGHT)
             return;
 
-        if(party_request_answer == false)
+        if (party_request_answer == false)
             inviter.write(S2C_MESSAGEV, "bs", MSG_REJECTJOINPARTY, GetName().c_str());
-        else if(!inviter.IsInParty())
-            inviter.m_party = new Party(&inviter, this);
-        else if(inviter.IsPartyLeader())
+        else if (!inviter.IsInParty())
+        {
+            inviter.SetParty(std::make_shared<Party>(&inviter, this));
+            SetParty(inviter.GetParty());
+        }
+        else if (inviter.IsPartyLeader())
+        {
             inviter.GetParty()->AddMember(this);
+            SetParty(inviter.GetParty());
+        }
     });
 }
 
@@ -724,13 +736,10 @@ void Player::OnPartyLeave()
 
 void Player::PartyLeave(bool is_kicked)
 {
-    if(!IsInParty())
+    if (!IsInParty())
         return;
     m_party->RemoveMember(this, is_kicked);
-
-    if(m_party && m_party->IsEmpty())
-        delete m_party;
-    SetParty(nullptr);
+    ResetParty();
 }
 
 void Player::OnPartyExpel (bango::network::packet& p)
