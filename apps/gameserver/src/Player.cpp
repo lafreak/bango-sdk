@@ -729,14 +729,14 @@ void Player::OnAskPartyAnswer(packet& p)
         auto inviter_lock = inviter.Lock();
         if (!inviter.IsInParty())
         {
-            auto party = std::make_shared<Party>(&inviter, this);
+            auto party = std::make_shared<Party>(&inviter, this);  // TODO: Take out AddMember out of constructor
             inviter.SetParty(party);
             SetParty(party);
         }
         else if (inviter.IsPartyLeader())
         {
-            inviter.GetParty()->AddMember(this);
-            SetParty(inviter.GetParty());
+            if (inviter.GetParty()->AddMember(this))
+                SetParty(inviter.GetParty());
         }
     });
 }
