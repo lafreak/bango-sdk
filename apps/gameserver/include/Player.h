@@ -55,10 +55,10 @@ public:
     void OnUpdateProperty       (bango::network::packet& p);
     void OnPlayerAnimation      (bango::network::packet& p);
     void OnAttack               (bango::network::packet& p);
-    void OnPartyInvite          (bango::network::packet& p);
-    void OnPartyInviteResponse  (bango::network::packet& p);
-    void OnPartyLeave           ();
-    void OnPartyExpel           (bango::network::packet& p);
+    void OnAskParty             (bango::network::packet& p);
+    void OnAskPartyAnswer       (bango::network::packet& p);
+    void OnExileParty           (bango::network::packet& p);
+    void OnLeaveParty           (bango::network::packet& p);
 
     // Command Endpoints
     void OnGetItem(CommandDispatcher::Token& token);
@@ -137,7 +137,7 @@ public:
     void Teleport(int x, int y, int z=0);
 
     void PartyLeave(bool is_kicked = false);
-    void PartyExpel(int expelled_player_id);
+    void KickFromParty(int expelled_player_id);
     void SetParty(const std::shared_ptr<Party>& party)    { m_party = party; }
     void ResetParty()                                     { m_party = nullptr; }
     void SetPartyInviterID(int id)                        { m_party_inviter_id = id; }

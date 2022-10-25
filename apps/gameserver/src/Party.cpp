@@ -1,5 +1,6 @@
 #include "Party.h"
 
+#include <iostream>
 #include <exception>
 #include <mutex>
 
@@ -12,8 +13,14 @@ using namespace bango::network;
 
 Party::Party(Player* leader, Player* player)
 {
+    std::cout << "Party constructor" << std::endl;
     AddMember(leader);
     AddMember(player);
+}
+
+Party::~Party()
+{
+    std::cout << "Party destructor" << std::endl;
 }
 
 void Party::SendPartyInfo() const
@@ -40,15 +47,16 @@ void Party::WriteToAll(const packet& p) const
         player->write(p);
 }
 
-void Party::AddMember(Player* player)
+bool Party::AddMember(Player* player)
 {
     std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
     player->ResetPartyInviterID();
 
+    // TODO: Return false if player already exist
     if(IsFull())
     {
         player->write(S2C_MESSAGE, "b", MSG_PARTYISFULL);
-        return;
+        return false;
     }
 
     if(!IsEmpty())
@@ -67,6 +75,7 @@ void Party::AddMember(Player* player)
     m_members_list.push_back(player);
     //player->SetParty(this);
     SendPartyInfo();
+    return true;
 }
 
 void Party::RemoveMember(Player* player, bool is_kicked)

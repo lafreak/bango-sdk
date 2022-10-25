@@ -676,50 +676,62 @@ void Player::OnAttack(packet& p)
     });
 }
 
-void Player::OnPartyInvite(packet& p)
+void Player::OnAskParty(packet& p)
 {
     auto invited_player_id = p.pop<int>();
-    if(invited_player_id == GetID())
+    if (invited_player_id == GetID())
         return;
 
-    if(IsInParty() && !IsPartyLeader())
+    auto lock = Lock();
+    if (IsInParty() && !IsPartyLeader())
     {
         write(S2C_MESSAGE, "b", MSG_NORIGHTOFPARTYHEAD);
         return;
     }
+
     World::ForPlayer(invited_player_id, [&](Player& invited_player){
-        if(distance(invited_player.m_x, invited_player.m_y) > MAP_SIGHT)
+        if (distance(&invited_player) > MAP_SIGHT)
             return;
 
-        if(invited_player.IsInParty())
+        auto invited_player_lock = invited_player.Lock();
+        if (invited_player.IsInParty())
         {
+            // TODO: Update bango::network::packet to accept std::string as well (remove the need of c_str() call)
             write(S2C_MESSAGEV, "bs", MSG_JOINEDINOTHERPARTY, invited_player.GetName().c_str());
             return;
         }
+
         write(S2C_MESSAGEV, "bs", MSG_ASKJOINPARTY, invited_player.GetName().c_str());
         invited_player.SetPartyInviterID(GetID());
         invited_player.write(S2C_ASKPARTY, "d", GetID());
     });
 }
 
-void Player::OnPartyInviteResponse(packet& p)
+void Player::OnAskPartyAnswer(packet& p)
 {
-    auto party_request_answer = p.pop<bool>();
+    auto answer = p.pop<bool>();
     auto inviter_id = p.pop<int>();
 
+    auto lock = Lock();
     if (inviter_id == GetID() || inviter_id != GetPartyInviterID() || IsInParty())
         return;
 
     World::ForPlayer(inviter_id, [&](Player& inviter){
-        if (distance(inviter.m_x, inviter.m_y) > MAP_SIGHT)
+        if (distance(&inviter) > MAP_SIGHT)
             return;
 
-        if (party_request_answer == false)
-            inviter.write(S2C_MESSAGEV, "bs", MSG_REJECTJOINPARTY, GetName().c_str());
-        else if (!inviter.IsInParty())
+        if (answer == false)
         {
-            inviter.SetParty(std::make_shared<Party>(&inviter, this));
-            SetParty(inviter.GetParty());
+            inviter.write(S2C_MESSAGEV, "bs", MSG_REJECTJOINPARTY, GetName().c_str());
+            return;
+        }
+
+        auto inviter_lock = inviter.Lock();
+        if (!inviter.IsInParty())
+        {
+            auto party = std::make_shared<Party>(&inviter, this);
+            inviter.SetParty(party);
+            SetParty(party);
         }
         else if (inviter.IsPartyLeader())
         {
@@ -729,7 +741,7 @@ void Player::OnPartyInviteResponse(packet& p)
     });
 }
 
-void Player::OnPartyLeave()
+void Player::OnLeaveParty(packet& p)
 {
     PartyLeave();
 }
@@ -742,14 +754,14 @@ void Player::PartyLeave(bool is_kicked)
     ResetParty();
 }
 
-void Player::OnPartyExpel (bango::network::packet& p)
+void Player::OnExileParty(bango::network::packet& p)
 {
-    PartyExpel(p.pop<int>());
+    KickFromParty(p.pop<int>());
 }
 
-void Player::PartyExpel(int expelled_player_id)
+void Player::KickFromParty(int expelled_player_id)
 {
-    if(!IsPartyLeader() || expelled_player_id == GetID() || !IsInParty())
+    if (expelled_player_id == GetID() || !IsPartyLeader())  // TODO: IsPartyLeader is not threadsafe
         return;
 
     World::ForPlayer(expelled_player_id, [&](Player& expelled_player){
