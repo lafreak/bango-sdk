@@ -88,10 +88,10 @@ int main(int argc, char** argv)
     Socket::GameServer().when(C2S_UPDATEPROPERTY,   std::bind(&Player::OnUpdateProperty,     _1, _2));
     Socket::GameServer().when(C2S_PLAYER_ANIMATION, std::bind(&Player::OnPlayerAnimation,    _1, _2));
     Socket::GameServer().when(C2S_ATTACK,           std::bind(&Player::OnAttack,             _1, _2));
-    Socket::GameServer().when(C2S_ASKPARTY,         std::bind(&Player::OnPartyInvite,        _1, _2));
-    Socket::GameServer().when(C2S_ANS_ASKPARTY,     std::bind(&Player::OnPartyInviteResponse,_1, _2));
-    Socket::GameServer().when(C2S_EXILEPARTY,       std::bind(&Player::OnPartyExpel,         _1, _2));
-    Socket::GameServer().when(C2S_LEAVEPARTY,       std::bind(&Player::OnPartyLeave,         _1));
+    Socket::GameServer().when(C2S_ASKPARTY,         std::bind(&Player::OnAskParty,           _1, _2));
+    Socket::GameServer().when(C2S_ANS_ASKPARTY,     std::bind(&Player::OnAskPartyAnswer,     _1, _2));
+    Socket::GameServer().when(C2S_EXILEPARTY,       std::bind(&Player::OnExileParty,         _1, _2));
+    Socket::GameServer().when(C2S_LEAVEPARTY,       std::bind(&Player::OnLeaveParty,         _1, _2));
 
     Socket::DBClient().when(D2S_LOGIN,              std::bind(&DBListener::OnLogin,             _1));
     Socket::DBClient().when(D2S_AUTHORIZED,         std::bind(&DBListener::OnAuthorized,        _1));
@@ -122,12 +122,13 @@ int main(int argc, char** argv)
     });
 
     CommandDispatcher::Register("/expelparty", [&](Player& player, CommandDispatcher::Token& token){
-        if(!player.IsPartyLeader())
+        auto lock = player.Lock();
+        if (!player.IsPartyLeader())
             return;
 
         std::string player_name(token);
         World::ForPlayerWithName(player_name, [&](Player& player_to_kick) {
-            player_to_kick.PartyExpel(player_to_kick.GetID());
+            player.KickFromParty(player_to_kick.GetID());
         });
     });
 

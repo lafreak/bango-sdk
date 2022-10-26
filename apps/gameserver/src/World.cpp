@@ -133,7 +133,7 @@ void WorldMap::Remove(Character* entity)
 
 void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop)
 {
-    std::lock_guard<std::recursive_mutex> lock(m_rmtx);
+    std::lock_guard<std::recursive_mutex> map_lock(m_rmtx);
 
     try {
         m_quad.remove(entity);
