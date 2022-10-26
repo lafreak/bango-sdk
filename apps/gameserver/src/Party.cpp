@@ -1,8 +1,9 @@
 #include "Party.h"
 
-#include <iostream>
 #include <exception>
 #include <mutex>
+
+#include "spdlog/spdlog.h"
 
 #include "Player.h"
 
@@ -13,14 +14,14 @@ using namespace bango::network;
 
 Party::Party(Player* leader, Player* player)
 {
-    std::cout << "Party constructor" << std::endl;
+    spdlog::trace("Party constructor between: {} and {}", leader->GetName(), player->GetName());
     AddMember(leader);
     AddMember(player);
 }
 
 Party::~Party()
 {
-    std::cout << "Party destructor" << std::endl;
+    spdlog::trace("Party destructor");
 }
 
 void Party::SendPartyInfo() const
@@ -116,25 +117,23 @@ std::uint8_t Party::GetSize() const
     std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
     return m_members_list.size(); 
 }
+
 Player* Party::GetLeader() const
 {
-    std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
     return !IsEmpty() ? m_members_list.front() : nullptr; 
 }
+
 bool Party::IsValid() const
 {
-    std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
     return GetSize() >= MIN_PARTY_SIZE;
 }
 
 bool Party::IsFull() const
 {
-    std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
     return GetSize() >= MAX_PARTY_SIZE; 
 }
 
 bool Party::IsEmpty() const
 {
-    std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
     return m_members_list.empty(); 
 }

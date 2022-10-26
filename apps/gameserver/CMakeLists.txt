@@ -11,6 +11,15 @@ include_directories(bangospace)
 include_directories(bangoprocessor)
 include_directories(bangoutils)
 
+include(FetchContent)
+FetchContent_Declare(
+  spdlog
+  GIT_REPOSITORY https://github.com/gabime/spdlog
+  GIT_TAG        v1.10.0
+)
+
+FetchContent_MakeAvailable(spdlog)
+
 set(SOURCES
   src/CommandDispatcher.cpp
   src/User.cpp
@@ -37,4 +46,5 @@ target_link_libraries(gameserver
   tacopie 
   pthread
   CLI11
+  spdlog
   )

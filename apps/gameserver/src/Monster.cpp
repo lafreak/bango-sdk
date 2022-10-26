@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <memory>
 
+#include "spdlog/spdlog.h"
+
 #include "World.h"
 #include "RegularMonster.h"
 #include "BeheadableMonster.h"
@@ -12,9 +14,20 @@
 
 using namespace bango::network;
 
+Monster::Monster(const std::unique_ptr<InitMonster>& init, int x, int y, int map)
+    : Character(Character::MONSTER), m_init(init)
+{
+    spdlog::trace("Monster constructor id: {}", GetID());
+    m_x = x;
+    m_y = y;
+    m_map = map;
+    m_curhp = GetMaxHP();
+    m_curmp = GetMaxMP();
+}
+
 Monster::~Monster()
 {
-    std::cout << "Monster ptr [" << (int*)this << "] destructor" << std::endl;
+    spdlog::trace("Monster destructor id: {}", GetID());
 }
 
 packet Monster::BuildAppearPacket(bool hero) const

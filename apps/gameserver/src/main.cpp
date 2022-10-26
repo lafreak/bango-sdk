@@ -6,6 +6,8 @@
 #include <chrono>
 #include <cstdint>
 
+#include "spdlog/spdlog.h"
+
 #include "CLI/App.hpp"
 #include "CLI/Formatter.hpp"
 #include "CLI/Config.hpp"
@@ -45,6 +47,9 @@ int main(int argc, char** argv)
     } catch (const CLI::ParseError &e) {
         return app.exit(e);
     }
+
+    // spdlog::set_level(spdlog::level::trace);
+    spdlog::set_pattern("[%H:%M:%S.%e] [%l] [tid %t] %v");
 
     random::init();
 
@@ -117,7 +122,7 @@ int main(int argc, char** argv)
         try {
             Monster::CreateMonster(index, player.GetX(), player.GetY(), player.GetMap());
         } catch (const std::exception&) {
-            std::cout << "Monster Index doesnt exist " << index << std::endl;
+            spdlog::warn("Cannot create monster with index {}", index);
         }
     });
 
@@ -136,26 +141,18 @@ int main(int argc, char** argv)
         player.Teleport(268622, 242944);
     });
 
-    CommandDispatcher::Register("/test", [&](Player& player, CommandDispatcher::Token& token) {
-        //int id = token;
-        //int type = token;
+    CommandDispatcher::Register("/around", [&](Player& player, CommandDispatcher::Token& token) {
         int radius = token;
+        spdlog::info("/around radius: {}; player {}:", radius, player.GetName());
 
         auto query = WorldMap::QK_PLAYER|WorldMap::QK_MONSTER|WorldMap::QK_NPC;
         World::Map(player.GetMap()).ForEachAround(player, radius, query, [&](Character& character) {
             int distance = player.distance(&character);
-            std::cout << "Character ID: " << character.GetID()
-                << "; distance: " << distance
-                << "; coords: (" << character.GetX()
-                << "," << character.GetY()
-                << "," << character.GetZ() << ")" << std::endl;
+            spdlog::info("Character ID: {}; type: {}; distance: {}; coords: ({},{},{})",
+                character.GetID(), character.GetType(), distance,
+                character.GetX(), character.GetY(), character.GetZ());
         });
-        //player->write(S2C_ATTACK, "ddddb", player->GetID(), id, 0, 0, type);
-        //player->write(S2C_ACTION, "bdd", AT_THROWITEM, id, type);
-        //player->write(S2C_INFODIE, "db", id, type);
     });
-
-    //S2C_ATTACK, "ddddb",
 
     World::OnAppear     (std::bind(&Player::OnCharacterAppear,      _1, _2, _3));
     World::OnDisappear  (std::bind(&Player::OnCharacterDisappear,   _1, _2));
@@ -200,10 +197,10 @@ int main(int argc, char** argv)
     try 
     {
         Socket::DBClient().connect(db_address, db_port);
-        std::cout << "Connected to DB Server on address " << db_address << ":" << db_port << std::endl;
+        spdlog::info("Connected to DB Server on address {}:{}", db_address, db_port);
 
         Socket::GameServer().start(game_address, game_port);
-        std::cout << "Game Server has started on address " << game_address << ":" << game_port << std::endl;
+        spdlog::info("Game Server has started on address {}:{}", game_address, game_port);
     } 
     catch (const std::exception& e) 
     {

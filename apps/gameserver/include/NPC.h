@@ -48,18 +48,7 @@ class NPC : public Character
     //const InitNPC* m_init;
     const std::unique_ptr<InitNPC>& m_init;
 public:
-    //NPC(const InitNPC* init) 
-    NPC(const std::unique_ptr<InitNPC>& init)
-        : Character(Character::NPC), m_init(init)
-    {
-        m_x =   init->X;
-        m_y =   init->Y;
-        m_z =   init->Z;
-        m_map = init->Map;
-
-        LookAt(init->DirX, init->DirY);
-    }
-
+    NPC(const std::unique_ptr<InitNPC>& init);
     ~NPC();
 
     unsigned short  GetIndex() const { return m_init->Index; }

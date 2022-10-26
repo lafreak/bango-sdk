@@ -1,5 +1,7 @@
 #include "Inventory.h"
 
+#include "spdlog/spdlog.h"
+
 #include <cassert>
 #include <algorithm>
 
@@ -157,9 +159,9 @@ const Item::Ptr Inventory::Insert(const ITEMINFO& info)
         return item;
 
     } catch (const std::out_of_range&) {
-        std::cerr << "Non existing item index: " << info.Index << std::endl;
+        spdlog::error("Tried to create item not existing in InitItem; index: {}", info.Index);
     } catch (const std::runtime_error& e) {
-        std::cerr << e.what() << std::endl;
+        spdlog::error("Cannot create item with error: {}", e.what());
     }
 
     return nullptr;
