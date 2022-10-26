@@ -127,14 +127,9 @@ int main(int argc, char** argv)
     });
 
     CommandDispatcher::Register("/expelparty", [&](Player& player, CommandDispatcher::Token& token){
-        // auto lock = player.Lock();
-        // if (!player.IsPartyLeader())
-        //     return;
-
         std::string player_name(token);
         World::ForPlayerWithName(player_name, [&](Player& player_to_kick) {
             player.BanFromParty(player_to_kick.GetID());
-            //player.KickFromParty(player_to_kick.GetID());
         });
     });
 

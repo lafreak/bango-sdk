@@ -734,6 +734,8 @@ void Player::OnAskPartyAnswer(packet& p)
         return;
 
     World::ForPlayer(inviter_id, [&](Player& inviter) {
+        ResetPartyInviterID();
+
         if (distance(&inviter) > MAP_SIGHT)
             return;
 

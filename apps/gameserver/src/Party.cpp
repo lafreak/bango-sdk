@@ -50,7 +50,6 @@ void Party::WriteToAll(const packet& p) const
 bool Party::AddMember(Player* player)
 {
     std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
-    //player->ResetPartyInviterID(); // TODO: Move out
 
     if (IsFull())
     {
@@ -82,7 +81,7 @@ void Party::RemoveMember(Player* player, bool is_kicked)
     if (std::find(m_members_list.begin(), m_members_list.end(), player) == m_members_list.end())
         throw std::runtime_error("Finding player to remove from party failed.");
 
-    bool was_leaver_party_leader = GetLeader() == player;//player->IsPartyLeader();
+    bool was_leaver_party_leader = GetLeader() == player;
     m_members_list.remove(player);
 
     if (is_kicked)
