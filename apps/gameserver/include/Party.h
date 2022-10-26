@@ -33,6 +33,9 @@ public:
 
     //! Checks if party size is between min and max.
     bool         IsValid()                     const;
+    
+    //! Checks if given player is party leader.
+    bool         IsLeader(const Player* player)const;
 
     //! Checks if party is full.
     bool         IsFull()                      const;

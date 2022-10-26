@@ -136,16 +136,20 @@ public:
     bool TrashItem(unsigned int local);
     void Teleport(int x, int y, int z=0);
 
-    void LeaveParty(bool is_kicked = false);
-    void KickFromParty(int expelled_player_id);
-    void SetParty(const std::shared_ptr<Party>& party)    { m_party = party; }
-    void ResetParty()                                     { m_party = nullptr; }
     void SetPartyInviterID(int id)                        { m_party_inviter_id = id; }
     void ResetPartyInviterID()                            { m_party_inviter_id = 0; }
     int  GetPartyInviterID()                  const       { return m_party_inviter_id; }
-    bool IsPartyLeader()                      const       { return IsInParty() && m_party->GetLeader() == this; }
-    bool IsInParty()                          const       { return m_party && m_party->IsValid(); }
-    std::shared_ptr<Party> GetParty()         const       { return IsInParty() ? m_party : nullptr; }
+    
+    //! Leave from party.
+    //! Display proper message if forced by leader via kick. 
+    void LeaveParty(bool is_kicked = false);
+
+    void BanFromParty(int banned_player_id);
+    void SetParty(const std::shared_ptr<Party>& party)          { m_party = party; }
+    void ResetParty()                                           { m_party = nullptr; }
+    bool HasParty()                                     const   { return m_party != nullptr; }
+    bool IsPartyLeader()                                const   { return HasParty() && GetParty()->IsLeader(this); }
+    const std::shared_ptr<Party>& GetParty()            const   { return m_party; }
 
     std::uint16_t   GetReqPU(std::uint8_t* stats);
 

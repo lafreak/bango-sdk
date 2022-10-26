@@ -222,7 +222,7 @@ void Player::OnChatting(packet& p)
             if (message.size() <= 1)
                 break;
             auto lock = Lock();
-            if (IsInParty())
+            if (HasParty())
                 GetParty()->WriteToAll(message_packet);
             break;
         }
@@ -693,7 +693,7 @@ void Player::OnAskParty(packet& p)
         return;
 
     auto lock = Lock();
-    if (IsInParty() && !IsPartyLeader())
+    if (HasParty() && GetParty()->GetLeader() != this)
     {
         write(S2C_MESSAGE, "b", MSG_NORIGHTOFPARTYHEAD);
         return;
@@ -704,7 +704,7 @@ void Player::OnAskParty(packet& p)
             return;
 
         auto invited_player_lock = invited_player.Lock();
-        if (invited_player.IsInParty())
+        if (invited_player.HasParty())
         {
             // TODO: Update bango::network::packet to accept std::string as well (remove the need of c_str() call)
             write(S2C_MESSAGEV, "bs", MSG_JOINEDINOTHERPARTY, invited_player.GetName().c_str());
@@ -722,11 +722,18 @@ void Player::OnAskPartyAnswer(packet& p)
     auto answer = p.pop<bool>();
     auto inviter_id = p.pop<int>();
 
-    auto lock = Lock();
-    if (inviter_id == GetID() || inviter_id != GetPartyInviterID() || IsInParty())
+    if (inviter_id == GetID())
         return;
 
-    World::ForPlayer(inviter_id, [&](Player& inviter){
+    auto lock = Lock();
+
+    if (HasParty())
+        return;
+
+    if (inviter_id != GetPartyInviterID())
+        return;
+
+    World::ForPlayer(inviter_id, [&](Player& inviter) {
         if (distance(&inviter) > MAP_SIGHT)
             return;
 
@@ -737,7 +744,7 @@ void Player::OnAskPartyAnswer(packet& p)
         }
 
         auto inviter_lock = inviter.Lock();
-        if (!inviter.IsInParty())
+        if (!inviter.HasParty())
         {
             auto party = std::make_shared<Party>(&inviter, this);
             inviter.SetParty(party);
@@ -759,33 +766,51 @@ void Player::OnLeaveParty(packet& p)
 
 void Player::LeaveParty(bool is_kicked)
 {
-    if (!IsInParty())
-        return;
-    m_party->RemoveMember(this, is_kicked);
-    ResetParty();
+    if (HasParty())
+    {
+        GetParty()->RemoveMember(this, is_kicked);
+        if (GetParty()->GetSize() == 1)
+        {
+            auto* leader = GetParty()->GetLeader();
+            auto leader_lock = leader->Lock();
+            if (leader->HasParty())
+            {
+                leader->GetParty()->RemoveMember(leader);
+                leader->ResetParty();
+            }
+        }
+        ResetParty();
+    }
 }
 
 void Player::OnExileParty(bango::network::packet& p)
 {
+    auto banned_player_id = p.pop<int>();
+    BanFromParty(banned_player_id);
+}
+
+void Player::BanFromParty(int banned_player_id)
+{
+    if (banned_player_id == GetID())
+        return;
+
     auto lock = Lock();
     if (!IsPartyLeader())
         return;
-    KickFromParty(p.pop<int>());
-}
 
-void Player::KickFromParty(int expelled_player_id)
-{
-    if (expelled_player_id == GetID() || !IsPartyLeader())
-        return;
-
-    World::ForPlayer(expelled_player_id, [&](Player& expelled_player){
-        auto lock = expelled_player.Lock();
-        if (!expelled_player.IsInParty())
+    World::ForPlayer(banned_player_id, [&](Player& banned_player) {
+        auto banned_player_lock = banned_player.Lock();
+        if (!banned_player.HasParty())
             return;
-        if (GetParty() != expelled_player.GetParty())
+        if (banned_player.GetParty() != GetParty())
             return;
-
-        expelled_player.LeaveParty(true);
+        GetParty()->RemoveMember(&banned_player);
+        banned_player.ResetParty();
+        if (GetParty()->GetSize() == 1)
+        {
+            GetParty()->RemoveMember(this);
+            ResetParty();
+        }
     });
 }
 
