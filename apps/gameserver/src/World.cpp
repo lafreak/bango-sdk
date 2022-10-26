@@ -1,5 +1,7 @@
 #include "World.h"
 
+#include "spdlog/spdlog.h"
+
 #include <cstdint>
 
 #include "Player.h"
@@ -99,7 +101,7 @@ void WorldMap::Add(Character* entity)
     try {
         m_quad.insert(entity);
     } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+        spdlog::error("cannot insert into quad with error: {}", e.what());
         return;
     }
 
@@ -113,7 +115,7 @@ void WorldMap::Remove(Character* entity)
     try {
         m_quad.remove(entity);
     } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+        spdlog::error("cannot remove from quad with error: {}", e.what());
         return;
     }
 
@@ -138,7 +140,7 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
     try {
         m_quad.remove(entity);
     } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+        spdlog::error("cannot remove from quad with error: {}", e.what());
         return;
     }
 
@@ -223,7 +225,7 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
     try {
         m_quad.insert(entity);
     } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+        spdlog::error("cannot insert into quad with error: {}", e.what());
     }
 }
 

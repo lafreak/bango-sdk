@@ -76,18 +76,7 @@ class Monster : public Character
     const std::unique_ptr<InitMonster>& m_init;
 
 public:
-    Monster(const std::unique_ptr<InitMonster>& init, int x, int y, int map=0)
-        : Character(Character::MONSTER), m_init(init)
-    {
-        m_x = x;
-        m_y = y;
-        m_map = map;
-        m_curhp = GetMaxHP();
-        m_curmp = GetMaxMP();
-
-        std::cout << "Monster ptr [" << (int*)this << "] constructor" << std::endl;
-    }
-
+    Monster(const std::unique_ptr<InitMonster>& init, int x, int y, int map=0);
     ~Monster();
 
     std::uint16_t   GetIndex()      const { return m_init->Index; }

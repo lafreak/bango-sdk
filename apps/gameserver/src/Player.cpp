@@ -1,7 +1,8 @@
 #include "Player.h"
 
-#include <iostream>
 #include <string>
+
+#include "spdlog/spdlog.h"
 
 #include "Socket.h"
 #include "World.h"
@@ -16,12 +17,12 @@ using namespace bango::utils;
 
 Player::Player(const bango::network::taco_client_t& client) : User(client), Character(Character::PLAYER)
 {
-    std::cout << "Player ptr[" << (int*)this << "] constructor" << std::endl;
+    spdlog::trace("Player constructor id: {}", GetID());
 }
 
 Player::~Player()
 {
-    std::cout << "Player ptr[" << (int*)this << "] destructor" << std::endl;
+    spdlog::trace("Player destructor id: {}", GetID());
 }
 
 void Player::OnConnected()
@@ -148,7 +149,7 @@ void Player::OnLoadFinish()
     // Send Inventory property
     SendInventoryProperty();
     
-    std::cout << "Player ID " << GetID() << " has loaded.\n";
+    spdlog::info("Player ID: {}; PID: {}; has loaded", GetID(), GetPID());
 }
 
 void Player::OnRest(packet& p)
