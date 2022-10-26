@@ -18,8 +18,8 @@ class Party
     std::list<Player*> m_members_list;
     mutable std::recursive_mutex m_rmtx_list;
 public:
-    static constexpr uint8_t MAX_PARTY_SIZE = 8;
-    static constexpr uint8_t MIN_PARTY_SIZE = 2;
+    static constexpr std::uint8_t MAX_PARTY_SIZE = 8;
+    static constexpr std::uint8_t MIN_PARTY_SIZE = 2;
 
     Party() = delete;
     Party(Player* leader, Player* player);

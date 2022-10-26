@@ -25,7 +25,6 @@ Party::~Party()
 
 void Party::SendPartyInfo() const
 {
-    std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
     packet p(S2C_PARTYINFO);
     p.push<unsigned char>(GetSize());
     for(auto& player : m_members_list)
@@ -52,14 +51,13 @@ bool Party::AddMember(Player* player)
     std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
     player->ResetPartyInviterID();
 
-    // TODO: Return false if player already exist
-    if(IsFull())
+    if (IsFull())
     {
         player->write(S2C_MESSAGE, "b", MSG_PARTYISFULL);
         return false;
     }
 
-    if(!IsEmpty())
+    if (!IsEmpty())
     {
         packet p(S2C_MESSAGEV);
         p.push<unsigned char>(MSG_JOINEDINPARTY);
@@ -73,7 +71,6 @@ bool Party::AddMember(Player* player)
     }
 
     m_members_list.push_back(player);
-    //player->SetParty(this);
     SendPartyInfo();
     return true;
 }
@@ -81,13 +78,13 @@ bool Party::AddMember(Player* player)
 void Party::RemoveMember(Player* player, bool is_kicked)
 {
     std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
-    if(std::find(m_members_list.begin(), m_members_list.end(), player) == m_members_list.end())
+    if (std::find(m_members_list.begin(), m_members_list.end(), player) == m_members_list.end())
         throw std::runtime_error("Finding player to remove from party failed.");
 
     bool was_leaver_party_leader = player->IsPartyLeader();
 
     m_members_list.remove(player);
-    if(is_kicked)
+    if (is_kicked)
     {
         player->write(S2C_MESSAGE, "b", MSG_EXILEDFROMPARTY);
         WriteToAll(packet(S2C_MESSAGEV, "bd", MSG_EXILEDFROMPARTY, player->GetID()));
@@ -98,18 +95,18 @@ void Party::RemoveMember(Player* player, bool is_kicked)
         WriteToAll(packet(S2C_MESSAGEV, "bd", MSG_LEFTPARTY, player->GetID()));
     }
 
-    if(GetSize() == 0)
-        throw std::runtime_error("Party list should be cleared when Size == 1");
-    if(GetSize() == 1)
+    if (GetSize() == 0)
+        throw std::runtime_error("Party list should be cleared when Size == 1");  // TODO: Change string
+
+    if (GetSize() == 1)
     {
         GetLeader()->write(S2C_MESSAGE, "b", MSG_ENDPARTY);
-        GetLeader()->SetParty(nullptr);
         m_members_list.clear();
     }
-    else if(GetSize() > 1)
+    else if (GetSize() > 1)
     {
         SendPartyInfo();
-        if(was_leaver_party_leader)
+        if (was_leaver_party_leader)
             GetLeader()->write(S2C_MESSAGE, "b", MSG_BECOMEPARTYHEAD);
     }
 }

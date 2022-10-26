@@ -136,7 +136,7 @@ public:
     bool TrashItem(unsigned int local);
     void Teleport(int x, int y, int z=0);
 
-    void PartyLeave(bool is_kicked = false);
+    void LeaveParty(bool is_kicked = false);
     void KickFromParty(int expelled_player_id);
     void SetParty(const std::shared_ptr<Party>& party)    { m_party = party; }
     void ResetParty()                                     { m_party = nullptr; }
@@ -145,7 +145,7 @@ public:
     int  GetPartyInviterID()                  const       { return m_party_inviter_id; }
     bool IsPartyLeader()                      const       { return IsInParty() && m_party->GetLeader() == this; }
     bool IsInParty()                          const       { return m_party && m_party->IsValid(); }
-    std::shared_ptr<Party>  GetParty()        const       { return IsInParty() ? m_party : nullptr; }
+    std::shared_ptr<Party> GetParty()         const       { return IsInParty() ? m_party : nullptr; }
 
     std::uint16_t   GetReqPU(std::uint8_t* stats);
 

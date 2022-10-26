@@ -63,7 +63,7 @@ void Player::OnRestart(packet& p)
         //m_inventory.Reset();
         m_inventory = Inventory();
         ResetStates();
-        PartyLeave();
+        LeaveParty();
         //World::Map(GetMap()).Remove(this);
         World::Remove(this);
         deny(User::INGAME);
@@ -625,6 +625,8 @@ void Player::OnAttack(packet& p)
         // CanAttack
         // OnPVP
 
+        auto lock = Lock();
+
         if (!m_inventory.HasWeapon())
             return;
         
@@ -642,6 +644,8 @@ void Player::OnAttack(packet& p)
         m_last_attack=now;
 
         LookAt(&character);
+
+        auto defender_lock = character.Lock();
 
         // CheckBlock
         if (!CheckHit(&character))
@@ -729,7 +733,7 @@ void Player::OnAskPartyAnswer(packet& p)
         auto inviter_lock = inviter.Lock();
         if (!inviter.IsInParty())
         {
-            auto party = std::make_shared<Party>(&inviter, this);  // TODO: Take out AddMember out of constructor
+            auto party = std::make_shared<Party>(&inviter, this);
             inviter.SetParty(party);
             SetParty(party);
         }
@@ -743,10 +747,11 @@ void Player::OnAskPartyAnswer(packet& p)
 
 void Player::OnLeaveParty(packet& p)
 {
-    PartyLeave();
+    auto lock = Lock();
+    LeaveParty();
 }
 
-void Player::PartyLeave(bool is_kicked)
+void Player::LeaveParty(bool is_kicked)
 {
     if (!IsInParty())
         return;
@@ -756,20 +761,25 @@ void Player::PartyLeave(bool is_kicked)
 
 void Player::OnExileParty(bango::network::packet& p)
 {
+    auto lock = Lock();
+    if (!IsPartyLeader())
+        return;
     KickFromParty(p.pop<int>());
 }
 
 void Player::KickFromParty(int expelled_player_id)
 {
-    if (expelled_player_id == GetID() || !IsPartyLeader())  // TODO: IsPartyLeader is not threadsafe
+    if (expelled_player_id == GetID() || !IsPartyLeader())
         return;
 
     World::ForPlayer(expelled_player_id, [&](Player& expelled_player){
-        if(!expelled_player.IsInParty()
-            || GetParty() != expelled_player.GetParty())
+        auto lock = expelled_player.Lock();
+        if (!expelled_player.IsInParty())
             return;
-        
-        expelled_player.PartyLeave(true);
+        if (GetParty() != expelled_player.GetParty())
+            return;
+
+        expelled_player.LeaveParty(true);
     });
 }
 
