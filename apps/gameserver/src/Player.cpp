@@ -33,7 +33,12 @@ void Player::OnConnected()
 void Player::OnDisconnected()
 {
     if (authorized(User::INGAME))
+    {
+        auto lock = Lock();
+        SaveAllProperty();
+        LeaveParty();
         World::Remove(this);
+    }
 
     if (authorized(User::AUTHORIZED))
         Socket::DBClient().write(S2D_DISCONNECT, "d", GetAID());

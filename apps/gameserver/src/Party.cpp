@@ -28,7 +28,7 @@ void Party::SendPartyInfo() const
 {
     packet p(S2C_PARTYINFO);
     p.push<unsigned char>(GetSize());
-    for(auto& player : m_members_list)
+    for (auto& player : m_members_list)
     {
         p.push<unsigned int>(player->GetID());
         p.push_str(player->GetName());
