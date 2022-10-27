@@ -48,7 +48,7 @@ int main(int argc, char** argv)
         return app.exit(e);
     }
 
-    // spdlog::set_level(spdlog::level::trace);
+    spdlog::set_level(spdlog::level::trace);
     spdlog::set_pattern("[%H:%M:%S.%e] [%l] [tid %t] %v");
 
     random::init();
@@ -127,13 +127,9 @@ int main(int argc, char** argv)
     });
 
     CommandDispatcher::Register("/expelparty", [&](Player& player, CommandDispatcher::Token& token){
-        auto lock = player.Lock();
-        if (!player.IsPartyLeader())
-            return;
-
         std::string player_name(token);
         World::ForPlayerWithName(player_name, [&](Player& player_to_kick) {
-            player.KickFromParty(player_to_kick.GetID());
+            player.BanFromParty(player_to_kick.GetID());
         });
     });
 

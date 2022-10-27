@@ -28,7 +28,7 @@ void Party::SendPartyInfo() const
 {
     packet p(S2C_PARTYINFO);
     p.push<unsigned char>(GetSize());
-    for(auto& player : m_members_list)
+    for (auto* player : m_members_list)
     {
         p.push<unsigned int>(player->GetID());
         p.push_str(player->GetName());
@@ -43,14 +43,13 @@ void Party::SendPartyInfo() const
 void Party::WriteToAll(const packet& p) const
 {
     std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
-    for(auto& player : m_members_list)
+    for (auto* player : m_members_list)
         player->write(p);
 }
 
 bool Party::AddMember(Player* player)
 {
     std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
-    player->ResetPartyInviterID();
 
     if (IsFull())
     {
@@ -82,9 +81,9 @@ void Party::RemoveMember(Player* player, bool is_kicked)
     if (std::find(m_members_list.begin(), m_members_list.end(), player) == m_members_list.end())
         throw std::runtime_error("Finding player to remove from party failed.");
 
-    bool was_leaver_party_leader = player->IsPartyLeader();
-
+    bool was_leaver_party_leader = GetLeader() == player;
     m_members_list.remove(player);
+
     if (is_kicked)
     {
         player->write(S2C_MESSAGE, "b", MSG_EXILEDFROMPARTY);
@@ -96,13 +95,9 @@ void Party::RemoveMember(Player* player, bool is_kicked)
         WriteToAll(packet(S2C_MESSAGEV, "bd", MSG_LEFTPARTY, player->GetID()));
     }
 
-    if (GetSize() == 0)
-        throw std::runtime_error("Party list should be cleared when Size == 1");  // TODO: Change string
-
     if (GetSize() == 1)
     {
         GetLeader()->write(S2C_MESSAGE, "b", MSG_ENDPARTY);
-        m_members_list.clear();
     }
     else if (GetSize() > 1)
     {
@@ -114,13 +109,17 @@ void Party::RemoveMember(Player* player, bool is_kicked)
 
 std::uint8_t Party::GetSize() const
 {
-    std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
     return m_members_list.size(); 
 }
 
 Player* Party::GetLeader() const
 {
     return !IsEmpty() ? m_members_list.front() : nullptr; 
+}
+
+bool Party::IsLeader(const Player* player) const
+{
+    return GetLeader() == player;
 }
 
 bool Party::IsValid() const
