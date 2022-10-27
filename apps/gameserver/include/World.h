@@ -6,6 +6,7 @@
 #include "Player.h"
 #include "Monster.h"
 #include "NPC.h"
+#include "Spawn.h"
 
 #include <bango/space/quadtree.h>
 
@@ -90,7 +91,7 @@ public:
 
     //! Removes entity from the map.
     //! Thread-safe.
-    void Remove(Character* entity);
+    void Remove(Character* entity, bool on_monster_death = false);
 
     //! Moves entity to new position.
     //! Thread-safe.
@@ -129,10 +130,12 @@ class World
     typedef std::unordered_map<Character::id_t, Player*>                    PlayerContainer;
     typedef std::unordered_map<Character::id_t, std::shared_ptr<Monster>>   MonsterContainer;
     typedef std::unordered_map<Character::id_t, std::shared_ptr<NPC>>       NpcContainer;
+    typedef std::unordered_map<Character::id_t, std::shared_ptr<Spawn>>     SpawnContainer;
 
     PlayerContainer m_players;
     MonsterContainer m_monsters;
     NpcContainer m_npcs;
+    SpawnContainer m_spawns;
 
     std::recursive_mutex m_entities_rmtx;
 
@@ -179,12 +182,15 @@ public:
             Add(std::make_shared<NPC>(init.second));
     }
 
+    static void SpawnGenMonster();
+
     static void Cleanup()
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
         Get().m_players.clear();
         Get().m_monsters.clear();
         Get().m_npcs.clear();
+        Get().m_spawns.clear();
     }
 
     static void RemoveDeadMonsters()
@@ -195,7 +201,7 @@ public:
         {
             auto& monster = it->second;
             if (monster->IsGState(CGS_KO)) {
-                Map(monster->GetMap()).Remove(monster.get());
+                Map(monster->GetMap()).Remove(monster.get(), true);
                 it = Get().m_monsters.erase(it);
             }
             else
@@ -337,6 +343,8 @@ public:
         callback(*it->second);
         return true;
     }
+
+    static void ForEachSpawn(const std::function<void(Spawn&)>& callback);
 };
 
 inline WorldMap::QUERY_KIND operator|(WorldMap::QUERY_KIND a, WorldMap::QUERY_KIND b)

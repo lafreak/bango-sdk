@@ -1962,6 +1962,12 @@ enum ATTRIBUTE
 	A_SIGHT,
 	A_EXP,
 	A_RESIST,
+
+	// GenMonster
+	A_AREA,
+	A_MAX,
+	A_SPAWNCYCLE,
+	A_RECT
 };
 
 enum ATT

@@ -226,6 +226,12 @@ namespace inix
         { "sight", A_SIGHT},
         { "exp", A_EXP},
         { "resist", A_RESIST},
+
+        // GenMonster
+        { "area", A_AREA},
+        { "max", A_MAX},
+        { "cycle", A_SPAWNCYCLE},
+        { "rect", A_RECT}
     };
 
     static std::map<unsigned int, int> g_wearables = {

@@ -8,6 +8,8 @@
 using namespace bango::network;
 using namespace bango::utils;
 
+id_t Character::g_max_id = 0;
+
 void Character::SetDirection(std::int8_t delta_x, std::int8_t delta_y)
 {
     if (delta_x == 0 && delta_y == 0) return;

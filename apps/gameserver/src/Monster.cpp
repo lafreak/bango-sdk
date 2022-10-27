@@ -63,24 +63,48 @@ packet Monster::BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::i
     return packet();
 }
 
-void Monster::CreateMonster(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map)
+void Monster::SummonMonster(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map)
 {
-    switch(InitMonster::DB().at(index)->Race)
+    const auto& init_monster = InitMonster::DB().at(index);
+    switch(init_monster->Race)
     {
         case MR_NOTMAGUNI:
         {
-            World::Add(std::make_shared<RegularMonster>(InitMonster::DB().at(index), x, y, map));
+            World::Add(std::make_shared<RegularMonster>(init_monster, x, y, map));
             break;
         }
         case MR_MAGUNI:
         { 
-            World::Add(std::make_shared<BeheadableMonster>(InitMonster::DB().at(index), x, y, map));
+            World::Add(std::make_shared<BeheadableMonster>(init_monster, x, y, map));
             break;
         }
         default:
         {
-            World::Add(std::make_shared<RegularMonster>(InitMonster::DB().at(index), x, y, map));
+            World::Add(std::make_shared<RegularMonster>(init_monster, x, y, map));
             break;
         }
     }
+}
+
+void Monster::SetNewID()
+{
+    m_id = Character::g_max_id++;
+}
+
+void Monster::PrepareMonsterToSpawn(int new_x, int new_y, int map)
+{
+    ResetStates();
+    SetNewID();
+    m_curhp = GetMaxHP();
+    m_x = new_x;
+    m_y = new_y;
+}
+
+bango::utils::time::point Monster::GetDeathTime() const
+{
+    return m_death_time;
+}
+void Monster::SetDeathTime(bango::utils::time::point death_time)
+{
+    m_death_time = death_time;
 }

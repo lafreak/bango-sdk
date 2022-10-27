@@ -108,7 +108,7 @@ void WorldMap::Add(Character* entity)
     m_entities[entity->GetType()].insert(std::make_pair(entity->GetID(), entity));
 }
 
-void WorldMap::Remove(Character* entity)
+void WorldMap::Remove(Character* entity, bool on_monster_death)
 {
     std::lock_guard<std::recursive_mutex> lock(m_rmtx);
 
@@ -120,6 +120,9 @@ void WorldMap::Remove(Character* entity)
     }
 
     m_entities[entity->GetType()].erase(entity->GetID());
+
+    if(on_monster_death)
+        return;
 
     auto center = point{entity->m_x, entity->m_y}; // TODO: Dont convert to point each time.
     m_quad.query(center, m_sight, [&](const Container* container) {
@@ -326,4 +329,21 @@ void WorldMap::WriteOnMap(const packet& p)
 
     for (const auto& pair : Players())
         ((Player*)pair.second)->write(p);
+}
+
+void World::SpawnGenMonster()
+{
+    for(const auto& init : GenMonster::DB())
+    {
+        auto new_spawn = std::make_shared<Spawn>(GenMonster::DB().at(init.second->Index));
+        Get().m_spawns.insert(std::make_pair(init.second->Index, new_spawn));
+    }
+}
+
+void World::ForEachSpawn(const std::function<void(Spawn&)>& callback)
+{
+    std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+    for (auto it : Get().m_spawns)
+        callback(*it.second);
 }
