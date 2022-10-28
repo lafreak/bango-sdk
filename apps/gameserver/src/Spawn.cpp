@@ -6,17 +6,19 @@
 #include "BeheadableMonster.h"
 #include "Character.h"
 
+#include <inix.h>
 #include <inix/common.h>
+#include <bango/utils/random.h>
 
 using namespace bango::utils;
 
-Spawn::Spawn(const std::unique_ptr<GenMonster>& init):
-    m_init(init)
+Spawn::Spawn(const std::unique_ptr<GenMonster>& init)
+    :m_init(init)
 {
     if(InitMonster::DB().find(GetMonsterIndex()) != InitMonster::DB().end())
         CreateSpawn();
     else
-        spdlog::error("Cannot create spawn of monster {}", GetMonsterIndex()); // TODO: object shouldn't be created.
+        spdlog::error("Monster ID does not exist in InitMonster {}", GetMonsterIndex()); // TODO: object shouldn't be created.
 
     SetNextSpawnCycle();
 }
@@ -139,12 +141,12 @@ GenMonster::RectXY Spawn::GetRect() const
     return m_init->Rect;
 }
 
-std::uint32_t GenMonster::RectXY::GetRandomX() const
+int GenMonster::RectXY::GetRandomX() const
 {
     return bango::utils::random::between(X1, X2) * 32;
 }
 
-std::uint32_t GenMonster::RectXY::GetRandomY() const
+int GenMonster::RectXY::GetRandomY() const
 {
     return bango::utils::random::between(Y1, Y2) * 32;
 }

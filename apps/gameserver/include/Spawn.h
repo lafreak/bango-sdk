@@ -5,9 +5,7 @@
 
 #include "Monster.h"
 
-#include <inix.h>
 #include <bango/processor/db.h>
-#include <bango/utils/random.h>
 #include <bango/utils/time.h>
 
 //TODO:
@@ -18,13 +16,13 @@ struct GenMonster : public bango::processor::db_object<GenMonster>
 {
     struct RectXY
     {
-        std::uint32_t X1 = 0, Y1 = 0, X2 = 0, Y2 = 0;
-        std::uint32_t GetRandomX() const;
-        std::uint32_t GetRandomY() const;
+        int X1 = 0, Y1 = 0, X2 = 0, Y2 = 0;
+        int GetRandomX() const;
+        int GetRandomY() const;
 
     };
     std::uint32_t MonsterIndex = 0, Map = 0, Index = 0, Amount = 0, SpawnCycle = 0;
-    RectXY Rect;
+    RectXY Rect{};
 
     unsigned int index() const;
     virtual void set(bango::processor::lisp::var param) override;
@@ -37,7 +35,6 @@ public:
     Spawn(const std::unique_ptr<GenMonster>& init);
 
     void Tick();
-
 private:
     void RespawnOnWorld(std::shared_ptr<Monster> monster);
     void CreateSpawn();
