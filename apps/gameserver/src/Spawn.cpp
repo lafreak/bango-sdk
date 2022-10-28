@@ -1,5 +1,6 @@
 #include "Spawn.h"
 
+#include "spdlog/spdlog.h"
 #include "World.h"
 #include "RegularMonster.h"
 #include "BeheadableMonster.h"
@@ -13,14 +14,11 @@ Spawn::Spawn(const std::unique_ptr<GenMonster>& init):
     m_init(init)
 {
     if(InitMonster::DB().find(GetMonsterIndex()) != InitMonster::DB().end())
-    {
-        m_area_monsters.resize(GetAmount());
-        for(int i = 0; i < GetAmount(); i++)
-        {
-            auto monster = CreateMonster();
-            m_area_monsters.at(i) = monster;
-        }
-    }
+        CreateSpawn();
+    else
+        spdlog::error("Cannot create spawn of monster {}", GetMonsterIndex()); // TODO: object shouldn't be created.
+
+    SetNextSpawnCycle();
 }
 
 void GenMonster::set(bango::processor::lisp::var param)
@@ -44,11 +42,18 @@ void GenMonster::set(bango::processor::lisp::var param)
 
 void Spawn::Tick()
 {
-    for(auto& monster : m_area_monsters)
-        if(monster->IsGState(CGS_KO) && IsMonsterReadyToRespawn(monster))
-            RespawnOnWorld(monster);
-}
+    if((time::now() - m_next_spawn_cycle).count() > GetSpawnCycle())
+        return;
 
+    for(auto& monster : m_area_monsters)
+    {
+        auto monster_lock = monster->Lock();
+        if(monster->IsGState(CGS_KO))
+            RespawnOnWorld(monster);
+    }
+
+    SetNextSpawnCycle();
+}
 
 void Spawn::RespawnOnWorld(std::shared_ptr<Monster> monster)
 {
@@ -56,35 +61,42 @@ void Spawn::RespawnOnWorld(std::shared_ptr<Monster> monster)
     World::Add(monster);
 }
 
-bool Spawn::IsMonsterReadyToRespawn(std::shared_ptr<Monster> monster)
-{
-    return ((time::now() - monster->GetDeathTime()).count() >= GetSpawnCycle());
-}
-
-std::shared_ptr<Monster> Spawn::CreateMonster()
+void Spawn::CreateSpawn()
 {
     const auto& init_monster = InitMonster::DB().at(GetMonsterIndex());
-    switch(init_monster->Race)
+    m_area_monsters.resize(GetAmount());
+    for (int i = 0; i < GetAmount(); i++)
     {
-        case MR_NOTMAGUNI:
+        switch (init_monster->Race)
         {
-            auto monster = std::make_shared<RegularMonster>(init_monster, GetRandomX(), GetRandomY(), GetMap());
-            World::Add(monster);
-            return monster;
-        }
-        case MR_MAGUNI:
-        { 
-            auto monster = std::make_shared<BeheadableMonster>(init_monster, GetRandomX(), GetRandomY(), GetMap());
-            World::Add(monster);
-            return monster;
-        }
-        default:
-        {
-            auto monster = std::make_shared<RegularMonster>(init_monster, GetRandomX(), GetRandomY(), GetMap());
-            World::Add(monster);
-            return monster;
+            case MR_NOTMAGUNI:
+            {
+                auto monster = std::make_shared<RegularMonster>(init_monster, GetRandomX(), GetRandomY(), GetMap());
+                m_area_monsters.at(i) = monster;
+                World::Add(monster);
+                break;
+            }
+            case MR_MAGUNI:
+            { 
+                auto monster = std::make_shared<BeheadableMonster>(init_monster, GetRandomX(), GetRandomY(), GetMap());
+                m_area_monsters.at(i) = monster;
+                World::Add(monster);
+                break;
+            }
+            default:
+            {
+                auto monster = std::make_shared<RegularMonster>(init_monster, GetRandomX(), GetRandomY(), GetMap());
+                m_area_monsters.at(i) = monster;
+                World::Add(monster);
+                break;
+            }
         }
     }
+}
+
+void Spawn::SetNextSpawnCycle()
+{
+    m_next_spawn_cycle = (time::now() + time::duration(GetSpawnCycle()));
 }
 
 std::uint32_t Spawn::GetIndex() const
@@ -116,6 +128,7 @@ std::uint32_t Spawn::GetRandomX() const
 {
     return m_init->Rect.GetRandomX();
 }
+
 std::uint32_t Spawn::GetRandomY() const
 {
     return m_init->Rect.GetRandomY();
@@ -126,20 +139,11 @@ GenMonster::RectXY Spawn::GetRect() const
     return m_init->Rect;
 }
 
-std::vector<std::shared_ptr<Monster>> Spawn::GetMonsterVector() const
-{
-    return m_area_monsters;
-}
-
-const std::unique_ptr<GenMonster>& Spawn::GetInitMonster() const
-{
-    return m_init;
-}
-
 std::uint32_t GenMonster::RectXY::GetRandomX() const
 {
     return bango::utils::random::between(X1, X2) * 32;
 }
+
 std::uint32_t GenMonster::RectXY::GetRandomY() const
 {
     return bango::utils::random::between(Y1, Y2) * 32;

@@ -8,10 +8,11 @@
 #include <inix.h>
 #include <bango/processor/db.h>
 #include <bango/utils/random.h>
+#include <bango/utils/time.h>
 
 //TODO:
-//thread-safe
-//Tick should be every spawncycle, not every second.
+//Monster might not exist in InitMonster -> spawn shouldn't be created
+//Some monsters do not spawn with error cannot insert into quad with error: not in boundary
 
 struct GenMonster : public bango::processor::db_object<GenMonster>
 {
@@ -37,6 +38,11 @@ public:
 
     void Tick();
 
+private:
+    void RespawnOnWorld(std::shared_ptr<Monster> monster);
+    void CreateSpawn();
+    void SetNextSpawnCycle();
+
     std::uint32_t                         GetIndex()          const;
     std::uint32_t                         GetMonsterIndex()   const;
     std::uint32_t                         GetMap()            const;
@@ -45,13 +51,8 @@ public:
     std::uint32_t                         GetRandomX()        const;
     std::uint32_t                         GetRandomY()        const;
     GenMonster::RectXY                    GetRect()           const;
-    std::vector<std::shared_ptr<Monster>> GetMonsterVector()  const;
-    const std::unique_ptr<GenMonster>&    GetInitMonster()    const;
 
-private:
-    void RespawnOnWorld(std::shared_ptr<Monster> monster);
-    bool IsMonsterReadyToRespawn(std::shared_ptr<Monster> monster);
-    std::shared_ptr<Monster> CreateMonster();
     const std::unique_ptr<GenMonster>& m_init;
     std::vector<std::shared_ptr<Monster>> m_area_monsters;
+    bango::utils::time::point m_next_spawn_cycle;
 };
