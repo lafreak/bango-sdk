@@ -27,6 +27,7 @@ target_link_libraries(dbserver
   bangonetwork
   bangopersistence 
   pthread
-  tacopie 
+  tacopie
+  zdb
   CLI11
   )

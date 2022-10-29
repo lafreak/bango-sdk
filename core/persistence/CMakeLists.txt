@@ -29,6 +29,7 @@ set(SOURCES
   src/query.cpp
   )
 
-add_library(bangopersistence SHARED ${SOURCES})
+add_library(bangopersistence ${SOURCES})
 target_include_directories(bangopersistence PUBLIC include ${ZDB_INCLUDE_DIR})
 target_link_libraries(bangopersistence PRIVATE zdb)
+target_link_directories(bangopersistence PUBLIC ${ZDB_LIB_DIR})
