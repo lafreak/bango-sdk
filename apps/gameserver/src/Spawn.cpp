@@ -101,37 +101,37 @@ void Spawn::SetNextSpawnCycle()
     m_next_spawn_cycle = (time::now() + time::duration(GetSpawnCycle()));
 }
 
-std::uint32_t Spawn::GetIndex() const
+std::int32_t Spawn::GetIndex() const
 {
     return m_init->Index;
 }
 
-std::uint32_t Spawn::GetMonsterIndex() const
+std::int32_t Spawn::GetMonsterIndex() const
 {
     return m_init->MonsterIndex;
 }
 
-std::uint32_t Spawn::GetMap() const
+std::int32_t Spawn::GetMap() const
 {
     return m_init->Map;
 }
 
-std::uint32_t Spawn::GetAmount() const
+std::int32_t Spawn::GetAmount() const
 {
     return m_init->Amount;
 }
 
-std::uint32_t Spawn::GetSpawnCycle() const
+std::int32_t Spawn::GetSpawnCycle() const
 {
     return m_init->SpawnCycle;
 }
 
-std::uint32_t Spawn::GetRandomX() const
+std::int32_t Spawn::GetRandomX() const
 {
     return m_init->Rect.GetRandomX();
 }
 
-std::uint32_t Spawn::GetRandomY() const
+std::int32_t Spawn::GetRandomY() const
 {
     return m_init->Rect.GetRandomY();
 }
@@ -141,12 +141,12 @@ GenMonster::RectXY Spawn::GetRect() const
     return m_init->Rect;
 }
 
-int GenMonster::RectXY::GetRandomX() const
+std::int32_t GenMonster::RectXY::GetRandomX() const
 {
     return bango::utils::random::between(X1, X2) * 32;
 }
 
-int GenMonster::RectXY::GetRandomY() const
+std::int32_t GenMonster::RectXY::GetRandomY() const
 {
     return bango::utils::random::between(Y1, Y2) * 32;
 }

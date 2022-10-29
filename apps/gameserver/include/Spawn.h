@@ -16,12 +16,12 @@ struct GenMonster : public bango::processor::db_object<GenMonster>
 {
     struct RectXY
     {
-        int X1 = 0, Y1 = 0, X2 = 0, Y2 = 0;
-        int GetRandomX() const;
-        int GetRandomY() const;
+        std::int32_t X1 = 0, Y1 = 0, X2 = 0, Y2 = 0;
+        std::int32_t GetRandomX() const;
+        std::int32_t GetRandomY() const;
 
     };
-    std::uint32_t MonsterIndex = 0, Map = 0, Index = 0, Amount = 0, SpawnCycle = 0;
+    std::int32_t MonsterIndex = 0, Map = 0, Index = 0, Amount = 0, SpawnCycle = 0;
     RectXY Rect{};
 
     unsigned int index() const;
@@ -40,13 +40,13 @@ private:
     void CreateSpawn();
     void SetNextSpawnCycle();
 
-    std::uint32_t                         GetIndex()          const;
-    std::uint32_t                         GetMonsterIndex()   const;
-    std::uint32_t                         GetMap()            const;
-    std::uint32_t                         GetAmount()         const;
-    std::uint32_t                         GetSpawnCycle()     const;
-    std::uint32_t                         GetRandomX()        const;
-    std::uint32_t                         GetRandomY()        const;
+    std::int32_t                         GetIndex()          const;
+    std::int32_t                         GetMonsterIndex()   const;
+    std::int32_t                         GetMap()            const;
+    std::int32_t                         GetAmount()         const;
+    std::int32_t                         GetSpawnCycle()     const;
+    std::int32_t                         GetRandomX()        const;
+    std::int32_t                         GetRandomY()        const;
     GenMonster::RectXY                    GetRect()           const;
 
     const std::unique_ptr<GenMonster>& m_init;
