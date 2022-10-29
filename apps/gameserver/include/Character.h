@@ -27,10 +27,10 @@ public:
     std::uint8_t    m_map;
 
 private:
-    std::uint64_t   m_gstate;
-    std::uint64_t   m_mstate;
-    std::uint64_t   m_gstate_ex;
-    std::uint64_t   m_mstate_ex;
+    std::uint64_t   m_gstate=0;
+    std::uint64_t   m_mstate=0;
+    std::uint64_t   m_gstate_ex=0;
+    std::uint64_t   m_mstate_ex=0;
 
     std::mutex      m_mtx;
 
