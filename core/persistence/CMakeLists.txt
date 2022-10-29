@@ -9,6 +9,7 @@ include_directories(include)
 set(ZDB_ROOT ${CMAKE_BINARY_DIR}/thirdparty/zdb)
 set(ZDB_LIB_DIR ${ZDB_ROOT}/bin/lib)
 set(ZDB_INCLUDE_DIR ${ZDB_ROOT}/bin/include/zdb)
+
 include(ExternalProject)
 ExternalProject_Add(zdb_external
                     URL "https://www.tildeslash.com/libzdb/dist/libzdb-3.2.3.tar.gz"
@@ -28,6 +29,6 @@ set(SOURCES
   src/query.cpp
   )
 
-add_library(bangopersistence ${SOURCES})
+add_library(bangopersistence SHARED ${SOURCES})
 target_include_directories(bangopersistence PUBLIC include ${ZDB_INCLUDE_DIR})
-target_link_libraries(bangopersistence zdb)
+target_link_libraries(bangopersistence PRIVATE zdb)

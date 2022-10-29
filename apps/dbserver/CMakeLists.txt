@@ -24,9 +24,9 @@ set(SOURCES
 
 add_executable(dbserver ${SOURCES})
 target_link_libraries(dbserver 
-  bangonetwork 
+  bangonetwork
   bangopersistence 
-  tacopie
   pthread
+  tacopie 
   CLI11
   )

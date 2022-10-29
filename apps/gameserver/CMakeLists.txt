@@ -40,10 +40,10 @@ set(SOURCES
 add_executable(gameserver ${SOURCES})
 target_link_libraries(gameserver 
   bangonetwork 
+  tacopie 
   bangospace 
   bangoprocessor 
   bangoutils 
-  tacopie 
   pthread
   CLI11
   spdlog
