@@ -58,7 +58,7 @@ void Spawn::Tick()
 
 void Spawn::RespawnOnWorld(std::shared_ptr<Monster> monster)
 {
-    monster->RestoreInitialState(m_init->Rect.GetRandomX(), m_init->Rect.GetRandomY());
+    monster->RestoreInitialState(GetRandomX(), GetRandomY());
     World::Add(monster);
 }
 

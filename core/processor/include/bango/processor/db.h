@@ -77,8 +77,8 @@ namespace bango { namespace processor {
                     if (m_db.find(temp.index()) == m_db.end()) 
                         m_db.insert(std::make_pair(temp.index(), std::unique_ptr<T>(new T(temp) )));
                 }
-                return true; 
 
+                return true; 
             }
         };
     };
