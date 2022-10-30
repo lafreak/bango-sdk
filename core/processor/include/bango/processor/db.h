@@ -5,7 +5,6 @@
 #include <map>
 #include <functional>
 #include <memory>
-#include <iostream>
 
 namespace bango { namespace processor {
 
@@ -79,6 +78,7 @@ namespace bango { namespace processor {
                         m_db.insert(std::make_pair(temp.index(), std::unique_ptr<T>(new T(temp) )));
                 }
                 return true; 
+
             }
         };
     };

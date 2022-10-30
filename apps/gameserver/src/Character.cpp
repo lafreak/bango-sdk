@@ -8,7 +8,6 @@
 using namespace bango::network;
 using namespace bango::utils;
 
-id_t Character::g_max_id = 0;
 
 void Character::SetDirection(std::int8_t delta_x, std::int8_t delta_y)
 {
@@ -135,4 +134,10 @@ void Character::WriteInSight(const packet& p) const
 std::unique_lock<std::mutex> Character::Lock()
 {
     return std::unique_lock<std::mutex>(m_mtx);
+}
+
+void Character::AssignNewId()
+{
+    static id_t g_max_id=0;
+    m_id = g_max_id++;
 }

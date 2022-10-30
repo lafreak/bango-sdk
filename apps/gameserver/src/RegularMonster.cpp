@@ -10,7 +10,6 @@ using namespace bango::network;
 void RegularMonster::Die()
 {
     SetGState(CGS_KO);
-    SetDeathTime(bango::utils::time::now());
     WriteInSight(packet(S2C_ACTION, "db", GetID(), AT_DIE));
 }
 

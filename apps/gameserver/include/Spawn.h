@@ -21,7 +21,7 @@ struct GenMonster : public bango::processor::db_object<GenMonster>
         std::int32_t GetRandomY() const;
 
     };
-    std::int32_t MonsterIndex = 0, Map = 0, Index = 0, Amount = 0, SpawnCycle = 0;
+    std::int32_t MonsterIndex = 0, Map = 0, Area = 0, Amount = 0, SpawnCycle = 0;
     RectXY Rect{};
 
     unsigned int index() const;
@@ -40,14 +40,14 @@ private:
     void CreateSpawn();
     void SetNextSpawnCycle();
 
-    std::int32_t                         GetIndex()          const;
+    std::int32_t                         GetArea()           const;
     std::int32_t                         GetMonsterIndex()   const;
     std::int32_t                         GetMap()            const;
     std::int32_t                         GetAmount()         const;
     std::int32_t                         GetSpawnCycle()     const;
     std::int32_t                         GetRandomX()        const;
     std::int32_t                         GetRandomY()        const;
-    GenMonster::RectXY                    GetRect()           const;
+    GenMonster::RectXY                   GetRect()          const;
 
     const std::unique_ptr<GenMonster>& m_init;
     std::vector<std::shared_ptr<Monster>> m_area_monsters;

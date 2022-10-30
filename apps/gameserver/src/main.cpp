@@ -122,7 +122,7 @@ int main(int argc, char** argv)
         int index = token;
 
         try {
-            Monster::SummonMonster(index, player.GetX(), player.GetY(), player.GetMap());
+            Monster::Summon(index, player.GetX(), player.GetY(), player.GetMap());
         } catch (const std::exception&) {
             spdlog::warn("Cannot create monster with index {}", index);
         }
@@ -198,7 +198,7 @@ int main(int argc, char** argv)
     });
 
     World::SpawnNpcs();
-    World::SpawnGenMonster();
+    World::SpawnMonster();
 
     try 
     {

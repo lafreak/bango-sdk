@@ -13,15 +13,14 @@ class Character : public bango::space::quad_entity
 {
 public:
     typedef std::uint32_t id_t;
-    static id_t g_max_id;
 
 private:
+    id_t   m_id;
     std::uint8_t    m_type;
     std::uint16_t   m_dir;
 
 protected: //TODO: Add method to inherit?
     std::uint32_t m_curhp=1, m_curmp=1;
-    std::uint32_t   m_id;
 
 public:
     int             m_z;
@@ -40,7 +39,7 @@ public:
     {
         //TODO: Make ID pool for players.
         //BUG: Not thread safe.
-        m_id = g_max_id++;
+        AssignNewId();
     }
 
     constexpr static std::uint8_t PLAYER    =0;
@@ -48,6 +47,7 @@ public:
     constexpr static std::uint8_t NPC       =2;
     constexpr static std::uint8_t LOOT      =3;
 
+    void AssignNewId();
     id_t            GetID()     const { return m_id;    }
     std::uint8_t    GetType()   const { return m_type;  }
     std::uint8_t    GetMap()    const { return m_map;   }

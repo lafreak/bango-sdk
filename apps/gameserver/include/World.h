@@ -130,7 +130,7 @@ class World
     typedef std::unordered_map<Character::id_t, Player*>                    PlayerContainer;
     typedef std::unordered_map<Character::id_t, std::shared_ptr<Monster>>   MonsterContainer;
     typedef std::unordered_map<Character::id_t, std::shared_ptr<NPC>>       NpcContainer;
-    typedef std::unordered_map<Character::id_t, std::shared_ptr<Spawn>>     SpawnContainer;
+    typedef std::list<std::shared_ptr<Spawn>>                               SpawnContainer;
 
     PlayerContainer m_players;
     MonsterContainer m_monsters;
@@ -182,15 +182,15 @@ public:
             Add(std::make_shared<NPC>(init.second));
     }
 
-    static void SpawnGenMonster();
+    static void SpawnMonster();
 
     static void Cleanup()
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
         Get().m_players.clear();
+        Get().m_spawns.clear();
         Get().m_monsters.clear();
         Get().m_npcs.clear();
-        Get().m_spawns.clear();
     }
 
     static void RemoveDeadMonsters()

@@ -22,3 +22,12 @@ void BeheadableMonster::Tick()
         WriteInSight(packet(S2C_ACTION, "db", GetID(), AT_DIE));
     }
 }
+
+bango::utils::time::point BeheadableMonster::GetDeathTime() const
+{
+    return m_death_time;
+}
+void BeheadableMonster::SetDeathTime(bango::utils::time::point death_time)
+{
+    m_death_time = death_time;
+}

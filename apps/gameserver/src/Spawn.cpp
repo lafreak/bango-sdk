@@ -29,7 +29,7 @@ void GenMonster::set(bango::processor::lisp::var param)
     {
         case A_INDEX:       MonsterIndex = param.pop(); break;
         case A_MAP:         Map          = param.pop(); break;
-        case A_AREA:        Index        = param.pop(); break;
+        case A_AREA:        Area        = param.pop(); break;
         case A_MAX:         Amount       = param.pop(); break;
         case A_SPAWNCYCLE:  SpawnCycle   = param.pop();
                             SpawnCycle   *= 1000;
@@ -49,7 +49,6 @@ void Spawn::Tick()
 
     for(auto& monster : m_area_monsters)
     {
-        auto monster_lock = monster->Lock();
         if(monster->IsGState(CGS_KO))
             RespawnOnWorld(monster);
     }
@@ -59,7 +58,7 @@ void Spawn::Tick()
 
 void Spawn::RespawnOnWorld(std::shared_ptr<Monster> monster)
 {
-    monster->PrepareMonsterToSpawn(m_init->Rect.GetRandomX(), m_init->Rect.GetRandomY(), m_init->Map);
+    monster->RestoreInitialState(m_init->Rect.GetRandomX(), m_init->Rect.GetRandomY());
     World::Add(monster);
 }
 
@@ -69,30 +68,11 @@ void Spawn::CreateSpawn()
     m_area_monsters.resize(GetAmount());
     for (int i = 0; i < GetAmount(); i++)
     {
-        switch (init_monster->Race)
-        {
-            case MR_NOTMAGUNI:
-            {
-                auto monster = std::make_shared<RegularMonster>(init_monster, GetRandomX(), GetRandomY(), GetMap());
-                m_area_monsters.at(i) = monster;
-                World::Add(monster);
-                break;
-            }
-            case MR_MAGUNI:
-            { 
-                auto monster = std::make_shared<BeheadableMonster>(init_monster, GetRandomX(), GetRandomY(), GetMap());
-                m_area_monsters.at(i) = monster;
-                World::Add(monster);
-                break;
-            }
-            default:
-            {
-                auto monster = std::make_shared<RegularMonster>(init_monster, GetRandomX(), GetRandomY(), GetMap());
-                m_area_monsters.at(i) = monster;
-                World::Add(monster);
-                break;
-            }
-        }
+        auto monster = Monster::CreateMonster(GetMonsterIndex(), GetRandomX(), GetRandomY(), GetMap());
+        if(!monster)
+            spdlog::error("Monster was not created correctly.");
+        m_area_monsters.at(i) = monster;
+        World::Add(monster);
     }
 }
 
@@ -101,9 +81,9 @@ void Spawn::SetNextSpawnCycle()
     m_next_spawn_cycle = (time::now() + time::duration(GetSpawnCycle()));
 }
 
-std::int32_t Spawn::GetIndex() const
+std::int32_t Spawn::GetArea() const
 {
-    return m_init->Index;
+    return m_init->Area;
 }
 
 std::int32_t Spawn::GetMonsterIndex() const
@@ -153,5 +133,5 @@ std::int32_t GenMonster::RectXY::GetRandomY() const
 
 unsigned int GenMonster::index() const
 {
-    return Index;
+    return Area;
 }

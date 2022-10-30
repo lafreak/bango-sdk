@@ -3,6 +3,7 @@
 #include "spdlog/spdlog.h"
 
 #include <cstdint>
+#include <list>
 
 #include "Player.h"
 #include "Monster.h"
@@ -331,19 +332,16 @@ void WorldMap::WriteOnMap(const packet& p)
         ((Player*)pair.second)->write(p);
 }
 
-void World::SpawnGenMonster()
+void World::SpawnMonster()
 {
     for(const auto& init : GenMonster::DB())
-    {
-        auto new_spawn = std::make_shared<Spawn>(GenMonster::DB().at(init.second->Index));
-        Get().m_spawns.insert(std::make_pair(init.second->Index, new_spawn));
-    }
+        Get().m_spawns.emplace_back(std::make_shared<Spawn>(init.second));
 }
 
 void World::ForEachSpawn(const std::function<void(Spawn&)>& callback)
 {
-    std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+    //Lock should be considered here once we add config reload in runtime.
 
     for (auto it : Get().m_spawns)
-        callback(*it.second);
+        callback(*it);
 }
