@@ -338,7 +338,7 @@ void World::CreateSpawnsAndSpawnMonsters()
     {
         if (InitMonster::DB().count(init.second->MonsterIndex) == 0)
         {
-            spdlog::error("Monster ID does not exist in InitMonster {}", init.second->MonsterIndex);
+            spdlog::error("Monster ID does not exist in InitMonster {} for area {}", init.second->MonsterIndex, init.second->Area);
             continue;
         }
         Get().m_spawns.emplace_back(std::make_shared<Spawn>(init.second));

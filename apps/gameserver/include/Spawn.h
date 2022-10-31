@@ -47,7 +47,7 @@ private:
     std::int32_t                         GetSpawnCycle()     const;
     std::int32_t                         GetRandomX()        const;
     std::int32_t                         GetRandomY()        const;
-    GenMonster::RectXY                   GetRect()          const;
+    GenMonster::RectXY                   GetRect()           const;
 
     const std::unique_ptr<GenMonster>& m_init;
     std::vector<std::shared_ptr<Monster>> m_area_monsters;

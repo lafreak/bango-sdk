@@ -40,7 +40,7 @@ void GenMonster::set(bango::processor::lisp::var param)
 
 void Spawn::Tick()
 {
-    if((time::now() - m_next_spawn_cycle).count() > GetSpawnCycle())
+    if((time::now() - m_next_spawn_cycle).count() < GetSpawnCycle())
         return;
 
     //NOTE: We always have thread-safety by making sure we always call RemoveDeadMonsters and Spawn::Tick
@@ -63,13 +63,13 @@ void Spawn::RespawnOnWorld(const std::shared_ptr<Monster> monster)
 
 void Spawn::CreateSpawn()
 {
-    m_area_monsters.resize(GetAmount());
     for (int i = 0; i < GetAmount(); i++)
     {
-        try{
-        auto monster = Monster::CreateMonster(GetMonsterIndex(), GetRandomX(), GetRandomY(), GetMap());
-        m_area_monsters.at(i) = monster;
-        World::Add(monster);
+        try
+        {
+            auto monster = Monster::CreateMonster(GetMonsterIndex(), GetRandomX(), GetRandomY(), GetMap());
+            m_area_monsters.emplace_back(monster);
+            World::Add(monster);
         }
         catch(...)
         {
