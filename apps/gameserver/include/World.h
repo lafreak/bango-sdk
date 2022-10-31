@@ -182,7 +182,7 @@ public:
             Add(std::make_shared<NPC>(init.second));
     }
 
-    static void SpawnMonster();
+    static void CreateSpawnsAndSpawnMonsters();
 
     static void Cleanup()
     {

@@ -15,11 +15,7 @@ using namespace bango::utils;
 Spawn::Spawn(const std::unique_ptr<GenMonster>& init)
     :m_init(init)
 {
-    if(InitMonster::DB().find(GetMonsterIndex()) != InitMonster::DB().end())
-        CreateSpawn();
-    else
-        spdlog::error("Monster ID does not exist in InitMonster {}", GetMonsterIndex()); // TODO: object shouldn't be created.
-
+    CreateSpawn();
     SetNextSpawnCycle();
 }
 
@@ -47,6 +43,8 @@ void Spawn::Tick()
     if((time::now() - m_next_spawn_cycle).count() > GetSpawnCycle())
         return;
 
+    //NOTE: We always have thread-safety by making sure we always call RemoveDeadMonsters and Spawn::Tick
+    //in the same thread and Spawn::Tick is always called after RemoveDeadMonsters.
     for(auto& monster : m_area_monsters)
     {
         if(monster->IsGState(CGS_KO))
@@ -56,23 +54,27 @@ void Spawn::Tick()
     SetNextSpawnCycle();
 }
 
-void Spawn::RespawnOnWorld(std::shared_ptr<Monster> monster)
+void Spawn::RespawnOnWorld(const std::shared_ptr<Monster> monster)
 {
+    //TODO: World add/remove API to check if the monster with given ID already exists.
     monster->RestoreInitialState(GetRandomX(), GetRandomY());
     World::Add(monster);
 }
 
 void Spawn::CreateSpawn()
 {
-    const auto& init_monster = InitMonster::DB().at(GetMonsterIndex());
     m_area_monsters.resize(GetAmount());
     for (int i = 0; i < GetAmount(); i++)
     {
+        try{
         auto monster = Monster::CreateMonster(GetMonsterIndex(), GetRandomX(), GetRandomY(), GetMap());
-        if(!monster)
-            spdlog::error("Monster was not created correctly.");
         m_area_monsters.at(i) = monster;
         World::Add(monster);
+        }
+        catch(...)
+        {
+            spdlog::error("Exception caught while creating monster");
+        }
     }
 }
 

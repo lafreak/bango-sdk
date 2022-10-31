@@ -198,7 +198,7 @@ int main(int argc, char** argv)
     });
 
     World::SpawnNpcs();
-    World::SpawnMonster();
+    World::CreateSpawnsAndSpawnMonsters();
 
     try 
     {

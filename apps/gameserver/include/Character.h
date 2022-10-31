@@ -47,7 +47,6 @@ public:
     constexpr static std::uint8_t NPC       =2;
     constexpr static std::uint8_t LOOT      =3;
 
-    void AssignNewId();
     id_t            GetID()     const { return m_id;    }
     std::uint8_t    GetType()   const { return m_type;  }
     std::uint8_t    GetMap()    const { return m_map;   }
@@ -137,4 +136,6 @@ public:
     virtual void Die() = 0;
 
     std::unique_lock<std::mutex> Lock();
+protected:
+    void AssignNewId();
 };

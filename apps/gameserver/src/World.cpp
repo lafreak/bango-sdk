@@ -332,10 +332,17 @@ void WorldMap::WriteOnMap(const packet& p)
         ((Player*)pair.second)->write(p);
 }
 
-void World::SpawnMonster()
+void World::CreateSpawnsAndSpawnMonsters()
 {
     for(const auto& init : GenMonster::DB())
+    {
+        if (InitMonster::DB().count(init.second->MonsterIndex) == 0)
+        {
+            spdlog::error("Monster ID does not exist in InitMonster {}", init.second->MonsterIndex);
+            continue;
+        }
         Get().m_spawns.emplace_back(std::make_shared<Spawn>(init.second));
+    }
 }
 
 void World::ForEachSpawn(const std::function<void(Spawn&)>& callback)

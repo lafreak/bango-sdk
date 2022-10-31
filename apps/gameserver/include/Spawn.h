@@ -36,7 +36,7 @@ public:
 
     void Tick();
 private:
-    void RespawnOnWorld(std::shared_ptr<Monster> monster);
+    void RespawnOnWorld(const std::shared_ptr<Monster> monster);
     void CreateSpawn();
     void SetNextSpawnCycle();
 
