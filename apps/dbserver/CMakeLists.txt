@@ -24,11 +24,10 @@ set(SOURCES
 
 add_executable(dbserver ${SOURCES})
 target_link_libraries(dbserver 
-  bangonetwork 
+  bangonetwork
   bangopersistence 
-  tacopie 
-  zdb 
-  mysqlclient
   pthread
+  tacopie
+  zdb
   CLI11
   )

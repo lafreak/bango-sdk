@@ -43,8 +43,8 @@ target_link_libraries(gameserver
   bangospace 
   bangoprocessor 
   bangoutils 
-  tacopie 
   pthread
+  tacopie 
   CLI11
   spdlog
   )

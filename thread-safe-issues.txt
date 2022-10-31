@@ -1,2 +1,0 @@
-DBServer:
-    - m_active_users is not thread safe
