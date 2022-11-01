@@ -15,7 +15,7 @@ public:
     typedef std::uint32_t id_t;
 
 private:
-    std::uint32_t   m_id;
+    id_t   m_id;
     std::uint8_t    m_type;
     std::uint16_t   m_dir;
 
@@ -39,8 +39,7 @@ public:
     {
         //TODO: Make ID pool for players.
         //BUG: Not thread safe.
-        static id_t g_max_id=0;
-        m_id = g_max_id++;
+        AssignNewId();
     }
 
     constexpr static std::uint8_t PLAYER    =0;
@@ -137,4 +136,6 @@ public:
     virtual void Die() = 0;
 
     std::unique_lock<std::mutex> Lock();
+protected:
+    void AssignNewId();
 };

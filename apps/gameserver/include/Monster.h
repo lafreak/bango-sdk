@@ -6,6 +6,7 @@
 #include "Character.h"
 
 #include <bango/processor/db.h>
+#include <bango/utils/time.h>
 #include <inix.h>
 
 struct InitMonster : public bango::processor::db_object<InitMonster>
@@ -79,6 +80,8 @@ public:
     Monster(const std::unique_ptr<InitMonster>& init, int x, int y, int map=0);
     ~Monster();
 
+    void RestoreInitialState(int new_x, int new_y);
+
     std::uint16_t   GetIndex()      const { return m_init->Index; }
     std::uint8_t    GetRace()       const { return m_init->Race; }
 
@@ -109,8 +112,10 @@ public:
     std::uint32_t   GetMaxHP()      const override { return (52 * GetLevel() / 3)   + 115               + 2 * GetHealth() * GetHealth() / /*deno*/10 + m_init->HP; }
     std::uint32_t   GetMaxMP()      const override { return (8  * GetLevel()    )   + 140 + GetWisdom() + 2 * GetWisdom() * GetWisdom() / /*deno*/10 + m_init->MP; }
 
+
     bango::network::packet BuildAppearPacket(bool hero=false) const override;
     bango::network::packet BuildDisappearPacket() const override;
     bango::network::packet BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const override;
-    static void CreateMonster(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map);
+    static void Summon(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map);
+    static std::shared_ptr<Monster> CreateMonster(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map);
 };

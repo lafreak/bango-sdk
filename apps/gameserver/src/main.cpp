@@ -16,6 +16,7 @@
 #include "World.h"
 #include "BeheadableMonster.h"
 #include "RegularMonster.h"
+#include "Spawn.h"
 
 #include "CommandDispatcher.h"
 #include "DBListener.h"
@@ -56,6 +57,7 @@ int main(int argc, char** argv)
     InitItem    ::Load("Config/InitItem.txt");
     InitNPC     ::Load("Config/InitNPC.txt");
     InitMonster ::Load("Config/InitMonster.txt");
+    GenMonster  ::Load("Config/GenMonster.txt");
 
     using namespace std::placeholders;
 
@@ -120,7 +122,7 @@ int main(int argc, char** argv)
         int index = token;
 
         try {
-            Monster::CreateMonster(index, player.GetX(), player.GetY(), player.GetMap());
+            Monster::Summon(index, player.GetX(), player.GetY(), player.GetMap());
         } catch (const std::exception&) {
             spdlog::warn("Cannot create monster with index {}", index);
         }
@@ -136,6 +138,15 @@ int main(int argc, char** argv)
     CommandDispatcher::Register("/fort", [&](Player& player, CommandDispatcher::Token& token) {
         player.Teleport(268622, 242944);
     });
+
+    CommandDispatcher::Register("/ghost", [&](Player& player, CommandDispatcher::Token& token) {
+        player.Teleport(265500, 238054);
+    });
+
+    CommandDispatcher::Register("/tp", [&](Player& player, CommandDispatcher::Token& token) {
+        player.Teleport(255680, 229056);
+    });
+
 
     CommandDispatcher::Register("/around", [&](Player& player, CommandDispatcher::Token& token) {
         int radius = token;
@@ -186,9 +197,8 @@ int main(int argc, char** argv)
         {C2S_EXILEPARTY,        User::INGAME}
     });
 
-    //Socket::GameServer().restrict({});
-
     World::SpawnNpcs();
+    World::CreateSpawnsAndSpawnMonsters();
 
     try 
     {
@@ -221,6 +231,10 @@ int main(int argc, char** argv)
                     monster.Tick();
                 });
                 World::RemoveDeadMonsters();
+
+                World::ForEachSpawn([](Spawn& spawn) {
+                    spawn.Tick();
+                });
             }
         } while (status != std::future_status::ready);
     });

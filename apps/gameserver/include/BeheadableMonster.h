@@ -4,7 +4,6 @@
 #include <memory>
 
 #include "Monster.h"
-#include <bango/utils/time.h>
 
 class BeheadableMonster : public Monster
 {
@@ -13,6 +12,8 @@ public:
     void Die() override;
     void Tick() override;
 
-private:
+    bango::utils::time::point GetDeathTime() const;
+    void                      SetDeathTime(bango::utils::time::point death_time);
+
     bango::utils::time::point m_death_time;
 };

@@ -63,24 +63,30 @@ packet Monster::BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::i
     return packet();
 }
 
-void Monster::CreateMonster(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map)
+void Monster::Summon(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map)
 {
-    switch(InitMonster::DB().at(index)->Race)
+    World::Add(Monster::CreateMonster(index, x, y, map));
+}
+
+std::shared_ptr<Monster> Monster::CreateMonster(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map)
+{
+    const auto& init_monster = InitMonster::DB().at(index);
+    switch (init_monster->Race)
     {
         case MR_NOTMAGUNI:
-        {
-            World::Add(std::make_shared<RegularMonster>(InitMonster::DB().at(index), x, y, map));
-            break;
-        }
+            return std::make_shared<RegularMonster>(init_monster, x, y, map);
         case MR_MAGUNI:
-        { 
-            World::Add(std::make_shared<BeheadableMonster>(InitMonster::DB().at(index), x, y, map));
-            break;
-        }
+            return std::make_shared<BeheadableMonster>(init_monster, x, y, map);
         default:
-        {
-            World::Add(std::make_shared<RegularMonster>(InitMonster::DB().at(index), x, y, map));
-            break;
-        }
+            return std::make_shared<RegularMonster>(init_monster, x, y, map);
     }
+}
+
+void Monster::RestoreInitialState(int new_x, int new_y)
+{
+    ResetStates();
+    AssignNewId();
+    m_curhp = GetMaxHP();
+    m_x = new_x;
+    m_y = new_y;
 }
