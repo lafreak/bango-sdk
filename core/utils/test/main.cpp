@@ -20,7 +20,7 @@ TEST(RandomTest, Between)
     }
 }
 
-TEST(ClockTest, Difference)
+TEST(ClockTest, DISABLED_Difference)
 {
     auto t0 = time::now();
     std::this_thread::sleep_until(t0 + std::chrono::seconds(1));
