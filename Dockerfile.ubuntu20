@@ -29,7 +29,7 @@ COPY ./core /bango-sdk/core
 COPY CMakeLists.txt /bango-sdk/CMakeLists.txt
 RUN mkdir bango-sdk/build && cd bango-sdk/build && \
     cmake .. -DUSE_GTEST=ON && \
-    make -j1  # issues when building with >1
+    make -j$(nproc)
 RUN cd /bango-sdk/bin && \
     for t in *_test; do ./"$t"; done
 

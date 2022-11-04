@@ -37,6 +37,8 @@ set(SOURCES
 add_library(bangonetwork ${SOURCES})
 target_include_directories(bangonetwork PUBLIC include ${TACOPIE_INCLUDE_DIR})
 target_link_directories(bangonetwork PUBLIC ${TACOPIE_LIB_DIR})
+add_dependencies(bangonetwork tacopie_external)
+
 
 IF(USE_GTEST)
   include(FetchContent)
