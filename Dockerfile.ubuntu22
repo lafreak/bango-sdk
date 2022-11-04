@@ -30,10 +30,10 @@ RUN mkdir bango-sdk/build && cd bango-sdk/build && \
     cmake .. && \
     make -j1  # issues when building with >1
 
-FROM ubuntu:22.04
-
-RUN apt update && apt install -y libmysqlclient-dev
-COPY --from=bango_build /bango-sdk/bin ./bango
-COPY --from=bango_build /bango-sdk/build/thirdparty/zdb/bin/lib/libzdb.so* ./bango/
-
-ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/bango
+#FROM ubuntu:22.04
+#
+#RUN apt update && apt install -y libmysqlclient-dev
+#COPY --from=bango_build /bango-sdk/bin ./bango
+#COPY --from=bango_build /bango-sdk/build/thirdparty/zdb/bin/lib/libzdb.so* ./bango/
+#
+#ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/bango
