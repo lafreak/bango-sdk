@@ -24,12 +24,13 @@ link_directories(${ZDB_LIB_DIR})
 
 
 set(SOURCES
-  src/connection.cpp
-  src/pool.cpp
-  src/query.cpp
-  )
+src/connection.cpp
+src/pool.cpp
+src/query.cpp
+)
 
 add_library(bangopersistence ${SOURCES})
 target_include_directories(bangopersistence PUBLIC include ${ZDB_INCLUDE_DIR})
 target_link_libraries(bangopersistence PRIVATE zdb)
 target_link_directories(bangopersistence PUBLIC ${ZDB_LIB_DIR})
+add_dependencies(bangopersistence zdb_external)

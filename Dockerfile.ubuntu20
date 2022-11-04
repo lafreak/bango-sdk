@@ -1,0 +1,42 @@
+FROM ubuntu:20.04 as bango_build
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update && apt install -y \
+    git \
+    software-properties-common \
+    lsb-release \
+    gpg \
+    wget \
+    build-essential
+
+# Install CMake
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | \
+    tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null && \
+    echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | \
+    tee /etc/apt/sources.list.d/kitware.list >/dev/null && \
+    apt update && \
+    rm /usr/share/keyrings/kitware-archive-keyring.gpg && \
+    apt install -y kitware-archive-keyring && \
+    apt update && \
+    apt install -y cmake
+
+# Build DB & Game servers
+RUN apt update && apt install -y libmysqlclient-dev
+WORKDIR /
+COPY ./apps /bango-sdk/apps
+COPY ./core /bango-sdk/core
+COPY CMakeLists.txt /bango-sdk/CMakeLists.txt
+RUN mkdir bango-sdk/build && cd bango-sdk/build && \
+    cmake .. -DUSE_GTEST=ON && \
+    make -j$(nproc)
+RUN cd /bango-sdk/bin && \
+    for t in *_test; do ./"$t"; done
+
+#FROM ubuntu:22.04
+#
+#RUN apt update && apt install -y libmysqlclient-dev
+#COPY --from=bango_build /bango-sdk/bin ./bango
+#COPY --from=bango_build /bango-sdk/build/thirdparty/zdb/bin/lib/libzdb.so* ./bango/
+#
+#ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/bango

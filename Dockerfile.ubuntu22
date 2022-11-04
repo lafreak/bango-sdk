@@ -1,0 +1,39 @@
+FROM ubuntu:22.04 as bango_build
+
+RUN apt update && apt install -y \
+    git \
+    build-essential \
+    libtool \
+    autoconf \
+    unzip \
+    wget \
+    libssl-dev
+
+# Build CMake
+ARG cmake_version=3.24
+ARG cmake_build=1
+WORKDIR /tmp
+RUN wget https://cmake.org/files/v$cmake_version/cmake-$cmake_version.$cmake_build.tar.gz && \
+    tar -xzvf cmake-$cmake_version.$cmake_build.tar.gz && \
+    cd cmake-$cmake_version.$cmake_build && \
+    ./bootstrap && \
+    make -j$(nproc) && \
+    make install
+
+# Build DB & Game servers
+RUN apt update && apt install -y libmysqlclient-dev
+WORKDIR /
+COPY ./apps /bango-sdk/apps
+COPY ./core /bango-sdk/core
+COPY CMakeLists.txt /bango-sdk/CMakeLists.txt
+RUN mkdir bango-sdk/build && cd bango-sdk/build && \
+    cmake .. && \
+    make -j1  # issues when building with >1
+
+#FROM ubuntu:22.04
+#
+#RUN apt update && apt install -y libmysqlclient-dev
+#COPY --from=bango_build /bango-sdk/bin ./bango
+#COPY --from=bango_build /bango-sdk/build/thirdparty/zdb/bin/lib/libzdb.so* ./bango/
+#
+#ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/bango

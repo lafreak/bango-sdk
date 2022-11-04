@@ -5,6 +5,7 @@
 #include <map>
 #include <functional>
 #include <memory>
+#include <stdexcept>
 
 namespace bango { namespace processor {
 

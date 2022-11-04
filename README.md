@@ -11,7 +11,8 @@ $ sudo apt-get install libmysqlclient-dev
 ```
 $ cd build
 $ cmake ..
-$ sudo make
+$ make
+$ cd ../bin
 $ ./dbserver
 $ ./gameserver
 ```
@@ -23,6 +24,7 @@ $ ./bangonetwork_test
 $ ./bangonetwork_benchmark
 $ ./bangospace_test
 $ ./bangospace_benchmark
+...
 ```
 
 # Core API
