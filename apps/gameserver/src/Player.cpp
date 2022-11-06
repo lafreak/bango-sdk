@@ -1,6 +1,7 @@
 #include "Player.h"
 
 #include <string>
+#include <algorithm>
 
 #include "spdlog/spdlog.h"
 
@@ -666,6 +667,7 @@ void Player::OnAttack(packet& p)
         // Something with mage
         damage = character.GetFinalDamage(this, damage);
         // Apply Mix Effects
+        lock.unlock();
 
         if (damage < 0)
             return;
@@ -679,7 +681,6 @@ void Player::OnAttack(packet& p)
             0,//EB
             damage == 0 ? ATF_IGNORE : ATF_HIT));
 
-        lock.unlock();
         character.ReceiveDamage(GetID(), damage);
 
         if (character.GetCurHP() <= 0)
@@ -832,7 +833,10 @@ void Player::Die()
 void Player::UpdateExp(std::int64_t amount)
 {
     if(GetLevel() >= 100) // ExpTable ends at lvl 100
+    {
+        spdlog::warn("ExpTable ends at lvl 100, exp will not be increased.");
         return;
+    }
     m_data.Exp += amount;
 
     write(S2C_UPDATEPROPERTY, "bII", P_EXP, GetExp(), amount);
@@ -840,7 +844,7 @@ void Player::UpdateExp(std::int64_t amount)
 
 bool Player::CanReciveExp()
 {
-    return !IsGState(0x0000023); // check for 3 gstates: CGS_KNEE, CGS_KO, CGS_FISH
+    return !IsGState(CGS_KNEE | CGS_KO | CGS_FISH);
 }
 
 void Player::CalculateExp(std::uint64_t& exp, std::uint8_t monster_level)
@@ -850,16 +854,15 @@ void Player::CalculateExp(std::uint64_t& exp, std::uint8_t monster_level)
 
     if (level_difference < 0)
     {
-        if (std::abs(level_difference) >= 20)
-            level_difference = 20;
-        else
-            level_difference = std::abs(level_difference);
+        level_difference = std::min(std::abs(level_difference), 20);
+        //When monster_level < player_level, use g_nReviseExpB to calculate color ratio
         exp = (exp - exp * (g_nReviseExpB[(GetLevel() - 1) / 10][level_difference] / 100.0));
     }
     else
     {
         if(level_difference >= 20)
             level_difference = 20;
+        //When monster_level > player_level, use g_nReviseExpA to calculate color ratio
         exp = (exp * (g_nReviseExpA[(GetLevel() - 1) / 10][level_difference] / 100.0) + exp);
     }
 }

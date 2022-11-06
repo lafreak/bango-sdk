@@ -76,9 +76,9 @@ struct InitMonster : public bango::processor::db_object<InitMonster>
 class Monster : public Character
 {
     const std::unique_ptr<InitMonster>& m_init;
-    std::map<id_t, std::uint64_t> hostility_map;
-    std::uint64_t all_hostility;
-    void ExpDistribution();
+    std::unordered_map<id_t, std::uint64_t> hostility_map;
+    std::uint64_t total_hostility;
+    void DistributeExp();
 
 public:
     Monster(const std::unique_ptr<InitMonster>& init, int x, int y, int map=0);

@@ -23,7 +23,7 @@ class Party
 public:
     static constexpr std::uint8_t MAX_PARTY_SIZE = 8;
     static constexpr std::uint8_t MIN_PARTY_SIZE = 2;
-    static constexpr std::uint16_t EXP_RECEIVE_RANGE = 640;
+    static constexpr std::uint16_t MAX_EXP_RECEIVE_RANGE = 640;
 
     Party() = delete;
     Party(Player* leader, Player* player);
@@ -71,7 +71,7 @@ public:
     void         RemoveMember(Player* player, bool is_kicked = false);
 
     //! Distribute exp for all players in MAP_SIGHT range
-    void         ExpDistribute(std::uint64_t exp, std::uint8_t monster_level, bango::space::point p);
+    void         DistributeExp(std::uint64_t exp, std::uint8_t monster_level, bango::space::point p);
 
     //! Sets new highest level of the party
     void         SetTopLevel();

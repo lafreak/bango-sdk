@@ -96,11 +96,11 @@ void Monster::ReceiveDamage(id_t id, std::uint32_t damage)
 {
     Character::ReceiveDamage(id, damage);
     hostility_map[id] += damage;
-    all_hostility += damage;
+    total_hostility += damage;
 }
 
 
-void Monster::ExpDistribution()
+void Monster::DistributeExp()
 {
     std::map<id_t, std::uint64_t> party_container;
     for (auto&[id, damage] : hostility_map)
@@ -111,7 +111,7 @@ void Monster::ExpDistribution()
                 party_container[player.GetPartyID()] += damage;
             else
             {
-                std::uint64_t exp = static_cast<double>(damage) / all_hostility * m_init->Exp;
+                std::uint64_t exp = static_cast<double>(damage) / total_hostility * m_init->Exp;
                 player.CalculateExp(exp, GetLevel());
                 player.UpdateExp(exp);
             }
@@ -120,10 +120,10 @@ void Monster::ExpDistribution()
     }
 
     hostility_map.clear();
-    all_hostility = 0;
+    total_hostility = 0;
 }
 
 void Monster::Die()
 {
-    ExpDistribution();
+    DistributeExp();
 }
