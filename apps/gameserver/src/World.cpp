@@ -353,3 +353,28 @@ void World::ForEachSpawn(const std::function<void(Spawn&)>& callback)
     for (auto it : Get().m_spawns)
         callback(*it);
 }
+
+
+void World::AddParty(std::shared_ptr<Party> party)
+{
+    std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+    Get().m_parties.insert(std::make_pair(party->GetID(), party));
+}
+
+void World::RemoveParty(std::shared_ptr<Party> party)
+{
+    std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+    Get().m_parties.erase(party->GetID());
+}
+
+bool World::ForParty(Character::id_t id, const std::function<void(Party&)>& callback)
+{
+    std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+    auto it = Get().m_parties.find(id);
+    if (it == Get().m_parties.end())
+        return false;
+    
+    callback(*it->second);
+    return true;
+}

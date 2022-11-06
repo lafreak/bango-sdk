@@ -121,11 +121,11 @@ void Character::ResetStates()
     m_mstate_ex = 0;
 }
 
-void Character::ReduceHP(std::uint32_t reduce)
+void Character::ReceiveDamage(id_t id, std::uint32_t damage)
 {
-    if(reduce > m_curhp)
-        throw std::logic_error("reduce is higher than current HP");
-    m_curhp -= reduce;
+    if(damage > m_curhp)
+        throw std::logic_error("damage is higher than current HP");
+    m_curhp -= damage;
 }
 
 void Character::WriteInSight(const packet& p) const

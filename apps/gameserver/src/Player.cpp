@@ -679,7 +679,8 @@ void Player::OnAttack(packet& p)
             0,//EB
             damage == 0 ? ATF_IGNORE : ATF_HIT));
 
-        character.ReduceHP(damage);
+        lock.unlock();
+        character.ReceiveDamage(GetID(), damage);
 
         if (character.GetCurHP() <= 0)
             character.Die();
@@ -751,6 +752,7 @@ void Player::OnAskPartyAnswer(packet& p)
             auto party = std::make_shared<Party>(&inviter, this);
             inviter.SetParty(party);
             SetParty(party);
+            World::AddParty(party);
         }
         else if (inviter.IsPartyLeader())
         {
@@ -777,6 +779,7 @@ void Player::LeaveParty(bool is_kicked)
             auto leader_lock = leader->Lock();
             if (leader->HasParty())
             {
+                World::RemoveParty(leader->GetParty());
                 leader->GetParty()->RemoveMember(leader);
                 leader->ResetParty();
             }
@@ -824,4 +827,39 @@ void Player::Die()
 {
     AddGState(CGS_KO);
     WriteInSight(bango::network::packet(S2C_ACTION, "db", GetID(), AT_DIE));
+}
+
+void Player::UpdateExp(std::int64_t amount)
+{
+    if(GetLevel() >= 100) // ExpTable ends at lvl 100
+        return;
+    m_data.Exp += amount;
+
+    write(S2C_UPDATEPROPERTY, "bII", P_EXP, GetExp(), amount);
+}
+
+bool Player::CanReciveExp()
+{
+    return !IsGState(0x0000023); // check for 3 gstates: CGS_KNEE, CGS_KO, CGS_FISH
+}
+
+void Player::CalculateExp(std::uint64_t& exp, std::uint8_t monster_level)
+{
+    //TODO: Calculate exp buffs like exp stone, asadal, exp event.
+    std::int8_t level_difference =  monster_level - GetLevel();
+
+    if (level_difference < 0)
+    {
+        if (std::abs(level_difference) >= 20)
+            level_difference = 20;
+        else
+            level_difference = std::abs(level_difference);
+        exp = (exp - exp * (g_nReviseExpB[(GetLevel() - 1) / 10][level_difference] / 100.0));
+    }
+    else
+    {
+        if(level_difference >= 20)
+            level_difference = 20;
+        exp = (exp * (g_nReviseExpA[(GetLevel() - 1) / 10][level_difference] / 100.0) + exp);
+    }
 }

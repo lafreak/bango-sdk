@@ -9,6 +9,7 @@ using namespace bango::utils;
 
 void BeheadableMonster::Die()
 {
+    Monster::Die();
     SetGState(CGS_KNEE);
     SetDeathTime(time::now());
     WriteInSight(packet(S2C_ACTION, "db", GetID(), AT_KNEE));
