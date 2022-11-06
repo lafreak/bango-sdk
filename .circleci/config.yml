@@ -13,12 +13,11 @@ jobs:
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     machine:
       image: ubuntu-2004:2022.10.1
+      docker_layer_caching: true
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
       - checkout
-      - setup_remote_docker:
-        docker_layer_caching: true # DLC will explicitly cache layers here and try to avoid rebuilding.
       - run: docker build -t bango-build-u20 -f Dockerfile.ubuntu20 .
 
 # Invoke jobs via workflows
