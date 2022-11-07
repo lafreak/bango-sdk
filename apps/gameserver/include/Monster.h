@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <memory>
-#include <map>
+#include <unordered_map>
 
 #include "Character.h"
 

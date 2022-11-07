@@ -111,9 +111,8 @@ void Monster::DistributeExp()
                 party_container[player.GetPartyID()] += damage;
             else
             {
-                std::uint64_t exp = static_cast<double>(damage) / total_hostility * m_init->Exp;
-                player.CalculateExp(exp, GetLevel());
-                player.UpdateExp(exp);
+                std::uint64_t exp = static_cast<long double>(damage) / total_hostility * m_init->Exp;
+                player.UpdateExp(player.CalculateExp(exp, GetLevel()));
             }
         });
 

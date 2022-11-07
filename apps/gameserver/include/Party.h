@@ -74,5 +74,5 @@ public:
     void         DistributeExp(std::uint64_t exp, std::uint8_t monster_level, bango::space::point p);
 
     //! Sets new highest level of the party
-    void         SetTopLevel();
+    void         UpdateTopLevel();
 };

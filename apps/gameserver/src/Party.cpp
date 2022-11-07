@@ -74,7 +74,7 @@ bool Party::AddMember(Player* player)
         p.push<unsigned short>(player->GetMaxHP());
         WriteToAll(p);
     }
-    m_top_level = player->GetLevel() > m_top_level ? player->GetLevel() : m_top_level;
+    UpdateTopLevel();
     m_members_list.push_back(player);
     SendPartyInfo();
     return true;
@@ -111,7 +111,7 @@ void Party::RemoveMember(Player* player, bool is_kicked)
         if (was_leaver_party_leader)
             GetLeader()->write(S2C_MESSAGE, "b", MSG_BECOMEPARTYHEAD);
         if (was_leaver_party_top_level)
-            SetTopLevel();
+            UpdateTopLevel();
     }
 }
 id_t Party::GetID() const
@@ -160,7 +160,7 @@ bool Party::IsEmpty() const
     return m_members_list.empty(); 
 }
 
-void Party::SetTopLevel()
+void Party::UpdateTopLevel()
 {
     //TODO: Should be also used when top lvl player gets a level up. Then lock will be needed.
     m_top_level = (*std::max_element(m_members_list.begin(), m_members_list.end(), [](auto& p1, auto& p2){

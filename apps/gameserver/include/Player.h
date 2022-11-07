@@ -160,5 +160,5 @@ public:
 
     void UpdateExp(std::int64_t amount);
     bool CanReciveExp();
-    void CalculateExp(std::uint64_t& exp, std::uint8_t monster_level);
+    std::uint64_t CalculateExp(std::uint64_t exp, std::uint8_t monster_level);
 };

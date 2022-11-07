@@ -847,7 +847,7 @@ bool Player::CanReciveExp()
     return !IsGState(CGS_KNEE | CGS_KO | CGS_FISH);
 }
 
-void Player::CalculateExp(std::uint64_t& exp, std::uint8_t monster_level)
+std::uint64_t Player::CalculateExp(std::uint64_t exp, std::uint8_t monster_level)
 {
     //TODO: Calculate exp buffs like exp stone, asadal, exp event.
     std::int8_t level_difference =  monster_level - GetLevel();
@@ -857,6 +857,7 @@ void Player::CalculateExp(std::uint64_t& exp, std::uint8_t monster_level)
         level_difference = std::min(std::abs(level_difference), 20);
         //When monster_level < player_level, use g_nReviseExpB to calculate color ratio
         exp = (exp - exp * (g_nReviseExpB[(GetLevel() - 1) / 10][level_difference] / 100.0));
+        return exp;
     }
     else
     {
@@ -864,5 +865,6 @@ void Player::CalculateExp(std::uint64_t& exp, std::uint8_t monster_level)
             level_difference = 20;
         //When monster_level > player_level, use g_nReviseExpA to calculate color ratio
         exp = (exp * (g_nReviseExpA[(GetLevel() - 1) / 10][level_difference] / 100.0) + exp);
+        return exp;
     }
 }
