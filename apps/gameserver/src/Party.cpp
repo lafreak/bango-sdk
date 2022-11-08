@@ -74,8 +74,8 @@ bool Party::AddMember(Player* player)
         p.push<unsigned short>(player->GetMaxHP());
         WriteToAll(p);
     }
-    UpdateTopLevel();
     m_members_list.push_back(player);
+    UpdateTopLevel();
     SendPartyInfo();
     return true;
 }
