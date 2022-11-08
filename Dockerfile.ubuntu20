@@ -31,7 +31,10 @@ RUN mkdir bango-sdk/build && cd bango-sdk/build && \
     cmake .. -DUSE_GTEST=ON && \
     make -j$(nproc)
 RUN cd /bango-sdk/bin && \
-    for t in *_test; do ./"$t"; done
+    ./bangonetwork_test \
+    ./bangoprocessor_test \
+    ./bangospace_test \
+    ./bangoutils_test
 
 #FROM ubuntu:22.04
 #
