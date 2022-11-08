@@ -849,7 +849,7 @@ bool Player::CanReciveExp()
 std::uint64_t Player::CalculateExp(std::uint64_t exp, std::uint8_t monster_level)
 {
     //TODO: Calculate exp buffs like exp stone, asadal, exp event.
-    std::int32_t level_difference =  monster_level - GetLevel();
+    std::int32_t level_difference =  static_cast<std::int32_t>(monster_level - GetLevel());
     if (level_difference < 0)
     {
         level_difference = std::min(std::abs(level_difference), 20);
