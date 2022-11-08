@@ -190,6 +190,7 @@ namespace bango { namespace space {
             if (m_top_right->in_boundary(p))    return m_top_right;
             if (m_bottom_left->in_boundary(p))  return m_bottom_left;
             if (m_bottom_right->in_boundary(p)) return m_bottom_right;
+            return nullptr;
         }
         quad* inner(const quad_entity* e) const {
             return inner(point{e->m_x, e->m_y});
