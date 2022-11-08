@@ -9,6 +9,7 @@ using namespace bango::network;
 
 void RegularMonster::Die()
 {
+    Monster::Die();
     SetGState(CGS_KO);
     WriteInSight(packet(S2C_ACTION, "db", GetID(), AT_DIE));
 }

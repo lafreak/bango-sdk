@@ -131,11 +131,13 @@ class World
     typedef std::unordered_map<Character::id_t, std::shared_ptr<Monster>>   MonsterContainer;
     typedef std::unordered_map<Character::id_t, std::shared_ptr<NPC>>       NpcContainer;
     typedef std::list<std::shared_ptr<Spawn>>                               SpawnContainer;
+    typedef std::unordered_map<Character::id_t, std::shared_ptr<Party>>     PartyContainer;
 
     PlayerContainer m_players;
     MonsterContainer m_monsters;
     NpcContainer m_npcs;
     SpawnContainer m_spawns;
+    PartyContainer m_parties;
 
     std::recursive_mutex m_entities_rmtx;
 
@@ -240,7 +242,17 @@ public:
         Map(entity->GetMap()).Add(entity.get());
     }
 
-    // Removes player from the world.
+    //! Adds party to the world
+    static void AddParty(std::shared_ptr<Party> party);
+    
+    //! Removes party from the world
+    static void RemoveParty(std::shared_ptr<Party> party);
+
+    //! Callback function for party
+    static bool ForParty(Character::id_t id, const std::function<void(Party&)>& callback);
+
+
+    //! Removes player from the world.
     static void Remove(Player* entity)
     {
         Map(entity->GetMap()).Remove(entity);

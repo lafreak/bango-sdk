@@ -9,6 +9,7 @@
 #include "World.h"
 #include "RegularMonster.h"
 #include "BeheadableMonster.h"
+#include "Party.h"
 
 #include <bango/network/packet.h>
 
@@ -89,4 +90,40 @@ void Monster::RestoreInitialState(int new_x, int new_y)
     m_curhp = GetMaxHP();
     m_x = new_x;
     m_y = new_y;
+}
+
+void Monster::ReceiveDamage(id_t id, std::uint32_t damage)
+{
+    Character::ReceiveDamage(id, damage);
+    hostility_map[id] += damage;
+    total_hostility += damage;
+}
+
+
+void Monster::DistributeExp()
+{
+    std::map<id_t, std::uint64_t> party_container;
+    for (auto&[id, damage] : hostility_map)
+    {
+        World::ForPlayer(id, [&](Player& player){
+            auto player_lock = player.Lock();
+            if (player.GetPartyID() != 0)
+                party_container[player.GetPartyID()] += damage;
+            else
+            {
+                long double exp_share = static_cast<long double>(damage) / static_cast<long double>(total_hostility);
+                std::uint64_t exp = exp_share * m_init->Exp;
+                player.UpdateExp(player.CalculateExp(exp, GetLevel()));
+            }
+        });
+
+    }
+
+    hostility_map.clear();
+    total_hostility = 0;
+}
+
+void Monster::Die()
+{
+    DistributeExp();
 }

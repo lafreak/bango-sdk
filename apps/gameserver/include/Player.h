@@ -23,6 +23,7 @@ class Player : public Character, public User
     Inventory m_inventory;
     std::shared_ptr<Party> m_party;
     int m_party_inviter_id;
+    id_t m_party_id;
 
     //! Teleportation coordinates waiting for Z coordinate from client.
     int m_teleport_x=0;
@@ -145,14 +146,19 @@ public:
     void LeaveParty(bool is_kicked = false);
 
     void BanFromParty(int banned_player_id);
-    void SetParty(const std::shared_ptr<Party>& party)          { m_party = party; }
-    void ResetParty()                                           { m_party = nullptr; }
+    void SetParty(const std::shared_ptr<Party>& party)          { m_party = party; m_party_id = party->GetID(); }
+    void ResetParty()                                           { m_party = nullptr; m_party_id = 0; }
     bool HasParty()                                     const   { return m_party != nullptr; }
     bool IsPartyLeader()                                const   { return HasParty() && GetParty()->IsLeader(this); }
     const std::shared_ptr<Party>& GetParty()            const   { return m_party; }
+    id_t GetPartyID()                                   const   { return m_party_id; }
 
     std::uint16_t   GetReqPU(std::uint8_t* stats);
 
     void Tick() override;
     void Die() override;
+
+    void UpdateExp(std::int64_t amount);
+    bool CanReciveExp();
+    std::uint64_t CalculateExp(std::uint64_t exp, std::uint8_t monster_level);
 };

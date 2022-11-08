@@ -2,10 +2,12 @@
 
 #include <exception>
 #include <mutex>
+#include <algorithm>
 
 #include "spdlog/spdlog.h"
 
 #include "Player.h"
+#include "World.h"
 
 #include <bango/network/packet.h>
 #include <inix.h>
@@ -14,7 +16,10 @@ using namespace bango::network;
 
 Party::Party(Player* leader, Player* player)
 {
-    spdlog::trace("Party constructor between: {} and {}", leader->GetName(), player->GetName());
+    static id_t g_max_id=0;
+    m_id = g_max_id++;
+
+    spdlog::trace("Party constructor between: {} and {}, index:{}", leader->GetName(), player->GetName(), m_id);
     AddMember(leader);
     AddMember(player);
 }
@@ -69,8 +74,8 @@ bool Party::AddMember(Player* player)
         p.push<unsigned short>(player->GetMaxHP());
         WriteToAll(p);
     }
-
     m_members_list.push_back(player);
+    UpdateTopLevel();
     SendPartyInfo();
     return true;
 }
@@ -82,6 +87,7 @@ void Party::RemoveMember(Player* player, bool is_kicked)
         throw std::runtime_error("Finding player to remove from party failed.");
 
     bool was_leaver_party_leader = GetLeader() == player;
+    bool was_leaver_party_top_level = player->GetLevel() == GetTopLevel();
     m_members_list.remove(player);
 
     if (is_kicked)
@@ -104,7 +110,24 @@ void Party::RemoveMember(Player* player, bool is_kicked)
         SendPartyInfo();
         if (was_leaver_party_leader)
             GetLeader()->write(S2C_MESSAGE, "b", MSG_BECOMEPARTYHEAD);
+        if (was_leaver_party_top_level)
+            UpdateTopLevel();
     }
+}
+id_t Party::GetID() const
+{
+    return m_id;
+}
+
+std::uint8_t Party::GetTopLevel() const
+{
+    return m_top_level;
+}
+
+void Party::DistributeExp(std::uint64_t exp, std::uint8_t monster_level, bango::space::point p)
+{
+    //TODO
+    std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
 }
 
 std::uint8_t Party::GetSize() const
@@ -135,4 +158,12 @@ bool Party::IsFull() const
 bool Party::IsEmpty() const
 {
     return m_members_list.empty(); 
+}
+
+void Party::UpdateTopLevel()
+{
+    //TODO: Should be also used when top lvl player gets a level up. Then lock will be needed.
+    m_top_level = (*std::max_element(m_members_list.begin(), m_members_list.end(), [](auto& p1, auto& p2){
+        return p1->GetLevel() < p2->GetLevel(); 
+    }))->GetLevel();
 }
