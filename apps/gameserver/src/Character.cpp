@@ -42,6 +42,8 @@ std::uint16_t Character::GetResist(std::uint8_t type) const
             return GetHealth()      / 9;
         case RT_CURSE:
             return GetWisdom()      / 9;
+        default:
+            throw std::logic_error("GetResist reaches default");
     }
 }
 

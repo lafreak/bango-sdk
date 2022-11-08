@@ -53,6 +53,7 @@ long long WorldMap::Container::total_memory() const
     long long count=0;
     for (const auto& p : m_entities)
         count += sizeof(p.second)+p.second.size()*sizeof(Character*);
+    return count;
 }
 
 void WorldMap::Container::for_each(const std::function<void(const quad_entity*)>&& callback) const
