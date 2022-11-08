@@ -158,7 +158,11 @@ public:
     void Tick() override;
     void Die() override;
 
-    void UpdateExp(std::int64_t amount);
+    void UpdateExp(std::int64_t amount, bool send_update_to_client = true);
     bool CanReciveExp();
     std::uint64_t CalculateExp(std::uint64_t exp, std::uint8_t monster_level);
+    void LevelUp();
+private:
+    std::uint8_t GetAmountOfPUPointsOnLevelUp();
+    void UpdatePropertyOnLevelUp();
 };

@@ -518,6 +518,10 @@ void Player::SendProperty(std::uint8_t kind)
             write(S2C_UPDATEPROPERTY, "bww",    P_DODGE, GetDodge(), GetDodge()); break;
         case P_PUPOINT:
             write(S2C_UPDATEPROPERTY, "bw",     P_PUPOINT, GetPUPoint()); break;
+        case P_SUPOINT:
+            write(S2C_UPDATEPROPERTY, "bw",     P_SUPOINT, GetSUPoint()); break;
+        case P_LEVEL:
+            write(S2C_UPDATEPROPERTY, "bw",     P_LEVEL, GetLevel()); break;
     }
 }
 
@@ -829,16 +833,30 @@ void Player::Die()
     WriteInSight(bango::network::packet(S2C_ACTION, "db", GetID(), AT_DIE));
 }
 
-void Player::UpdateExp(std::int64_t amount)
+void Player::UpdateExp(std::int64_t amount, bool send_update_to_client)
 {
-    if(GetLevel() >= 100) // ExpTable ends at lvl 100
+    if (amount == 0)
+        return;
+
+    if (GetLevel() >= 100)
     {
         spdlog::warn("ExpTable ends at lvl 100, exp will not be increased.");
         return;
     }
-    m_data.Exp += amount;
+    std::uint64_t exp_needed_for_next_level = g_nNeedExp[GetLevel()] * g_fNeedExpRatio[GetLevel()] / EXP_RATE;
+    if (m_data.Exp + amount >= exp_needed_for_next_level)
+    {
+        std::int64_t leftover_exp = m_data.Exp + amount - exp_needed_for_next_level;
+        LevelUp();
 
-    write(S2C_UPDATEPROPERTY, "bII", P_EXP, GetExp(), amount);
+        if(leftover_exp > 0)
+            UpdateExp(leftover_exp, false);
+    }
+    else
+        m_data.Exp += amount;
+
+    if(send_update_to_client)
+        write(S2C_UPDATEPROPERTY, "bII", P_EXP, GetExp(), amount);
 }
 
 bool Player::CanReciveExp()
@@ -862,4 +880,33 @@ std::uint64_t Player::CalculateExp(std::uint64_t exp, std::uint8_t monster_level
     //When monster_level > player_level, use g_nReviseExpA to calculate color ratio
     exp = (exp * (g_nReviseExpA[(GetLevel() - 1) / 10][level_difference] / 100.0) + exp);
     return exp;
+}
+
+void Player::LevelUp()
+{
+    m_data.Level++;
+    m_data.SUPoint++;
+    m_data.PUPoint += GetAmountOfPUPointsOnLevelUp();
+    m_data.Exp = 0;
+    UpdatePropertyOnLevelUp();
+}
+
+std::uint8_t Player::GetAmountOfPUPointsOnLevelUp()
+{
+        return (
+            (GetLevel() >= 96 ? 12 :
+            (GetLevel() >= 91 ? 11 :
+            (GetLevel() >= 86 ? 10 :
+            (GetLevel() >= 81 ? 9 :
+            (GetLevel() >= 76 ? 8 :
+            (GetLevel() >= 72 ? 7 :
+                                5)))))));
+}
+
+void Player::UpdatePropertyOnLevelUp()
+{
+    SendProperty(P_LEVEL);
+    SendProperty(P_SUPOINT);
+    SendProperty(P_PUPOINT);
+    SaveAllProperty();
 }
