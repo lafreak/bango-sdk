@@ -19,7 +19,7 @@ NPC::NPC(const std::unique_ptr<InitNPC>& init)
 
 NPC::~NPC()
 {
-    spdlog::trace("NPC constructor id: {}", GetID());
+    spdlog::trace("NPC destructor id: {}", GetID());
 }
 
 void NPC::Tick()

@@ -113,7 +113,8 @@ void Monster::DistributeExp()
             {
                 long double exp_share = static_cast<long double>(damage) / static_cast<long double>(total_hostility);
                 std::uint64_t exp = exp_share * m_init->Exp;
-                player.UpdateExp(player.CalculateExp(exp, GetLevel()));
+                if (player.UpdateExp(player.CalculateExp(exp, GetLevel())))
+                    player.SendProperty(P_EXP, exp);
             }
         });
 
