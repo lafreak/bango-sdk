@@ -474,7 +474,7 @@ std::uint32_t Player::GetMaxMP() const
 //     }
 // }
 
-void Player::SendInventoryProperty()
+void Player::SendInventoryProperty() const
 {
     SendProperty(P_STRADD);
     SendProperty(P_HTHADD);
@@ -486,7 +486,7 @@ void Player::SendInventoryProperty()
     SendProperty(P_DEFENSE);
 }
 
-void Player::SendProperty(std::uint8_t kind, std::int64_t amount)
+void Player::SendProperty(std::uint8_t kind, std::int64_t amount) const
 {
     switch (kind)
     {
@@ -517,20 +517,17 @@ void Player::SendProperty(std::uint8_t kind, std::int64_t amount)
         case P_DODGE:
             write(S2C_UPDATEPROPERTY, "bww",    P_DODGE, GetDodge(), GetDodge()); break;
         case P_PUPOINT:
-            m_data.PUPoint += amount;
             write(S2C_UPDATEPROPERTY, "bw",     P_PUPOINT, GetPUPoint()); break;
         case P_SUPOINT:
-            m_data.SUPoint += amount;
             write(S2C_UPDATEPROPERTY, "bw",     P_SUPOINT, GetSUPoint()); break;
         case P_LEVEL:
-            m_data.Level +=   amount;
             write(S2C_UPDATEPROPERTY, "bw",     P_LEVEL, GetLevel()); break;
         case P_EXP:
             write(S2C_UPDATEPROPERTY, "bII",    P_EXP, GetExp(), amount); break;
     }
 }
 
-void Player::SaveAllProperty()
+void Player::SaveAllProperty() const
 {
     packet p(S2D_SAVEALLPROPERTY);
     p   << GetPID()
@@ -838,29 +835,43 @@ void Player::Die()
     WriteInSight(bango::network::packet(S2C_ACTION, "db", GetID(), AT_DIE));
 }
 
-bool Player::UpdateExp(std::int64_t amount)
+void Player::UpdateExp(std::int64_t amount)
 {
+    // No effect
     if (amount == 0)
-        return false;
+        return;
+    
+    // Decrease
+    if (amount < 0)
+    {
+        if (std::abs(amount) > m_data.Exp)
+            amount = -static_cast<std::int64_t>(m_data.Exp);
+        m_data.Exp += amount;
+        SendProperty(P_EXP, amount);
+        return;
+    }
 
     if (GetLevel() >= MAX_LEVEL)
     {
-        spdlog::warn("ExpTable ends at lvl 100, exp will not be increased.");
-        return false;
+        spdlog::warn("Level is too large to exp exp: {}", GetLevel());
+        return;   
     }
 
-    if (m_data.Exp + amount > GET_EXP_FOR_LEVEL(GetLevel()))
+    // Increase
+    m_data.Exp += amount;  // TODO: Check for possible overflow
+
+    std::uint64_t required_exp = g_exp_table[GetLevel()];
+    while (m_data.Exp > required_exp)
     {
-        std::int64_t leftover_exp = m_data.Exp + amount - GET_EXP_FOR_LEVEL(GetLevel());
+        spdlog::debug("More exp than required ({}/{}). Performing level up from {} to {}.", m_data.Exp, required_exp,
+            GetLevel(), GetLevel()+1);
+        m_data.Exp -= required_exp;
         LevelUp();
-
-        if(leftover_exp > 0)
-            UpdateExp(leftover_exp);
+        required_exp = g_exp_table[GetLevel()];
     }
-    else
-        m_data.Exp += amount;
 
-    return true;
+    SendProperty(P_EXP, amount);
+    return;
 }
 
 bool Player::CanReciveExp()
@@ -888,8 +899,11 @@ std::uint64_t Player::CalculateExp(std::uint64_t exp, std::uint8_t monster_level
 
 void Player::LevelUp()
 {
-    SendProperty(P_LEVEL, 1);
-    SendProperty(P_SUPOINT, 1);
-    SendProperty(P_PUPOINT, GET_PU_ON_LEVEL_UP(GetLevel()));
-    m_data.Exp = 0;
+    m_data.SUPoint += 1;
+    m_data.Level += 1;
+    m_data.PUPoint += GET_PU_ON_LEVEL_UP(GetLevel());
+    SendProperty(P_LEVEL);
+    SendProperty(P_SUPOINT);
+    SendProperty(P_PUPOINT);
+    //m_data.Exp = 0;
 }
