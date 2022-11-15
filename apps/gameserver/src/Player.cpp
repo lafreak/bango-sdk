@@ -517,13 +517,13 @@ void Player::SendProperty(std::uint8_t kind, std::int64_t amount)
         case P_DODGE:
             write(S2C_UPDATEPROPERTY, "bww",    P_DODGE, GetDodge(), GetDodge()); break;
         case P_PUPOINT:
-            m_data.PUPoint += amount;
+            //m_data.PUPoint += amount;
             write(S2C_UPDATEPROPERTY, "bw",     P_PUPOINT, GetPUPoint()); break;
         case P_SUPOINT:
-            m_data.SUPoint += amount;
+            //m_data.SUPoint += amount;
             write(S2C_UPDATEPROPERTY, "bw",     P_SUPOINT, GetSUPoint()); break;
         case P_LEVEL:
-            m_data.Level +=   amount;
+            //m_data.Level +=   amount;
             write(S2C_UPDATEPROPERTY, "bw",     P_LEVEL, GetLevel()); break;
         case P_EXP:
             write(S2C_UPDATEPROPERTY, "bII",    P_EXP, GetExp(), amount); break;
@@ -840,24 +840,64 @@ void Player::Die()
 
 bool Player::UpdateExp(std::int64_t amount)
 {
+    // No effect
     if (amount == 0)
         return false;
-
-    if (GetLevel() >= MAX_LEVEL)
+    
+    // Decrease
+    if (amount < 0)
     {
-        spdlog::warn("ExpTable ends at lvl 100, exp will not be increased.");
-        return false;
+        if (std::abs(amount) > m_data.Exp)
+            amount = -static_cast<std::int64_t>(m_data.Exp);
+        m_data.Exp += amount;
+        SendProperty(P_EXP, amount);
+        return true;
     }
 
-    if (m_data.Exp + amount > GET_EXP_FOR_LEVEL(GetLevel()))
+    // Increase
+    m_data.Exp += amount;  // Check for possible overflow
+
+    std::uint64_t required_exp = g_exp_table[GetLevel()];
+    while (m_data.Exp > required_exp)
     {
-        std::int64_t leftover_exp = m_data.Exp + amount - GET_EXP_FOR_LEVEL(GetLevel());
+        m_data.Exp -= required_exp;
         LevelUp();
-
-        if(leftover_exp > 0)
-            UpdateExp(leftover_exp);
+        required_exp = g_exp_table[GetLevel()];
     }
-    else
+
+    SendProperty(P_EXP, amount);
+
+    // std::uint64_t remaining_exp = required_exp - m_data.Exp;
+    // while (static_cast<std::uint64_t>(amount) > remaining_exp)
+    // {
+    //     std
+    //     m_data.Exp += amount;
+    //     SendProperty(P_EXP, amount);
+    //     return true;
+    // }
+
+    // m_data.Exp += amount;
+    // std::int64_t required_exp = GET_EXP_FOR_LEVEL(GetLevel());  // TODO: make this a macro or lookup
+    // while (required_exp)
+    // {
+    //     m_data.Exp -= required_exp;
+    //     LevelUp();
+    //     required_exp = GET_EXP_FOR_LEVEL(GetLevel());
+    // }
+
+    // SendProperty(P_EXP, amount);
+
+    // std::int64_t remaining_exp = required_exp - m_data.Exp;
+
+    // if (m_data.Exp + amount > GET_EXP_FOR_LEVEL(GetLevel()))
+    // {
+    //     std::int64_t leftover_exp = m_data.Exp + amount - GET_EXP_FOR_LEVEL(GetLevel());
+    //     LevelUp();
+
+    //     if(leftover_exp > 0)
+    //         UpdateExp(leftover_exp);
+    // }
+    // else
         m_data.Exp += amount;
 
     return true;
@@ -888,8 +928,11 @@ std::uint64_t Player::CalculateExp(std::uint64_t exp, std::uint8_t monster_level
 
 void Player::LevelUp()
 {
-    SendProperty(P_LEVEL, 1);
-    SendProperty(P_SUPOINT, 1);
-    SendProperty(P_PUPOINT, GET_PU_ON_LEVEL_UP(GetLevel()));
-    m_data.Exp = 0;
+    m_data.SUPoint += 1;
+    m_data.Level += 1;
+    m_data.PUPoint += GET_PU_ON_LEVEL_UP(GetLevel());
+    SendProperty(P_LEVEL);
+    SendProperty(P_SUPOINT);
+    SendProperty(P_PUPOINT);
+    //m_data.Exp = 0;
 }
