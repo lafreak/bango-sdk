@@ -129,9 +129,9 @@ public:
     std::uint32_t       GetHonorOption()const { return 0; }
 
     bool CanLogout() const { return true; }
-    void SendInventoryProperty();
-    void SendProperty(std::uint8_t kind, std::int64_t amount = 0);
-    void SaveAllProperty();
+    void SendInventoryProperty() const;
+    void SendProperty(std::uint8_t kind, std::int64_t amount = 0) const;
+    void SaveAllProperty() const;
 
     void InsertItem(unsigned short index, unsigned int num=1);
     bool TrashItem(unsigned int local);

@@ -474,7 +474,7 @@ std::uint32_t Player::GetMaxMP() const
 //     }
 // }
 
-void Player::SendInventoryProperty()
+void Player::SendInventoryProperty() const
 {
     SendProperty(P_STRADD);
     SendProperty(P_HTHADD);
@@ -486,7 +486,7 @@ void Player::SendInventoryProperty()
     SendProperty(P_DEFENSE);
 }
 
-void Player::SendProperty(std::uint8_t kind, std::int64_t amount)
+void Player::SendProperty(std::uint8_t kind, std::int64_t amount) const
 {
     switch (kind)
     {
@@ -530,7 +530,7 @@ void Player::SendProperty(std::uint8_t kind, std::int64_t amount)
     }
 }
 
-void Player::SaveAllProperty()
+void Player::SaveAllProperty() const
 {
     packet p(S2D_SAVEALLPROPERTY);
     p   << GetPID()
