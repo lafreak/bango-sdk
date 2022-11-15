@@ -838,11 +838,11 @@ void Player::Die()
     WriteInSight(bango::network::packet(S2C_ACTION, "db", GetID(), AT_DIE));
 }
 
-bool Player::UpdateExp(std::int64_t amount)
+void Player::UpdateExp(std::int64_t amount)
 {
     // No effect
     if (amount == 0)
-        return false;
+        return;
     
     // Decrease
     if (amount < 0)
@@ -851,56 +851,24 @@ bool Player::UpdateExp(std::int64_t amount)
             amount = -static_cast<std::int64_t>(m_data.Exp);
         m_data.Exp += amount;
         SendProperty(P_EXP, amount);
-        return true;
+        return;
     }
 
     // Increase
-    m_data.Exp += amount;  // Check for possible overflow
+    m_data.Exp += amount;  // TODO: Check for possible overflow
 
     std::uint64_t required_exp = g_exp_table[GetLevel()];
     while (m_data.Exp > required_exp)
     {
+        spdlog::debug("More exp than required ({}/{}). Performing level up from {} to {}.", m_data.Exp, required_exp,
+            GetLevel(), GetLevel()+1);
         m_data.Exp -= required_exp;
         LevelUp();
         required_exp = g_exp_table[GetLevel()];
     }
 
     SendProperty(P_EXP, amount);
-
-    // std::uint64_t remaining_exp = required_exp - m_data.Exp;
-    // while (static_cast<std::uint64_t>(amount) > remaining_exp)
-    // {
-    //     std
-    //     m_data.Exp += amount;
-    //     SendProperty(P_EXP, amount);
-    //     return true;
-    // }
-
-    // m_data.Exp += amount;
-    // std::int64_t required_exp = GET_EXP_FOR_LEVEL(GetLevel());  // TODO: make this a macro or lookup
-    // while (required_exp)
-    // {
-    //     m_data.Exp -= required_exp;
-    //     LevelUp();
-    //     required_exp = GET_EXP_FOR_LEVEL(GetLevel());
-    // }
-
-    // SendProperty(P_EXP, amount);
-
-    // std::int64_t remaining_exp = required_exp - m_data.Exp;
-
-    // if (m_data.Exp + amount > GET_EXP_FOR_LEVEL(GetLevel()))
-    // {
-    //     std::int64_t leftover_exp = m_data.Exp + amount - GET_EXP_FOR_LEVEL(GetLevel());
-    //     LevelUp();
-
-    //     if(leftover_exp > 0)
-    //         UpdateExp(leftover_exp);
-    // }
-    // else
-        m_data.Exp += amount;
-
-    return true;
+    return;
 }
 
 bool Player::CanReciveExp()
