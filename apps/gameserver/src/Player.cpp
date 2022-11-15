@@ -517,13 +517,10 @@ void Player::SendProperty(std::uint8_t kind, std::int64_t amount) const
         case P_DODGE:
             write(S2C_UPDATEPROPERTY, "bww",    P_DODGE, GetDodge(), GetDodge()); break;
         case P_PUPOINT:
-            //m_data.PUPoint += amount;
             write(S2C_UPDATEPROPERTY, "bw",     P_PUPOINT, GetPUPoint()); break;
         case P_SUPOINT:
-            //m_data.SUPoint += amount;
             write(S2C_UPDATEPROPERTY, "bw",     P_SUPOINT, GetSUPoint()); break;
         case P_LEVEL:
-            //m_data.Level +=   amount;
             write(S2C_UPDATEPROPERTY, "bw",     P_LEVEL, GetLevel()); break;
         case P_EXP:
             write(S2C_UPDATEPROPERTY, "bII",    P_EXP, GetExp(), amount); break;
@@ -852,6 +849,12 @@ void Player::UpdateExp(std::int64_t amount)
         m_data.Exp += amount;
         SendProperty(P_EXP, amount);
         return;
+    }
+
+    if (GetLevel() >= MAX_LEVEL)
+    {
+        spdlog::warn("Level is too large to exp exp: {}", GetLevel());
+        return;   
     }
 
     // Increase
