@@ -860,14 +860,14 @@ void Player::UpdateExp(std::int64_t amount)
     // Increase
     m_data.Exp += amount;  // TODO: Check for possible overflow
 
-    std::uint64_t required_exp = g_exp_table[GetLevel()];
+    std::uint64_t required_exp = g_n64NeedExpFinal[GetLevel()];
     while (m_data.Exp > required_exp)
     {
         spdlog::debug("More exp than required ({}/{}). Performing level up from {} to {}.", m_data.Exp, required_exp,
             GetLevel(), GetLevel()+1);
         m_data.Exp -= required_exp;
         LevelUp();
-        required_exp = g_exp_table[GetLevel()];
+        required_exp = g_n64NeedExpFinal[GetLevel()];
     }
 
     SendProperty(P_EXP, amount);
