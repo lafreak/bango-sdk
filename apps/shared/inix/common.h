@@ -2,7 +2,10 @@
 
 #include <cstdint>
 
-static std::int64_t g_nNeedExp[] = {
+static constexpr std::uint8_t EXP_RATE = 3;
+static constexpr std::uint8_t MAX_LEVEL = 100;
+
+static constexpr std::int64_t g_nNeedExp[MAX_LEVEL] = {
 	0, 5, 24, 60, 160, 327, 540, 811, 1153, 1582, 2242, 3074, 4119, 5423, 7041, 9091, 11615, 14712, 18500, 23124, 29042, 36267, 45069, 55770, 68502,
 	84980, 104989, 129247, 158361, 193878, 236530, 288063, 350265, 425285, 515699, 624397, 755304, 912622, 1102206, 1329711, 1603347, 1932099, 2327056,
 	2801272, 3371225, 4055312, 4877039, 5863234, 7047523, 8469131, 10175792, 12224433, 14683208, 17569241, 21111460, 25362481, 30464688, 36522905,
@@ -13,7 +16,7 @@ static std::int64_t g_nNeedExp[] = {
 };
 
 // 2018 ratios
-static double g_fNeedExpRatio[] = {
+static constexpr double g_fNeedExpRatio[] = {
 	1,1,1,1,0.5,0.5,0.5,0.5,0.5,0.5,					//0-9
 	0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,			//10-19
 	0.6,0.6,0.6,0.6,0.6,0.6,0.6,0.6,0.6,0.6,			//20-29
@@ -29,7 +32,15 @@ static double g_fNeedExpRatio[] = {
 	5,5,5,5,5,5,5,5,5,5,5,5								//99-110
 };
 
-static std::uint8_t g_nReviseExpA[10][21] = {
+constexpr auto g_n64NeedExpFinal = [] () constexpr -> auto
+{
+	std::array<std::uint64_t, MAX_LEVEL> temp{};
+	for (size_t i = 0; i < MAX_LEVEL; i++)
+		temp[i] = static_cast<std::uint64_t>(g_nNeedExp[i] * g_fNeedExpRatio[i]) / EXP_RATE;
+	return temp;
+}();
+
+static constexpr std::uint8_t g_nReviseExpA[10][21] = {
 	0, 0, 0, 25, 25, 25, 25,
 	50, 50, 50,  50,  50,  100, 100,100, 100, 100, 100, 100, 100, 100, 0, 0,  0,  25, 25, 25, 25,
 	50, 50, 50,  50,  50,  100, 100,100, 100, 100, 100, 100, 100, 100, 0, 0,  25, 25, 25, 25, 50,
@@ -43,7 +54,7 @@ static std::uint8_t g_nReviseExpA[10][21] = {
 	50, 50, 100, 100, 100, 100, 100,100, 100, 100, 100, 100, 100, 100,
 };
 
-static std::uint8_t g_nReviseExpB[10][21] = {
+static constexpr std::uint8_t g_nReviseExpB[10][21] = {
 	0,   25,  25,  25,  50,  50,  50,
 	100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 0, 0, 25, 25, 25, 50, 50,
 	50,  100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 0, 0, 0,  25, 25, 25, 50,
@@ -57,11 +68,12 @@ static std::uint8_t g_nReviseExpB[10][21] = {
 	0,   25,  25,  25,  50,  50,  50,  100, 100, 100, 100, 100, 100, 100
 };
 
-static std::uint8_t g_nRevisePartyExp[] = {
+static constexpr std::uint8_t g_nRevisePartyExp[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	10, 10, 20, 20, 30, 30, 40, 40, 50, 50,
 	60, 60, 70, 70, 80, 80, 90, 90, 100
 };
+
 
 #define MAX_STAT_DISTRIBUTED 250
 static unsigned char g_byNeedPU[] = {
@@ -154,6 +166,18 @@ static int g_nAddDefLv[] = {
 	99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
 	99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99
 };
+
+static std::uint8_t GET_PU_ON_LEVEL_UP(std::uint8_t level)
+{
+	return (
+		(level >= 96 ? 12 :
+		(level >= 91 ? 11 :
+		(level >= 86 ? 10 :
+		(level >= 81 ?  9 :
+		(level >= 76 ?  8 :
+		(level >= 72 ?  7 :
+						5)))))));
+}
 
 // Stat-up
 static unsigned short FIND_NEED_PU(unsigned short cur, unsigned char add) {

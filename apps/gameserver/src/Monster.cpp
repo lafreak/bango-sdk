@@ -118,7 +118,7 @@ void Monster::DistributeExp()
         });
 
     }
-
+    // TODO: Distribute party container EXP.
     hostility_map.clear();
     total_hostility = 0;
 }

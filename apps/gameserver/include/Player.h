@@ -129,9 +129,9 @@ public:
     std::uint32_t       GetHonorOption()const { return 0; }
 
     bool CanLogout() const { return true; }
-    void SendInventoryProperty();
-    void SendProperty(std::uint8_t kind);
-    void SaveAllProperty();
+    void SendInventoryProperty() const;
+    void SendProperty(std::uint8_t kind, std::int64_t amount = 0) const;
+    void SaveAllProperty() const;
 
     void InsertItem(unsigned short index, unsigned int num=1);
     bool TrashItem(unsigned int local);
@@ -161,4 +161,5 @@ public:
     void UpdateExp(std::int64_t amount);
     bool CanReciveExp();
     std::uint64_t CalculateExp(std::uint64_t exp, std::uint8_t monster_level);
+    void LevelUp();
 };

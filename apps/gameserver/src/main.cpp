@@ -147,6 +147,11 @@ int main(int argc, char** argv)
         player.Teleport(255680, 229056);
     });
 
+    CommandDispatcher::Register("/getexp", [&](Player& player, CommandDispatcher::Token& token) {
+        int exp = token;
+        auto lock = player.Lock();
+        player.UpdateExp(exp);
+    });
 
     CommandDispatcher::Register("/around", [&](Player& player, CommandDispatcher::Token& token) {
         int radius = token;

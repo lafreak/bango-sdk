@@ -474,7 +474,7 @@ std::uint32_t Player::GetMaxMP() const
 //     }
 // }
 
-void Player::SendInventoryProperty()
+void Player::SendInventoryProperty() const
 {
     SendProperty(P_STRADD);
     SendProperty(P_HTHADD);
@@ -486,7 +486,7 @@ void Player::SendInventoryProperty()
     SendProperty(P_DEFENSE);
 }
 
-void Player::SendProperty(std::uint8_t kind)
+void Player::SendProperty(std::uint8_t kind, std::int64_t amount) const
 {
     switch (kind)
     {
@@ -518,10 +518,16 @@ void Player::SendProperty(std::uint8_t kind)
             write(S2C_UPDATEPROPERTY, "bww",    P_DODGE, GetDodge(), GetDodge()); break;
         case P_PUPOINT:
             write(S2C_UPDATEPROPERTY, "bw",     P_PUPOINT, GetPUPoint()); break;
+        case P_SUPOINT:
+            write(S2C_UPDATEPROPERTY, "bw",     P_SUPOINT, GetSUPoint()); break;
+        case P_LEVEL:
+            write(S2C_UPDATEPROPERTY, "bw",     P_LEVEL, GetLevel()); break;
+        case P_EXP:
+            write(S2C_UPDATEPROPERTY, "bII",    P_EXP, GetExp(), amount); break;
     }
 }
 
-void Player::SaveAllProperty()
+void Player::SaveAllProperty() const
 {
     packet p(S2D_SAVEALLPROPERTY);
     p   << GetPID()
@@ -831,14 +837,41 @@ void Player::Die()
 
 void Player::UpdateExp(std::int64_t amount)
 {
-    if(GetLevel() >= 100) // ExpTable ends at lvl 100
+    // No effect
+    if (amount == 0)
+        return;
+    
+    // Decrease
+    if (amount < 0)
     {
-        spdlog::warn("ExpTable ends at lvl 100, exp will not be increased.");
+        if (std::abs(amount) > m_data.Exp)
+            amount = -static_cast<std::int64_t>(m_data.Exp);
+        m_data.Exp += amount;
+        SendProperty(P_EXP, amount);
         return;
     }
-    m_data.Exp += amount;
 
-    write(S2C_UPDATEPROPERTY, "bII", P_EXP, GetExp(), amount);
+    if (GetLevel() >= MAX_LEVEL)
+    {
+        spdlog::warn("Level is too large to exp exp: {}", GetLevel());
+        return;   
+    }
+
+    // Increase
+    m_data.Exp += amount;  // TODO: Check for possible overflow
+
+    std::uint64_t required_exp = g_n64NeedExpFinal[GetLevel()];
+    while (m_data.Exp > required_exp)
+    {
+        spdlog::debug("More exp than required ({}/{}). Performing level up from {} to {}.", m_data.Exp, required_exp,
+            GetLevel(), GetLevel()+1);
+        m_data.Exp -= required_exp;
+        LevelUp();
+        required_exp = g_n64NeedExpFinal[GetLevel()];
+    }
+
+    SendProperty(P_EXP, amount);
+    return;
 }
 
 bool Player::CanReciveExp()
@@ -862,4 +895,15 @@ std::uint64_t Player::CalculateExp(std::uint64_t exp, std::uint8_t monster_level
     //When monster_level > player_level, use g_nReviseExpA to calculate color ratio
     exp = (exp * (g_nReviseExpA[(GetLevel() - 1) / 10][level_difference] / 100.0) + exp);
     return exp;
+}
+
+void Player::LevelUp()
+{
+    m_data.SUPoint += 1;
+    m_data.Level += 1;
+    m_data.PUPoint += GET_PU_ON_LEVEL_UP(GetLevel());
+    SendProperty(P_LEVEL);
+    SendProperty(P_SUPOINT);
+    SendProperty(P_PUPOINT);
+    //m_data.Exp = 0;
 }
