@@ -32,109 +32,13 @@ static constexpr double g_fNeedExpRatio[] = {
 	5,5,5,5,5,5,5,5,5,5,5,5								//99-110
 };
 
-
-static constexpr std::uint64_t g_exp_table[MAX_LEVEL] = {
-static_cast<std::uint64_t>(g_nNeedExp[0] * g_fNeedExpRatio[0] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[1] * g_fNeedExpRatio[1] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[2] * g_fNeedExpRatio[2] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[3] * g_fNeedExpRatio[3] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[4] * g_fNeedExpRatio[4] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[5] * g_fNeedExpRatio[5] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[6] * g_fNeedExpRatio[6] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[7] * g_fNeedExpRatio[7] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[8] * g_fNeedExpRatio[8] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[9] * g_fNeedExpRatio[9] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[10] * g_fNeedExpRatio[10] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[11] * g_fNeedExpRatio[11] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[12] * g_fNeedExpRatio[12] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[13] * g_fNeedExpRatio[13] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[14] * g_fNeedExpRatio[14] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[15] * g_fNeedExpRatio[15] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[16] * g_fNeedExpRatio[16] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[17] * g_fNeedExpRatio[17] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[18] * g_fNeedExpRatio[18] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[19] * g_fNeedExpRatio[19] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[20] * g_fNeedExpRatio[20] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[21] * g_fNeedExpRatio[21] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[22] * g_fNeedExpRatio[22] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[23] * g_fNeedExpRatio[23] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[24] * g_fNeedExpRatio[24] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[25] * g_fNeedExpRatio[25] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[26] * g_fNeedExpRatio[26] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[27] * g_fNeedExpRatio[27] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[28] * g_fNeedExpRatio[28] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[29] * g_fNeedExpRatio[29] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[30] * g_fNeedExpRatio[30] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[31] * g_fNeedExpRatio[31] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[32] * g_fNeedExpRatio[32] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[33] * g_fNeedExpRatio[33] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[34] * g_fNeedExpRatio[34] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[35] * g_fNeedExpRatio[35] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[36] * g_fNeedExpRatio[36] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[37] * g_fNeedExpRatio[37] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[38] * g_fNeedExpRatio[38] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[39] * g_fNeedExpRatio[39] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[40] * g_fNeedExpRatio[40] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[41] * g_fNeedExpRatio[41] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[42] * g_fNeedExpRatio[42] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[43] * g_fNeedExpRatio[43] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[44] * g_fNeedExpRatio[44] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[45] * g_fNeedExpRatio[45] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[46] * g_fNeedExpRatio[46] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[47] * g_fNeedExpRatio[47] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[48] * g_fNeedExpRatio[48] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[49] * g_fNeedExpRatio[49] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[50] * g_fNeedExpRatio[50] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[51] * g_fNeedExpRatio[51] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[52] * g_fNeedExpRatio[52] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[53] * g_fNeedExpRatio[53] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[54] * g_fNeedExpRatio[54] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[55] * g_fNeedExpRatio[55] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[56] * g_fNeedExpRatio[56] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[57] * g_fNeedExpRatio[57] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[58] * g_fNeedExpRatio[58] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[59] * g_fNeedExpRatio[59] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[60] * g_fNeedExpRatio[60] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[61] * g_fNeedExpRatio[61] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[62] * g_fNeedExpRatio[62] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[63] * g_fNeedExpRatio[63] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[64] * g_fNeedExpRatio[64] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[65] * g_fNeedExpRatio[65] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[66] * g_fNeedExpRatio[66] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[67] * g_fNeedExpRatio[67] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[68] * g_fNeedExpRatio[68] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[69] * g_fNeedExpRatio[69] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[70] * g_fNeedExpRatio[70] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[71] * g_fNeedExpRatio[71] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[72] * g_fNeedExpRatio[72] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[73] * g_fNeedExpRatio[73] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[74] * g_fNeedExpRatio[74] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[75] * g_fNeedExpRatio[75] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[76] * g_fNeedExpRatio[76] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[77] * g_fNeedExpRatio[77] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[78] * g_fNeedExpRatio[78] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[79] * g_fNeedExpRatio[79] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[80] * g_fNeedExpRatio[80] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[81] * g_fNeedExpRatio[81] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[82] * g_fNeedExpRatio[82] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[83] * g_fNeedExpRatio[83] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[84] * g_fNeedExpRatio[84] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[85] * g_fNeedExpRatio[85] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[86] * g_fNeedExpRatio[86] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[87] * g_fNeedExpRatio[87] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[88] * g_fNeedExpRatio[88] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[89] * g_fNeedExpRatio[89] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[90] * g_fNeedExpRatio[90] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[91] * g_fNeedExpRatio[91] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[92] * g_fNeedExpRatio[92] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[93] * g_fNeedExpRatio[93] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[94] * g_fNeedExpRatio[94] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[95] * g_fNeedExpRatio[95] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[96] * g_fNeedExpRatio[96] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[97] * g_fNeedExpRatio[97] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[98] * g_fNeedExpRatio[98] / EXP_RATE),
-static_cast<std::uint64_t>(g_nNeedExp[99] * g_fNeedExpRatio[99] / EXP_RATE)
-};
+constexpr auto g_n64NeedExpFinal = [] () constexpr -> auto
+{
+	std::array<std::uint64_t, MAX_LEVEL> temp{};
+	for (size_t i = 0; i < MAX_LEVEL; i++)
+		temp[i] = static_cast<std::uint64_t>(g_nNeedExp[i] * g_fNeedExpRatio[i]) / EXP_RATE;
+	return temp;
+}();
 
 static constexpr std::uint8_t g_nReviseExpA[10][21] = {
 	0, 0, 0, 25, 25, 25, 25,
@@ -273,11 +177,6 @@ static std::uint8_t GET_PU_ON_LEVEL_UP(std::uint8_t level)
 		(level >= 76 ?  8 :
 		(level >= 72 ?  7 :
 						5)))))));
-}
-
-static std::int64_t GET_EXP_FOR_LEVEL(uint8_t level)
-{
-    return g_exp_table[level];
 }
 
 // Stat-up
