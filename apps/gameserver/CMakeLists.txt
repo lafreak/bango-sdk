@@ -36,6 +36,7 @@ set(SOURCES
   src/RegularMonster.cpp
   src/Party.cpp
   src/Spawn.cpp
+  src/Loot.cpp
   )
 
 add_executable(gameserver ${SOURCES})
