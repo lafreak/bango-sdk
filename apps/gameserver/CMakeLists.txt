@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 project(gameserver)
 
 set (CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_CLANG_TIDY 
+  clang-tidy)
 
 include_directories(include)
 include_directories(../shared)
@@ -13,12 +15,21 @@ include_directories(bangoutils)
 
 include(FetchContent)
 FetchContent_Declare(
-  spdlog
-  GIT_REPOSITORY https://github.com/gabime/spdlog
-  GIT_TAG        v1.10.0
+        spdlog
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG        v1.10.0
 )
-
-FetchContent_MakeAvailable(spdlog)
+FetchContent_GetProperties(spdlog)
+if(NOT spdlog_POPULATED)
+  FetchContent_Populate(spdlog)
+  # create a header only library
+  add_library(spdlog INTERFACE)
+  add_library(spdlog::libspdlog ALIAS spdlog)
+  target_include_directories(
+      spdlog
+      SYSTEM INTERFACE
+      ${spdlog_SOURCE_DIR}/include)
+endif() 
 
 set(SOURCES
   src/CommandDispatcher.cpp

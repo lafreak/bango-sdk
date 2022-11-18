@@ -19,7 +19,8 @@ RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/nul
     rm /usr/share/keyrings/kitware-archive-keyring.gpg && \
     apt install -y kitware-archive-keyring && \
     apt update && \
-    apt install -y cmake
+    apt install -y cmake \
+    apt install -y clang-tidy
 
 # Build DB & Game servers
 RUN apt update && apt install -y libmysqlclient-dev
