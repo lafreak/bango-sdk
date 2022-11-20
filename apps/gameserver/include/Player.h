@@ -105,7 +105,7 @@ public:
     std::uint16_t       GetDodge()                  const override { return Character::GetDodge()   + m_inventory.GetDodge();     }
     std::uint16_t       GetAbsorb()                 const override { return                           m_inventory.GetAbsorb();    }
 
-    std::uint16_t       GetDefense  (std::uint8_t type=ATT_MEELE)   const override { return                               m_inventory.GetDefense();   }
+    std::uint16_t       GetDefense  ([[maybe_unused]] std::uint8_t type=ATT_MEELE)   const override { return                               m_inventory.GetDefense();   }
     std::uint16_t       GetResist   (std::uint8_t type)             const override { return Character::GetResist(type)  + m_inventory.GetResist(type);}
 
     std::uint32_t       GetMaxHP()                  const override;

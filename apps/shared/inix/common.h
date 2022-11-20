@@ -76,7 +76,7 @@ static constexpr std::uint8_t g_nRevisePartyExp[] = {
 
 
 #define MAX_STAT_DISTRIBUTED 250
-static unsigned char g_byNeedPU[] = {
+static constexpr unsigned char g_byNeedPU[] = {
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -105,7 +105,7 @@ static unsigned char g_byNeedPU[] = {
 	// sum: 1200
 };
 
-static unsigned char g_byNeedPUEx[] = {
+static constexpr unsigned char g_byNeedPUEx[] = {
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -133,7 +133,7 @@ static unsigned char g_byNeedPUEx[] = {
 	8, 8, 8, 8, 8, 8, 8, 8, 8, 8
 };
 
-static int g_nAddOTPLv[] = {
+static constexpr int g_nAddOTPLv[] = {
 	0, 0, 0, 0, 0, 1, 2, 3, 4, 5,
 	6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 	16, 17, 18, 19, 20, 22, 24, 26, 28, 30,
@@ -146,7 +146,7 @@ static int g_nAddOTPLv[] = {
 	90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90,
 };
 
-static int g_nHitChance[] = {
+static constexpr int g_nHitChance[] = {
 	50, 52, 52, 54, 54, 56, 56, 58, 58, 60, 
 	60, 62, 62, 64, 64, 66, 66, 68, 68, 70, 
 	70, 72, 72, 74, 74, 76, 76, 78, 78, 80, 
@@ -154,7 +154,7 @@ static int g_nHitChance[] = {
 	90, 95, 95, 95, 95, 95, 95, 95, 95, 95, 95
 };
 
-static int g_nAddDefLv[] = {
+static constexpr int g_nAddDefLv[] = {
 	0, 0, 0, 1, 1, 3, 3, 6, 6, 9,
 	9, 12, 12, 15, 15, 18, 18, 21, 21, 24,
 	24, 27, 27, 30, 30, 33, 33, 36, 36, 39,
@@ -167,7 +167,7 @@ static int g_nAddDefLv[] = {
 	99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99
 };
 
-static std::uint8_t GET_PU_ON_LEVEL_UP(std::uint8_t level)
+static constexpr std::uint8_t GET_PU_ON_LEVEL_UP(std::uint8_t level)
 {
 	return (
 		(level >= 96 ? 12 :
@@ -180,7 +180,7 @@ static std::uint8_t GET_PU_ON_LEVEL_UP(std::uint8_t level)
 }
 
 // Stat-up
-static unsigned short FIND_NEED_PU(unsigned short cur, unsigned char add) {
+static constexpr unsigned short FIND_NEED_PU(unsigned short cur, unsigned char add) {
 	unsigned short needPU=0;
 	for ( ; add > 0; add--) {
 		needPU += g_byNeedPU[cur++];
@@ -188,7 +188,7 @@ static unsigned short FIND_NEED_PU(unsigned short cur, unsigned char add) {
 	return needPU;
 }
 
-static unsigned short FIND_NEED_PU_EX(unsigned short cur, unsigned char add) {
+static constexpr unsigned short FIND_NEED_PU_EX(unsigned short cur, unsigned char add) {
 	unsigned short needPU=0;
 	for ( ; add > 0; add--) {
 		needPU += g_byNeedPUEx[cur++];
@@ -196,8 +196,8 @@ static unsigned short FIND_NEED_PU_EX(unsigned short cur, unsigned char add) {
 	return needPU;
 }
 
-static int g_denoHP[] = { 10, 14, 13, 13, 13 }; // mob deno 10
-static int g_denoMP[] = { 13, 10, 12, 12, 12 }; // mob deno 10
+static constexpr int g_denoHP[] = { 10, 14, 13, 13, 13 }; // mob deno 10
+static constexpr int g_denoMP[] = { 13, 10, 12, 12, 12 }; // mob deno 10
 
 // (struct) /////////////////////////////////////////////////////////
 struct DATE_TIME
@@ -221,7 +221,7 @@ struct BASEPROPERTY
 
 #define GAME_HERO 0x80
 
-static BASEPROPERTY g_baseproperty[] = {
+static constexpr BASEPROPERTY g_baseproperty[] = {
 	18, 16, 8, 8, 10, 180, 120,		// knight
 	8, 10, 18, 16, 8, 170, 140,		// mage
 	14, 10, 8, 10, 18, 160, 160,	// archer

@@ -121,7 +121,7 @@ void Character::ResetStates()
     m_mstate_ex = 0;
 }
 
-void Character::ReceiveDamage(id_t id, std::uint32_t damage)
+void Character::ReceiveDamage([[maybe_unused]] id_t id, std::uint32_t damage)
 {
     if(damage > m_curhp)
         throw std::logic_error("damage is higher than current HP");

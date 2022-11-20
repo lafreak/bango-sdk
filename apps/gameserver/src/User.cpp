@@ -8,13 +8,13 @@
 
 using namespace bango::network;
 
-void User::OnConnect(packet& p)
+void User::OnConnect([[maybe_unused]] packet& p)
 {
     // ProtocolVersion, Code, TimeStamp, TimeStampStart, System, Event, ServerID, Age, Country
     write(S2C_CODE, "dbdddIbbb", 0, 0, 604800, 0, 0, 0, 0, 18, N_EN);
 }
 
-void User::OnCodeAnswer(packet& p)
+void User::OnCodeAnswer([[maybe_unused]] packet& p)
 {
 }
 

@@ -58,7 +58,7 @@ public:
 
     Item(const InitItem* init, const ITEMINFO& info);
 
-    const std::uint32_t GetLocalID()    const { return m_local_id; }
+    std::uint32_t GetLocalID()    const { return m_local_id; }
 
     const InitItem& GetInit() const { return *m_init; }
     const ITEMINFO& GetInfo() const { return  m_info; }

@@ -48,7 +48,6 @@ public:
         }
     };
 
-public:
     using Task = const std::function<void (Player &, Token &)>;
 private:
     std::unordered_map<std::string, Task> m_commands;

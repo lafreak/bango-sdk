@@ -54,7 +54,7 @@ void Spawn::Tick()
     SetNextSpawnCycle();
 }
 
-void Spawn::RespawnOnWorld(const std::shared_ptr<Monster> monster)
+void Spawn::RespawnOnWorld(const std::shared_ptr<Monster>& monster)
 {
     //TODO: World add/remove API to check if the monster with given ID already exists.
     monster->RestoreInitialState(GetRandomX(), GetRandomY());
@@ -83,27 +83,27 @@ void Spawn::SetNextSpawnCycle()
     m_next_spawn_cycle = (time::now() + time::duration(GetSpawnCycle()));
 }
 
-std::int32_t Spawn::GetArea() const
+std::uint32_t Spawn::GetArea() const
 {
     return m_init->Area;
 }
 
-std::int32_t Spawn::GetMonsterIndex() const
+std::uint32_t Spawn::GetMonsterIndex() const
 {
     return m_init->MonsterIndex;
 }
 
-std::int32_t Spawn::GetMap() const
+std::uint32_t Spawn::GetMap() const
 {
     return m_init->Map;
 }
 
-std::int32_t Spawn::GetAmount() const
+std::uint32_t Spawn::GetAmount() const
 {
     return m_init->Amount;
 }
 
-std::int32_t Spawn::GetSpawnCycle() const
+std::uint32_t Spawn::GetSpawnCycle() const
 {
     return m_init->SpawnCycle;
 }

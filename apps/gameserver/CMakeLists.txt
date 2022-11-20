@@ -3,8 +3,15 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 project(gameserver)
 
 set (CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_CLANG_TIDY 
+set(CMAKE_CXX_CLANG_TIDY
   clang-tidy)
+
+add_compile_options(-Wextra)
+add_compile_options(-Wshadow)
+add_compile_options(-Wconversion)
+add_compile_options(-Wpedantic)
+# add_compile_options(-Werror)
+add_compile_options(-Wall)
 
 include_directories(include)
 include_directories(../shared)

@@ -11,6 +11,7 @@
 #include <bango/utils/random.h>
 #include <bango/network/packet.h>
 #include <inix.h>
+#include <inix/common.h>
 
 using namespace bango::network;
 using namespace bango::utils;

@@ -221,7 +221,7 @@ public:
     }
 
     //! Adds characters to the world with ownership.
-    static void Add(std::shared_ptr<Character> entity)
+    static void Add(const std::shared_ptr<Character>& entity)
     {
         if (entity->GetType() == Character::PLAYER)
             throw std::logic_error("player should be added to the world by reference");
@@ -233,8 +233,10 @@ public:
             {
             case Character::MONSTER:
                 Get().m_monsters.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Monster>(entity)));
+                break;
             case Character::NPC:
                 Get().m_npcs.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<NPC>(entity)));
+                break;
             }
 
         }
@@ -242,10 +244,10 @@ public:
     }
 
     //! Adds party to the world
-    static void AddParty(std::shared_ptr<Party> party);
+    static void AddParty(const std::shared_ptr<Party>& party);
     
     //! Removes party from the world
-    static void RemoveParty(std::shared_ptr<Party> party);
+    static void RemoveParty(const std::shared_ptr<Party>& party);
 
     //! Callback function for party
     static bool ForParty(Character::id_t id, const std::function<void(Party&)>& callback);
@@ -266,7 +268,7 @@ public:
         Map(entity->GetMap()).Move(entity, delta_x, delta_y, delta_z, stop);
     }
 
-    static void Teleport(Player* entity, int x, int y, int z, int spread=0, int map=-1)
+    static void Teleport(Player* entity, int x, int y, int z, [[maybe_unused]] int spread=0, std::uint8_t map=-1)
     {
         // TODO: Add random spread.
         Map(entity->GetMap()).Remove(entity);
@@ -319,7 +321,7 @@ public:
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
 
-        for (auto it : Get().m_monsters)
+        for (const auto& it : Get().m_monsters)
             callback(*it.second);
     }
 
@@ -339,7 +341,7 @@ public:
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
 
-        for (auto it : Get().m_npcs)
+        for (const auto& it : Get().m_npcs)
             callback(*it.second);
     }
 

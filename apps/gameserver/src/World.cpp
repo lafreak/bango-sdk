@@ -350,18 +350,18 @@ void World::ForEachSpawn(const std::function<void(Spawn&)>& callback)
 {
     //Lock should be considered here once we add config reload in runtime.
 
-    for (auto it : Get().m_spawns)
+    for (const auto& it : Get().m_spawns)
         callback(*it);
 }
 
 
-void World::AddParty(std::shared_ptr<Party> party)
+void World::AddParty(const std::shared_ptr<Party>& party)
 {
     std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
     Get().m_parties.insert(std::make_pair(party->GetID(), party));
 }
 
-void World::RemoveParty(std::shared_ptr<Party> party)
+void World::RemoveParty(const std::shared_ptr<Party>& party)
 {
     std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
     Get().m_parties.erase(party->GetID());

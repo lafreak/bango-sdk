@@ -18,12 +18,13 @@ using namespace bango::network;
 Monster::Monster(const std::unique_ptr<InitMonster>& init, int x, int y, int map)
     : Character(Character::MONSTER), m_init(init)
 {
+    //
     spdlog::trace("Monster constructor id: {}", GetID());
     m_x = x;
     m_y = y;
     m_map = map;
-    // m_curhp = GetMaxHP();
-    // m_curmp = GetMaxMP();
+    m_curhp = (52 * m_init->Level / 3) + 115 + 2 * m_init->Health * m_init->Health / 10 + m_init->HP;
+    m_curmp = (8  * m_init->Level) + 140 + m_init->Wisdom + 2 * m_init->Wisdom * m_init->Wisdom / 10 + m_init->MP;
 }
 
 Monster::~Monster()
@@ -72,21 +73,15 @@ void Monster::Summon(std::uint32_t index, std::int32_t x, std::int32_t y, std::i
 std::shared_ptr<Monster> Monster::CreateMonster(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map)
 {
     const auto& init_monster = InitMonster::DB().at(index);
-    std::shared_ptr<Monster> monster;
     switch (init_monster->Race)
     {
         case MR_NOTMAGUNI:
-            monster = std::make_shared<RegularMonster>(init_monster, x, y, map);
-            break;
+            return std::make_shared<RegularMonster>(init_monster, x, y, map);
         case MR_MAGUNI:
-            monster = std::make_shared<BeheadableMonster>(init_monster, x, y, map);
-            break;
+            return std::make_shared<BeheadableMonster>(init_monster, x, y, map);
         default:
-            monster = std::make_shared<RegularMonster>(init_monster, x, y, map);
-            break;
+            return std::make_shared<RegularMonster>(init_monster, x, y, map);
     }
-
-    return monster;
 }
 
 void Monster::RestoreInitialState(int new_x, int new_y)

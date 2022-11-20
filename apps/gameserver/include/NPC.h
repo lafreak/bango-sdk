@@ -54,7 +54,7 @@ public:
     unsigned short  GetIndex() const { return m_init->Index; }
     unsigned char   GetShape() const { return m_init->Shape; }
 
-    bango::network::packet BuildAppearPacket(bool hero=false) const override
+    bango::network::packet BuildAppearPacket([[maybe_unused]] bool hero=false) const override
     {
         bango::network::packet p(S2C_CREATENPC);
         p   << GetID()
