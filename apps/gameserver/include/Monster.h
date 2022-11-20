@@ -22,7 +22,7 @@ struct InitMonster : public bango::processor::db_object<InitMonster>
     unsigned int Resist [5] ={0,};
     unsigned int Defense[2] ={0,};
 
-    unsigned int index() const { return Index; }
+    unsigned int index() const override { return Index; }
 
     virtual void set(bango::processor::lisp::var param) override
     {

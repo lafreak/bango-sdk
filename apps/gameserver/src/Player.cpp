@@ -46,8 +46,8 @@ void Player::OnDisconnected()
 
 void Player::OnStart(packet& p)
 {
-    auto unknown = p.pop<char>();
-    auto height = p.pop<int>();
+    [[maybe_unused]] auto unknown = p.pop<char>();
+    [[maybe_unused]] auto height = p.pop<int>();
 
     OnCharacterAppear(*this, true);
 
@@ -616,7 +616,7 @@ void Player::OnUpdateProperty(packet& p)
 
 void Player::OnPlayerAnimation(packet& p)
 {
-    auto id = p.pop<Character::id_t>();
+     [[maybe_unused]] auto id = p.pop<Character::id_t>();
     auto animation = p.pop<unsigned char>();
 
     if (animation >= 0 && animation < 20)
@@ -625,9 +625,9 @@ void Player::OnPlayerAnimation(packet& p)
 
 void Player::OnAttack(packet& p)
 {
-    auto kind = p.pop<char>();
+    [[maybe_unused]] auto kind = p.pop<char>();
     auto id = p.pop<Character::id_t>();
-    auto z = p.pop<unsigned int>();
+    [[maybe_unused]] auto z = p.pop<unsigned int>();
 
     World::Map(GetMap()).For(WorldMap::QK_PLAYER | WorldMap::QK_MONSTER, id, [&](Character& character) 
     {

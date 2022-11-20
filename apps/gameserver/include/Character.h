@@ -12,7 +12,7 @@
 class Character : public bango::space::quad_entity
 {
 public:
-    typedef std::uint32_t id_t;
+    using id_t = std::uint32_t;
 
 private:
     id_t   m_id;

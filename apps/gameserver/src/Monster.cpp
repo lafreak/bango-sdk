@@ -22,8 +22,8 @@ Monster::Monster(const std::unique_ptr<InitMonster>& init, int x, int y, int map
     m_x = x;
     m_y = y;
     m_map = map;
-    m_curhp = GetMaxHP();
-    m_curmp = GetMaxMP();
+    // m_curhp = GetMaxHP();
+    // m_curmp = GetMaxMP();
 }
 
 Monster::~Monster()
@@ -72,15 +72,21 @@ void Monster::Summon(std::uint32_t index, std::int32_t x, std::int32_t y, std::i
 std::shared_ptr<Monster> Monster::CreateMonster(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map)
 {
     const auto& init_monster = InitMonster::DB().at(index);
+    std::shared_ptr<Monster> monster;
     switch (init_monster->Race)
     {
         case MR_NOTMAGUNI:
-            return std::make_shared<RegularMonster>(init_monster, x, y, map);
+            monster = std::make_shared<RegularMonster>(init_monster, x, y, map);
+            break;
         case MR_MAGUNI:
-            return std::make_shared<BeheadableMonster>(init_monster, x, y, map);
+            monster = std::make_shared<BeheadableMonster>(init_monster, x, y, map);
+            break;
         default:
-            return std::make_shared<RegularMonster>(init_monster, x, y, map);
+            monster = std::make_shared<RegularMonster>(init_monster, x, y, map);
+            break;
     }
+
+    return monster;
 }
 
 void Monster::RestoreInitialState(int new_x, int new_y)
@@ -105,7 +111,7 @@ void Monster::DistributeExp()
     std::map<id_t, std::uint64_t> party_container;
     for (auto&[id, damage] : hostility_map)
     {
-        World::ForPlayer(id, [&](Player& player){
+        World::ForPlayer(id, [&, damage = damage](Player& player){
             auto player_lock = player.Lock();
             if (player.GetPartyID() != 0)
                 party_container[player.GetPartyID()] += damage;

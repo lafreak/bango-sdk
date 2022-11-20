@@ -24,7 +24,7 @@ struct GenMonster : public bango::processor::db_object<GenMonster>
     std::int32_t MonsterIndex = 0, Map = 0, Area = 0, Amount = 0, SpawnCycle = 0;
     RectXY Rect{};
 
-    unsigned int index() const;
+    unsigned int index() const override;
     virtual void set(bango::processor::lisp::var param) override;
 };
 

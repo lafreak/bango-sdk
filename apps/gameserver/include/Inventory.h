@@ -40,7 +40,7 @@ struct InitItem : public bango::processor::db_object<InitItem>
         unsigned int AttackSpeed=0, MinAttack=0, MaxAttack=0, MinMagic=0, MaxMagic=0;
     } Specialty;
 
-    unsigned int index() const { return Index; }
+    unsigned int index() const override { return Index; }
 
     virtual void set(bango::processor::lisp::var param) override;
 };
@@ -54,7 +54,7 @@ class Item
     std::uint32_t m_local_id;
 
 public:
-    typedef std::shared_ptr<Item> Ptr;
+    using Ptr = std::shared_ptr<Item>;
 
     Item(const InitItem* init, const ITEMINFO& info);
 

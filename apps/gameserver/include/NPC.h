@@ -19,7 +19,7 @@ struct InitNPC : public bango::processor::db_object<InitNPC>
         X, Y, Z,
         DirX, DirY;
 
-    unsigned int index() const { return Index; }
+    unsigned int index() const override { return Index; }
 
     virtual void set(bango::processor::lisp::var param) override
     {

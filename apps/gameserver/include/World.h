@@ -19,7 +19,7 @@ public:
     class Container : public bango::space::quad_entity_container<Container>
     {
     public:
-        typedef std::unordered_map<unsigned int, Character*> CharacterContainer;
+        using CharacterContainer = std::unordered_map<unsigned int, Character *>;
     private:
         std::unordered_map<char, CharacterContainer> m_entities;
 
@@ -44,10 +44,9 @@ private:
     const int m_sight;
 
 public:
-    typedef std::function<void(Player&, Character&, bool)>  AppearEvent;
-    typedef std::function<void(Player&, Character&)>        DisappearEvent;
-    typedef std::function<void(Player&, Character&, 
-        std::int8_t, std::int8_t, std::int8_t, bool)>       MoveEvent;
+    using AppearEvent = std::function<void (Player &, Character &, bool)>;
+    using DisappearEvent = std::function<void (Player &, Character &)>;
+    using MoveEvent = std::function<void (Player &, Character &, std::int8_t, std::int8_t, std::int8_t, bool)>;
 
 private:
     bango::space::quad<Container> m_quad;
@@ -127,11 +126,11 @@ class World
 
     std::vector<std::unique_ptr<WorldMap>> m_maps;
 
-    typedef std::unordered_map<Character::id_t, Player*>                    PlayerContainer;
-    typedef std::unordered_map<Character::id_t, std::shared_ptr<Monster>>   MonsterContainer;
-    typedef std::unordered_map<Character::id_t, std::shared_ptr<NPC>>       NpcContainer;
-    typedef std::list<std::shared_ptr<Spawn>>                               SpawnContainer;
-    typedef std::unordered_map<Character::id_t, std::shared_ptr<Party>>     PartyContainer;
+    using PlayerContainer = std::unordered_map<Character::id_t, Player *>;
+    using MonsterContainer = std::unordered_map<Character::id_t, std::shared_ptr<Monster>>;
+    using NpcContainer = std::unordered_map<Character::id_t, std::shared_ptr<NPC>>;
+    using SpawnContainer = std::list<std::shared_ptr<Spawn>>;
+    using PartyContainer = std::unordered_map<Character::id_t, std::shared_ptr<Party>>;
 
     PlayerContainer m_players;
     MonsterContainer m_monsters;

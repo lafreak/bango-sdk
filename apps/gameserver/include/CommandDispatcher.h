@@ -49,7 +49,7 @@ public:
     };
 
 public:
-    typedef const std::function<void(Player&, Token&)> Task;
+    using Task = const std::function<void (Player &, Token &)>;
 private:
     std::unordered_map<std::string, Task> m_commands;
 
