@@ -2030,7 +2030,11 @@ enum ATTRIBUTE
 	A_AREA,
 	A_MAX,
 	A_SPAWNCYCLE,
-	A_RECT
+	A_RECT,
+
+	// ItemGroup
+	A_GROUP,
+	A_ITEMGROUP
 };
 
 enum ATT

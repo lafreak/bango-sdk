@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 #include "Character.h"
 
@@ -10,8 +11,20 @@
 #include <bango/utils/time.h>
 #include <inix.h>
 
+struct MonsterItemGroup
+{
+    MonsterItemGroup(std::uint32_t rolls, std::uint32_t index)
+        : m_index(index)
+        , m_rolls(rolls)
+    {}
+
+    std::uint32_t m_index;
+    std::uint32_t m_rolls;
+};
+
 struct InitMonster : public bango::processor::db_object<InitMonster>
 {
+    std::vector<MonsterItemGroup> m_itemgroups;
     unsigned int
         Index=0, Race=0, Level=1, AI=0, Range=0, CloseSight=0, FarSight=0, Exp=0,
         Strength=0, Health=0, Inteligence=0, Wisdom=0, Dexterity=0,
@@ -24,53 +37,7 @@ struct InitMonster : public bango::processor::db_object<InitMonster>
 
     unsigned int index() const { return Index; }
 
-    virtual void set(bango::processor::lisp::var param) override
-    {
-        switch (FindAttribute(param.pop()))
-        {
-            case A_INDEX:       Index       = param.pop(); break;
-            case A_RACE:        Race        = param.pop(); break;
-            case A_LEVEL:       Level       = param.pop(); break;
-            case A_AI:          AI          = param.pop(); break;
-            case A_RANGE:       Range       = param.pop(); break;
-            case A_SIGHT:       CloseSight  = param.pop();
-                                FarSight    = param.pop();
-                                break;
-            case A_EXP:         Exp         = param.pop(); break;
-            case A_STR:         Strength    = param.pop(); break;
-            case A_HTH:         Health      = param.pop(); break;
-            case A_INT:         Inteligence = param.pop(); break;
-            case A_WIS:         Wisdom      = param.pop(); break;
-            case A_DEX:         Dexterity   = param.pop(); break;
-            case A_HP:          HP          = param.pop(); break;
-            case A_MP:          MP          = param.pop(); break;
-            case A_ASPEED:      AttackSpeed = param.pop(); break;
-            case A_HIT:         Hit         = param.pop(); break;
-            case A_DODGE:       Dodge       = param.pop(); break;
-            case A_SIZE:        Size        = param.pop(); break;
-            case A_ATTACK:      AttackType  = param.pop();
-                                MinAttack   = param.pop();
-                                MaxAttack   = param.pop();
-                                break;
-            case A_MAGICATTACK: MinMagic    = param.pop();
-                                MaxMagic    = param.pop();
-                                break;
-            case IC_DEFENSE:    Defense[ATT_MEELE]  = param.pop();
-                                Defense[ATT_RANGE]  = param.pop();
-                                break;
-            case A_ABSORB:      Absorb      = param.pop(); break;
-            case A_SPEED:       WalkSpeed   = param.pop();
-                                RunSpeed    = param.pop();
-                                break;
-                                //TODO: Not sure if order is right.
-            case A_RESIST:      Resist[RT_FIRE]     = param.pop();
-                                Resist[RT_ICE]      = param.pop();
-                                Resist[RT_LITNING]  = param.pop();
-                                Resist[RT_CURSE]    = param.pop();
-                                Resist[RT_PALSY]    = param.pop();
-                                break;
-        }
-    }
+    virtual void set(bango::processor::lisp::var param) override;
 };
 
 class Monster : public Character

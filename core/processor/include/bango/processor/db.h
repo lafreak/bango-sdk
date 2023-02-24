@@ -2,7 +2,7 @@
 
 #include <bango/processor/parser.h>
 
-#include <map>
+#include <unordered_map>
 #include <functional>
 #include <memory>
 #include <stdexcept>
@@ -15,7 +15,7 @@ namespace bango { namespace processor {
     public:
         static bool Load(const char* path) { return container::instance().load(path); }
 
-        static const std::map<unsigned int, const std::unique_ptr<T>>& DB() { return container::instance().db(); }
+        static const std::unordered_map<unsigned int, const std::unique_ptr<T>>& DB() { return container::instance().db(); }
 
         static const T* Find(unsigned int index)
         {
@@ -39,10 +39,10 @@ namespace bango { namespace processor {
                 return instance;
             }
 
-            const std::map<unsigned int, const std::unique_ptr<T>>& db() const { return m_db; }
+            const std::unordered_map<unsigned int, const std::unique_ptr<T>>& db() const { return m_db; }
 
         private:
-            std::map<unsigned int, const std::unique_ptr<T>> m_db;
+            std::unordered_map<unsigned int, const std::unique_ptr<T>> m_db;
 
             container() {}
             ~container() 
@@ -76,7 +76,7 @@ namespace bango { namespace processor {
 
                     // BUG: Some configs have multiple types of rows for example InitNPC npc/gennpc. Filter?
                     if (m_db.find(temp.index()) == m_db.end()) 
-                        m_db.insert(std::make_pair(temp.index(), std::unique_ptr<T>(new T(temp) )));
+                        m_db.insert(std::make_pair(temp.index(), std::unique_ptr<T>(std::make_unique<T>(temp) )));
                 }
 
                 return true; 

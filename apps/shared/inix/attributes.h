@@ -231,7 +231,12 @@ namespace inix
         { "area", A_AREA},
         { "max", A_MAX},
         { "cycle", A_SPAWNCYCLE},
-        { "rect", A_RECT}
+        { "rect", A_RECT},
+
+        // ItemGroup
+        {"group", A_GROUP},
+        {"itemgroup", A_ITEMGROUP}
+
     };
 
     static std::map<unsigned int, int> g_wearables = {
