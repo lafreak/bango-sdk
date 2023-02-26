@@ -18,7 +18,7 @@ RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/nul
     add-apt-repository ppa:ubuntu-toolchain-r/test && \
     apt update && \
     rm /usr/share/keyrings/kitware-archive-keyring.gpg && \
-    apt install -y cmake g++-10
+    apt install -y cmake g++-11
 
 # Build DB & Game servers
 RUN apt update && apt install -y libmysqlclient-dev
@@ -29,7 +29,7 @@ COPY ./bin /bango-sdk/bin
 COPY ./core /bango-sdk/core
 COPY CMakeLists.txt /bango-sdk/CMakeLists.txt
 RUN mkdir bango-sdk/build && cd bango-sdk/build && \
-    cmake .. -DUSE_GTEST=ON -DCMAKE_CXX_STANDARD=20 && \
+    cmake .. -DUSE_GTEST=ON -DCMAKE_C_COMPILER=/usr/bin/gcc-11 -DCMAKE_CXX_COMPILER=/usr/bin/g++-11 && \
     make -j$(nproc)
 RUN cd /bango-sdk/bin && \
     ./bangonetwork_test && \
