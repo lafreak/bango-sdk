@@ -3,16 +3,22 @@
 #include "spdlog/spdlog.h"
 
 #include <bango/processor/db.h>
+#include <bango/utils/interval_map.h>
 #include <inix/attributes.h>
+
 
 struct LootInfo
 {
+    LootInfo() = default;
     LootInfo(std::uint32_t index, std::uint32_t chance, std::uint32_t amount, std::uint32_t prefix)
         : m_index(index)
         , m_chance(chance)
         , m_amount(amount)
         , m_prefix(prefix)
     {}
+
+    constexpr bool operator==(const LootInfo&) const = default;
+
     std::uint32_t m_index;
     std::uint32_t m_chance;
     std::uint32_t m_amount;
@@ -21,24 +27,31 @@ struct LootInfo
 
 struct GroupInfo
 {
+    GroupInfo() = default;
     GroupInfo(std::uint32_t index, std::uint32_t chance)
         : m_index(index)
         , m_chance(chance)
     {}
+
+    constexpr bool operator==(const GroupInfo&) const = default;
+
+
     std::uint32_t m_index;
     std::uint32_t m_chance;
 };
 
 struct Group
 {
+    Group() = default;
     std::uint32_t m_index;
-    std::vector<LootInfo> m_loots;
+    bango::utils::interval_map<LootInfo> m_loots_map;
 };
 
-struct ItemGroup 
+struct ItemGroup
 {
+    ItemGroup() = default;
     std::uint32_t m_index;
-    std::vector<GroupInfo> m_groups;
+    bango::utils::interval_map<GroupInfo> m_groups_map;
 };
 
 
@@ -46,7 +59,10 @@ struct LootGroup : public bango::processor::db_object<LootGroup>
 {
     Group m_group;
 
-    unsigned int index() const { return m_group.m_loots.empty() ? 0 : m_group.m_index; }
+    unsigned int index() const { return m_group.m_loots_map.GetMaxKey() != 0 ? m_group.m_index : 0; }
+
+    void IsValueAllowed(LootInfo current) const;
+    void AssignGroup(std::vector<uint32_t> values_from_bracket);
 
     virtual void set(bango::processor::lisp::var param) override;
 };
@@ -56,59 +72,12 @@ struct LootItemGroup : public bango::processor::db_object<LootItemGroup>
 {
     ItemGroup m_itemgroup;
     
-    unsigned int index() const { return m_itemgroup.m_groups.empty() ? 0 : m_itemgroup.m_index; }
+    unsigned int index() const { return m_itemgroup.m_groups_map.GetMaxKey() != 0 ? m_itemgroup.m_index : 0; }
+
+    void IsValueAllowed(GroupInfo current) const;
+    void AssignItemGroup(std::vector<uint32_t> values_from_bracket);
 
     virtual void set(bango::processor::lisp::var param) override;
 };
 
 std::vector<std::uint32_t> GetValuesFromBrackets(bango::processor::lisp::var& param);
-
-template<typename T>
-void SetChances(std::vector<T>& vec,const std::vector<std::uint32_t>& chances_from_config)
-{
-    for(std::size_t i = 1; i < vec.size(); i++)
-    {
-        if(chances_from_config[i] <= chances_from_config[i-1])
-            throw std::runtime_error("Previous chance is larger or equal than current chance for index: " + std::to_string(vec[i - 1].m_index));
-        
-        vec[i].m_chance -= chances_from_config[i-1];
-    }
-}
-
-template<typename T>
-std::vector<std::uint32_t> GetConfigChancesFromVector(const std::vector<T>& vec)
-{
-    std::vector<std::uint32_t> chances;
-    for(auto& item : vec)
-    {
-        if(item.m_chance > 1000)
-            throw std::runtime_error("Chance is larger than 1000 for index: " + std::to_string(item.m_index));
-
-        chances.push_back(item.m_chance);
-    }
-
-    return chances;
-}
-
-template<typename DbObject>
-void CalculateChances()
-{
-    using namespace bango::processor;
-
-    for(auto& [index, group] : DbObject::DB())
-    {
-        if constexpr (std::is_same_v<DbObject, LootGroup>)
-        {
-            auto chances_from_config = GetConfigChancesFromVector(group->m_group.m_loots);
-            SetChances(group->m_group.m_loots, chances_from_config);
-        }
-        else if constexpr (std::is_same_v<DbObject, LootItemGroup>)
-        {
-            auto chances_from_config = GetConfigChancesFromVector(group->m_itemgroup.m_groups);
-            SetChances(group->m_itemgroup.m_groups, chances_from_config);
-        }
-        else
-            throw std::runtime_error("Wrong template argument");
-
-    }
-}

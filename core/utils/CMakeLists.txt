@@ -9,6 +9,7 @@ include_directories(include)
 set(SOURCES
   src/random.cpp
   src/time.cpp
+  src/interval_map.cpp
   )
 
 add_library(bangoutils ${SOURCES})

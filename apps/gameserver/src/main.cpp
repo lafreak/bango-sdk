@@ -61,8 +61,6 @@ int main(int argc, char** argv)
     GenMonster      ::Load("Config/GenMonster.txt");
     LootGroup       ::Load("Config/ItemGroup.txt");
     LootItemGroup   ::Load("Config/ItemGroup.txt");
-    CalculateChances<LootGroup>();
-    CalculateChances<LootItemGroup>();
 
     using namespace std::placeholders;
 
