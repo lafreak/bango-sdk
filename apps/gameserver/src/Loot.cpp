@@ -72,7 +72,7 @@ void LootItemGroup::AssignItemGroup(std::vector<uint32_t> values_from_bracket)
     auto max_key = map.GetMaxKey();
 
     GroupInfo group_info(values_from_bracket.at(1), values_from_bracket.at(0));
-    IsValueAllowed(group_info);
+    ValidateGroupInfo(group_info);
     map.assign(max_key, values_from_bracket.at(0), group_info);
 
 }
@@ -93,12 +93,12 @@ void LootItemGroup::AssignItemGroup(std::vector<uint32_t> values_from_bracket)
     else
         throw std::runtime_error("Invalid amount of values in brackets for group index: " + std::to_string(m_group.m_index));
 
-    IsValueAllowed(loot_info);
+    ValidateLootInfo(loot_info);
     map.assign(max_key, values_from_bracket.at(0), loot_info);
  }
 
 
-void LootItemGroup::IsValueAllowed(GroupInfo current) const
+void LootItemGroup::ValidateGroupInfo(GroupInfo current) const
 {
     if(current.m_chance > 1000)
         throw std::runtime_error("Chance value is higher than 1000 for group index: " + std::to_string(current.m_index) + " in itemgroup:" + std::to_string(m_itemgroup.m_index));
@@ -106,7 +106,7 @@ void LootItemGroup::IsValueAllowed(GroupInfo current) const
         throw std::runtime_error("Chance value is lower than previous chance value for group index: " + std::to_string(current.m_index) + " in itemgroup:" + std::to_string(m_itemgroup.m_index));
 }
 
-void LootGroup::IsValueAllowed(LootInfo current) const
+void LootGroup::ValidateLootInfo(LootInfo current) const
 {
     if(current.m_chance > 1000)
         throw std::runtime_error("Chance value is higher than 1000 for group index: " + std::to_string(current.m_index) + " in itemgroup:" + std::to_string(m_group.m_index));
