@@ -6,95 +6,62 @@
 
 namespace bango::utils
 {
-template<class V>
-class interval_map 
+template<typename V>
+class interval_map
 {
-
-    std::map<std::uint32_t, V> m_map;
-    std::uint32_t max;
 public:
+	V m_val_begin;
+	std::map<std::uint32_t, V> m_map;
+    std::uint32_t max;
 
-    interval_map() 
-    {
-        max = 0;
-        m_map.insert(m_map.begin(), std::make_pair(max, V()));
-    }
+	interval_map()
+		: m_val_begin()
+        , max(0)
+	{}
 
-    void assign(std::uint32_t const& keyBegin, std::uint32_t const& keyEnd, V const& val) 
-    {
-        if (!(keyBegin < keyEnd)) 
-        {
-            return;
-        }
+	void assign(std::uint32_t const& keyBegin, std::uint32_t const& keyEnd, V const& val) 
+	{
+		if (!(keyBegin < keyEnd)) 
+			return;
 
-        V valend;
-        bool erase = true;
+		auto currentKeyBeginValue = this->operator[](keyBegin);
+		auto currentKeyEndValue = this->operator[](keyEnd);
 
-        auto start = m_map.lower_bound(keyBegin);
+		auto beginRemoveIterator = m_map.upper_bound(keyBegin);
+		auto endRemoveIterator = m_map.upper_bound(keyEnd);
 
-        auto delst = start;
+		if (!(currentKeyBeginValue == val))
+		{
+			auto [iterator, success] = m_map.insert_or_assign(keyBegin, val);
+			if (iterator != m_map.begin() && (--iterator)->second == val)
+				--beginRemoveIterator;
+		}
 
+		if (!(currentKeyEndValue == val))
+		{
+			auto [iterator, success] = m_map.insert_or_assign(keyEnd, currentKeyEndValue);
+            max = std::max(max, keyEnd);
+			endRemoveIterator = iterator;
+		}
 
-        if (start != m_map.end() && start->first == keyBegin) 
-        {
-            valend = start->second;
-            start->second = val;
-
-            ++delst;
-            if (delst == m_map.end()) 
-            {
-                erase = false;
-            }
-        }
-        else {
-            auto prev = start;
-            --prev;
-            valend = prev->second;
-            if (prev->second != val) 
-            {
-                auto it = m_map.insert(start, std::make_pair(keyBegin, val));
-                start = it;
-                delst = ++it;
-            }
-        }
-
-        auto end = m_map.lower_bound(keyEnd);
-        auto delfs = end;
-        if (delfs == delst)
-            erase = false;
-        if (end == m_map.end() || end->first != keyEnd) 
-        {
-            auto prev = end;
-            --prev;
-            if (prev != start) 
-            {
-                valend = prev->second;
-            }
-            if (valend != val) 
-            {
-                auto it = m_map.insert(end, std::make_pair(keyEnd, valend));
-                max = std::max(max, keyEnd);
-                delfs = it;
-                if ((++it) != m_map.end() && it->second == valend)
-                    m_map.erase(it);
-            }
-        }
-
-        if (erase && delst != m_map.end() && delfs != m_map.end() && delst->first < delfs->first) 
-        {
-            m_map.erase(delst, delfs);
-        }
-    }
+		if (beginRemoveIterator != m_map.end() && (endRemoveIterator == m_map.end() || beginRemoveIterator->first < endRemoveIterator->first))
+			m_map.erase(beginRemoveIterator, endRemoveIterator);
+	}
 
     std::uint32_t GetMaxKey() const 
     {
         return max;
     }
 
-    V const& operator[](std::uint32_t const& key) const 
-    {
-        return (--m_map.upper_bound(key))->second;
-    }
+	V const& operator[](std::uint32_t const& key) const {
+		auto it = m_map.upper_bound(key);
+		if (it == m_map.begin()) {
+			return m_val_begin;
+		}
+		else {
+			return (--it)->second;
+		}
+	}
 };
 
 } // namespace bango::utils

@@ -34,41 +34,352 @@ TEST(ClockTest, DISABLED_Difference)
     EXPECT_TRUE(((t2-t0).count() >= 3000) && ((t2-t0).count() <= 3010));
 }
 
-TEST(IntervalMap, AssigningElements)
+template <typename V>
+void IsMapCanonic(const interval_map<V>& m)
 {
-    interval_map<std::uint32_t> im;
+	EXPECT_EQ(m.m_val_begin, 0);
+	std::vector<char> vec;
+	vec.push_back(m.m_val_begin);
+	for (auto it : m.m_map)
+	{
+		vec.push_back(it.second);
+	}
 
-    //(group (index 120) (item (100 48 0) (200 1318 0) (350 48 0) (700 1318 0)(1000 1345 0)))
-    im.assign(0, 100, 48);
-    im.assign(100, 200, 1318);
-    im.assign(200, 350, 48);
-    im.assign(350, 700, 1318);
-    im.assign(700, 1000, 1345);
+	for (int i = 1; i < vec.size(); i++)
+	{
+		EXPECT_NE(vec[i], vec[i - 1]);
+	}
+}
 
-    EXPECT_EQ(48, im[0]);
-    EXPECT_EQ(48, im[50]);
-    EXPECT_EQ(48, im[99]);
+TEST(interval_map, EmptyMapTest)
+{
+	interval_map<std::uint32_t> m;
 
-    EXPECT_EQ(1318, im[100]);
-    EXPECT_EQ(1318, im[133]);
-    EXPECT_EQ(1318, im[199]);
+	EXPECT_EQ(m[10], 0);
 
-    EXPECT_EQ(48, im[200]);
-    EXPECT_EQ(48, im[277]);
-    EXPECT_EQ(48, im[349]);
+	EXPECT_EQ(m.m_map.size(), 0);
+	IsMapCanonic(m);
+}
 
-    EXPECT_EQ(1318, im[350]);
-    EXPECT_EQ(1318, im[555]);
-    EXPECT_EQ(1318, im[699]);
+TEST(interval_map, TryToAddTheSameFirstMapElementAs_m_valBegin)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(5, 10, 0);
 
-    EXPECT_EQ(1345, im[700]);
-    EXPECT_EQ(1345, im[823]);
-    EXPECT_EQ(1345, im[999]);
+	EXPECT_EQ(m.m_map.size(), 0);
+	IsMapCanonic(m);
+}
 
-    EXPECT_EQ(0, im[-1]);
-    EXPECT_EQ(0, im[1000]);
-    EXPECT_EQ(0, im[5000000]);
+TEST(interval_map, TryToAddTheSameLastElementAs_m_valBegin)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(5, 10, 20);
+	m.assign(12, 20, 0);
 
+	EXPECT_EQ(m.m_map.size(), 2);
+	IsMapCanonic(m);
+}
+
+TEST(interval_map, TryToAddTheSameFirstMapElementAs_m_valBeginWhenOneElementIsAlreadyInMap)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(10, 20, 20);
+	m.assign(3, 7, 0);
+
+	EXPECT_EQ(m.m_map.size(), 2);
+	IsMapCanonic(m);
+}
+
+TEST(interval_map, OverwriteRangeWithDifferentValue)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(10, 20, 20);
+	m.assign(10, 20, 30);
+
+	EXPECT_EQ(m.m_map.size(), 2);
+	IsMapCanonic(m);
+}
+
+
+TEST(interval_map, AddSingleRangeToEmptyMap)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(20, 50, 20);
+
+
+	for (int i = 0; i < 20; i++)
+        EXPECT_EQ(m[i], 0);
+    for (int i = 20; i < 50; i++)
+        EXPECT_EQ(m[i], 20);
+    for (int i = 50; i < 60; i++)
+        EXPECT_EQ(m[i], 0);
+	EXPECT_EQ(m.m_map.size(), 2);
+	IsMapCanonic(m);
+}
+
+TEST(interval_map, Add2RangesNotOverlappingEachother)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(20, 50, 20);
+	m.assign(60, 80, 30);
+
+	for (int i = 0; i < 20; i++)
+		EXPECT_EQ(m[i], 0);
+	for (int i = 20; i < 50; i++)
+		EXPECT_EQ(m[i], 20);
+	for (int i = 50; i < 60; i++)
+		EXPECT_EQ(m[i], 0);
+	for (int i = 60; i < 80; i++)
+		EXPECT_EQ(m[i], 30);
+	for (int i = 80; i < 100; i++)
+		EXPECT_EQ(m[i], 0);
+	EXPECT_EQ(m.m_map.size(), 4);
+	IsMapCanonic(m);
+}
+
+TEST(interval_map, Add2RangesOverlappingEachotherSmallerOverBigger)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(50, 100, 20);
+	m.assign(60, 80, 30);
+
+	for (int i = 0; i < 50; i++)
+		EXPECT_EQ(m[i], 0);
+	for (int i = 50; i < 60; i++)
+		EXPECT_EQ(m[i], 20);
+	for (int i = 60; i < 80; i++)
+		EXPECT_EQ(m[i], 30);
+	for (int i = 80; i < 100; i++)
+		EXPECT_EQ(m[i], 20);
+	for (int i = 100; i < 130; i++)
+		EXPECT_EQ(m[i], 0);
+	EXPECT_EQ(m.m_map.size(), 4);
+	IsMapCanonic(m);
+}
+
+TEST(interval_map, Add2RangesOverlappingEachotherBiggerOverSmaller)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(60, 80, 20);
+	m.assign(50, 100, 30);
+
+	for (int i = 0; i < 50; i++)
+		EXPECT_EQ(m[i], 0);
+	for (int i = 50; i < 100; i++)
+		EXPECT_EQ(m[i], 30);
+	for (int i = 100; i < 110; i++)
+		EXPECT_EQ(m[i], 0);
+	EXPECT_EQ(m.m_map.size(), 2);
+	IsMapCanonic(m);
+}
+
+
+TEST(interval_map, TwoRangesPartialOverlapOnBeggining)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(50, 100, 20);
+	m.assign(40, 70, 30);
+
+	for (int i = 0; i < 40; i++)
+		EXPECT_EQ(m[i], 0);
+	for (int i = 40; i < 70; i++)
+		EXPECT_EQ(m[i], 30);
+	for (int i = 70; i < 100; i++)
+		EXPECT_EQ(m[i], 20);
+	for (int i = 100; i < 110; i++)
+		EXPECT_EQ(m[i], 0);
+	EXPECT_EQ(m.m_map.size(), 3);
+	IsMapCanonic(m);
+}
+
+
+TEST(interval_map, TwoRangesPartialOverlapOnTheEnd)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(50, 100, 20);
+	m.assign(90, 110, 30);
+
+	for (int i = 0; i < 50; i++)
+		EXPECT_EQ(m[i], 0);
+	for (int i = 50; i < 90; i++)
+		EXPECT_EQ(m[i], 20);
+	for (int i = 90; i < 110; i++)
+		EXPECT_EQ(m[i], 30);
+	for (int i = 110; i < 120; i++)
+		EXPECT_EQ(m[i], 0);
+	EXPECT_EQ(m.m_map.size(), 3);
+	IsMapCanonic(m);
+}
+
+
+TEST(interval_map, TwoRangesPartialOverlapOnTheEndSameValue)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(50, 100, 20);
+	m.assign(90, 110, 20);
+
+	for (int i = 0; i < 50; i++)
+		EXPECT_EQ(m[i], 0);
+	for (int i = 50; i < 110; i++)
+		EXPECT_EQ(m[i], 20);
+	for (int i = 110; i < 120; i++)
+		EXPECT_EQ(m[i], 0);
+	EXPECT_EQ(m.m_map.size(), 2);
+	IsMapCanonic(m);
+}
+
+TEST(interval_map, TwoRangesPartialOverlapOnBegginingSameValue)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(50, 100, 20);
+	m.assign(40, 70, 20);
+
+	for (int i = 0; i < 40; i++)
+		EXPECT_EQ(m[i], 0);
+	for (int i = 40; i < 100; i++)
+		EXPECT_EQ(m[i], 20);
+	for (int i = 100; i < 110; i++)
+		EXPECT_EQ(m[i], 0);
+	EXPECT_EQ(m.m_map.size(), 2);
+	IsMapCanonic(m);
+}
+
+TEST(interval_map, AssignTwoRangesOverlappingEachOtherWithSameValue)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(50, 100, 20);
+	m.assign(40, 70, 20);
+
+	for (int i = 0; i < 40; i++)
+		EXPECT_EQ(m[i], 0);
+	for (int i = 40; i < 100; i++)
+		EXPECT_EQ(m[i], 20);
+	for (int i = 100; i < 110; i++)
+		EXPECT_EQ(m[i], 0);
+	EXPECT_EQ(m.m_map.size(), 2);
+	IsMapCanonic(m);
+}
+
+TEST(interval_map, AssignRangeInsideOtherRangeWithSameValue)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(50, 100, 20);
+	m.assign(60, 90, 20);
+
+	for (int i = 0; i < 50; i++)
+		EXPECT_EQ(m[i], 0);
+	for (int i = 50; i < 100; i++)
+		EXPECT_EQ(m[i], 20);
+	for (int i = 100; i < 110; i++)
+		EXPECT_EQ(m[i], 0);
+	EXPECT_EQ(m.m_map.size(), 2);
+	IsMapCanonic(m);
+}
+
+
+TEST(interval_map, DecreaseInterval)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(50, 100, 20);
+	m.assign(40, 70, 0);
+
+	for (int i = 0; i < 70; i++)
+		EXPECT_EQ(m[i], 0);
+	for (int i = 70; i < 100; i++)
+		EXPECT_EQ(m[i], 20);
+	for (int i = 100; i < 200; i++)
+		EXPECT_EQ(m[i], 0);
+	EXPECT_EQ(m.m_map.size(), 2);
+	IsMapCanonic(m);
+}
+
+TEST(interval_map, ClearInterval)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(50, 100, 20);
+	m.assign(0, 200, 0);
+
+	for (int i = 0; i < 200; i++)
+		EXPECT_EQ(m[i], 0);
+	EXPECT_EQ(m.m_map.size(), 0);
+	IsMapCanonic(m);
+}
+
+TEST(interval_map, KeyBeginGreaterThanKeyEnd)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(100, 50, 20);
+
+	for (int i = 0; i < 200; i++)
+		EXPECT_EQ(m[i], 0);
+	EXPECT_EQ(m.m_map.size(), 0);
+	IsMapCanonic(m);
+}
+
+TEST(interval_map, KeyBeginEqualKeyEnd)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(100, 100, 20);
+
+	for (int i = 0; i < 200; i++)
+		EXPECT_EQ(m[i], 0);
+	EXPECT_EQ(m.m_map.size(), 0);
+	IsMapCanonic(m);
+}
+
+
+TEST(interval_map, KeyBeginIsEqualToKeyEndAndThenAssignNormalRanges)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(100, 100, 20);
+	m.assign(50, 70, 30);
+	m.assign(55, 65, 40);
+
+	EXPECT_EQ(m.m_map.size(), 4);
+	IsMapCanonic(m);
+}
+
+
+TEST(interval_map, PartlyOverwriteRangeWithTwoOtherRanges)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(20, 40, 20);
+	m.assign(35, 60, 30);
+	m.assign(30, 50, 40);
+
+	EXPECT_EQ(m.m_map.size(), 4);
+	IsMapCanonic(m);
+}
+
+
+TEST(interval_map, IncreaseRangeWithSameValue)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(20, 40, 20);
+	m.assign(40, 60, 20);
+
+	EXPECT_EQ(m.m_map.size(), 2);
+	IsMapCanonic(m);
+}
+
+TEST(interval_map, IncreaseRangeWithSameValue2)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(40, 60, 20);
+	m.assign(20, 40, 20);
+
+	EXPECT_EQ(m.m_map.size(), 2);
+	IsMapCanonic(m);
+}
+
+TEST(interval_map, AssignOneRangeAndAddOtherRangeWithDifferentValueUntilKeyBeginOfFirstOne)
+{
+	interval_map<std::uint32_t> m;
+	m.assign(40, 60, 20);
+	m.assign(20, 40, 30);
+
+	EXPECT_EQ(m.m_map.size(), 3);
+	IsMapCanonic(m);
 }
 
 int main(int argc, char **argv)

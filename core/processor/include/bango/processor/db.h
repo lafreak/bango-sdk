@@ -76,7 +76,7 @@ namespace bango { namespace processor {
 
                     // BUG: Some configs have multiple types of rows for example InitNPC npc/gennpc. Filter?
                     if (m_db.find(temp.index()) == m_db.end()) 
-                        m_db.insert(std::make_pair(temp.index(), std::unique_ptr<T>(std::make_unique<T>(temp) )));
+                        m_db.insert(std::make_pair(temp.index(), std::make_unique<T>(temp)));
                 }
 
                 return true; 
