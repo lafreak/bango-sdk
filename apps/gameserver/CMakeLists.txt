@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 project(gameserver)
 
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 20)
 
 include_directories(include)
 include_directories(../shared)
@@ -36,6 +36,7 @@ set(SOURCES
   src/RegularMonster.cpp
   src/Party.cpp
   src/Spawn.cpp
+  src/Loot.cpp
   )
 
 add_executable(gameserver ${SOURCES})

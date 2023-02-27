@@ -10,10 +10,66 @@
 #include "RegularMonster.h"
 #include "BeheadableMonster.h"
 #include "Party.h"
+#include "Loot.h"
 
 #include <bango/network/packet.h>
 
 using namespace bango::network;
+using namespace bango::processor;
+
+
+void InitMonster::set(lisp::var param)
+{
+    switch (FindAttribute(param.pop()))
+    {
+        case A_INDEX:       Index       = param.pop(); break;
+        case A_RACE:        Race        = param.pop(); break;
+        case A_LEVEL:       Level       = param.pop(); break;
+        case A_AI:          AI          = param.pop(); break;
+        case A_RANGE:       Range       = param.pop(); break;
+        case A_SIGHT:       CloseSight  = param.pop();
+                            FarSight    = param.pop();
+                            break;
+        case A_EXP:         Exp         = param.pop(); break;
+        case A_STR:         Strength    = param.pop(); break;
+        case A_HTH:         Health      = param.pop(); break;
+        case A_INT:         Inteligence = param.pop(); break;
+        case A_WIS:         Wisdom      = param.pop(); break;
+        case A_DEX:         Dexterity   = param.pop(); break;
+        case A_HP:          HP          = param.pop(); break;
+        case A_MP:          MP          = param.pop(); break;
+        case A_ASPEED:      AttackSpeed = param.pop(); break;
+        case A_HIT:         Hit         = param.pop(); break;
+        case A_DODGE:       Dodge       = param.pop(); break;
+        case A_SIZE:        Size        = param.pop(); break;
+        case A_ATTACK:      AttackType  = param.pop();
+                            MinAttack   = param.pop();
+                            MaxAttack   = param.pop();
+                            break;
+        case A_MAGICATTACK: MinMagic    = param.pop();
+                            MaxMagic    = param.pop();
+                            break;
+        case IC_DEFENSE:    Defense[ATT_MEELE]  = param.pop();
+                            Defense[ATT_RANGE]  = param.pop();
+                            break;
+        case A_ABSORB:      Absorb      = param.pop(); break;
+        case A_SPEED:       WalkSpeed   = param.pop();
+                            RunSpeed    = param.pop();
+                            break;
+                            //TODO: Not sure if order is right.
+        case A_RESIST:      Resist[RT_FIRE]     = param.pop();
+                            Resist[RT_ICE]      = param.pop();
+                            Resist[RT_LITNING]  = param.pop();
+                            Resist[RT_CURSE]    = param.pop();
+                            Resist[RT_PALSY]    = param.pop();
+                            break;
+        case A_ITEMGROUP:
+        {
+            m_itemgroups.push_back(MonsterItemGroup(param.pop(), param.pop()));
+            break;
+        }
+    }
+}
 
 Monster::Monster(const std::unique_ptr<InitMonster>& init, int x, int y, int map)
     : Character(Character::MONSTER), m_init(init)

@@ -2,13 +2,14 @@ cmake_minimum_required(VERSION 3.5.2 FATAL_ERROR)
 
 project(bangoutils)
 
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 17)
 
 include_directories(include)
 
 set(SOURCES
   src/random.cpp
   src/time.cpp
+  src/interval_map.cpp
   )
 
 add_library(bangoutils ${SOURCES})

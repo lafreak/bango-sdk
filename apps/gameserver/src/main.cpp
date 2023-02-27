@@ -17,6 +17,7 @@
 #include "BeheadableMonster.h"
 #include "RegularMonster.h"
 #include "Spawn.h"
+#include "Loot.h"
 
 #include "CommandDispatcher.h"
 #include "DBListener.h"
@@ -54,10 +55,21 @@ int main(int argc, char** argv)
 
     random::init();
 
-    InitItem    ::Load("Config/InitItem.txt");
-    InitNPC     ::Load("Config/InitNPC.txt");
-    InitMonster ::Load("Config/InitMonster.txt");
-    GenMonster  ::Load("Config/GenMonster.txt");
+    try
+    {
+        InitItem        ::Load("Config/InitItem.txt");
+        InitNPC         ::Load("Config/InitNPC.txt");
+        InitMonster     ::Load("Config/InitMonster.txt");
+        GenMonster      ::Load("Config/GenMonster.txt");
+        LootGroup       ::Load("Config/ItemGroup.txt");
+        LootItemGroup   ::Load("Config/ItemGroup.txt");
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+        return 0;
+    }
+
 
     using namespace std::placeholders;
 
