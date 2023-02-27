@@ -4,7 +4,11 @@ namespace bango { namespace network {
 
     void writable::write(const packet& p) const
     {
-        m_client->async_write({p.buffer(), nullptr});
+        try {
+            m_client->async_write({p.buffer(), nullptr});
+        } catch (tacopie::tacopie_error& err) {
+            // Ignore errors in case the socket is already disconnected.
+        }
     }
 
     void writable::write(unsigned char type) const
