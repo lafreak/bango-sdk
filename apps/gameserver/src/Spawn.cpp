@@ -63,7 +63,7 @@ void Spawn::RespawnOnWorld(const std::shared_ptr<Monster>& monster)
 
 void Spawn::CreateSpawn()
 {
-    for (int i = 0; i < GetAmount(); i++)
+    for (std::uint32_t i = 0; i < GetAmount(); i++)
     {
         try
         {

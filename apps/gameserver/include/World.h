@@ -41,7 +41,7 @@ public:
     };
 
 private:
-    const int m_sight;
+    const std::uint32_t m_sight;
 
 public:
     using AppearEvent = std::function<void (Player &, Character &, bool)>;
@@ -61,7 +61,7 @@ private:
     std::recursive_mutex m_rmtx;
 
 public:
-    WorldMap(const int width, const int sight, const size_t max_container_entity=QUADTREE_MAX_NODES)
+    WorldMap(const int width, const std::uint32_t sight, const size_t max_container_entity=QUADTREE_MAX_NODES)
         : m_sight(sight), m_quad(bango::space::square{{0,0}, width}, max_container_entity)
     {
         m_entities[Character::PLAYER]={};
@@ -276,7 +276,7 @@ public:
         entity->m_y = y;
         entity->m_z = z;
 
-        if (map >= 0 && map < MAP_COUNT)
+        if (map < MAP_COUNT)
             entity->m_map = map;
 
         Map(entity->GetMap()).Add(entity);

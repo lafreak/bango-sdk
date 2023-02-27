@@ -32,7 +32,7 @@ Monster::~Monster()
     spdlog::trace("Monster destructor id: {}", GetID());
 }
 
-packet Monster::BuildAppearPacket(bool hero) const
+packet Monster::BuildAppearPacket([[maybe_unused]] bool hero) const
 {
     //                                wdddwddIIsbdsIIb
     return packet(S2C_CREATEMONSTER, "wdddwddIIsbdsIIb", 
@@ -60,7 +60,7 @@ packet Monster::BuildDisappearPacket() const
     return packet(S2C_REMOVEMONSTER, "d", GetID());
 }
 
-packet Monster::BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const
+[[maybe_unused]] packet Monster::BuildMovePacket([[maybe_unused]] std::int8_t delta_x,[[maybe_unused]] std::int8_t delta_y,[[maybe_unused]] std::int8_t delta_z,[[maybe_unused]] bool stop) const
 {
     return packet();
 }

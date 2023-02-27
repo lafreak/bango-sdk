@@ -72,7 +72,7 @@ bool Character::CheckHit(Character* target, int bonus)
     if (otp < -41)
         otp = -41;
 
-    int chance =0;
+    std::uint32_t chance =0;
 
     if (otp < 0)
         chance = 100 - g_nHitChance[abs(otp)];

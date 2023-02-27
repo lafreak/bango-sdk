@@ -160,7 +160,7 @@ namespace bango { namespace network {
     template<typename T>
     inline T packet::pop()
     {
-        if (m_end-m_begin < sizeof(T))
+        if (static_cast<std::uint32_t>(m_end-m_begin) < sizeof(T))
 #ifdef PACKET_EXCEPTIONS
             throw std::runtime_error("packet no more data");
 #else

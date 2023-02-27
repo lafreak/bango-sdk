@@ -124,7 +124,7 @@ std::uint8_t Party::GetTopLevel() const
     return m_top_level;
 }
 
-void Party::DistributeExp(std::uint64_t exp, std::uint8_t monster_level, bango::space::point p)
+[[maybe_unused]] void Party::DistributeExp([[maybe_unused]] std::uint64_t exp,[[maybe_unused]] std::uint8_t monster_level,[[maybe_unused]] bango::space::point p)
 {
     //TODO
     std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);

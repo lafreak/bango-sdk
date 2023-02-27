@@ -113,7 +113,7 @@ int main(int argc, char** argv)
     CommandDispatcher::Register("/get",             std::bind(&Player::OnGetItem,           _1, _2));
     CommandDispatcher::Register("/move2",           std::bind(&Player::OnMoveTo,            _1, _2));
 
-    CommandDispatcher::Register("/online", [&](Player& player, CommandDispatcher::Token& token) {
+    CommandDispatcher::Register("/online", [&](Player& player,[[maybe_unused]] CommandDispatcher::Token& token) {
         std::string message = std::string{"Current Online: "} + std::to_string(Socket::GameServer().get_online());
         player.write(packet(S2C_NOTICE, "s", message.c_str()));
     });
@@ -135,15 +135,15 @@ int main(int argc, char** argv)
         });
     });
 
-    CommandDispatcher::Register("/fort", [&](Player& player, CommandDispatcher::Token& token) {
+    CommandDispatcher::Register("/fort", [&](Player& player,[[maybe_unused]] CommandDispatcher::Token& token) {
         player.Teleport(268622, 242944);
     });
 
-    CommandDispatcher::Register("/ghost", [&](Player& player, CommandDispatcher::Token& token) {
+    CommandDispatcher::Register("/ghost", [&](Player& player,[[maybe_unused]] CommandDispatcher::Token& token) {
         player.Teleport(265500, 238054);
     });
 
-    CommandDispatcher::Register("/tp", [&](Player& player, CommandDispatcher::Token& token) {
+    CommandDispatcher::Register("/tp", [&](Player& player,[[maybe_unused]] CommandDispatcher::Token& token) {
         player.Teleport(255680, 229056);
     });
 
