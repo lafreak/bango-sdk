@@ -55,33 +55,27 @@ struct ItemGroup
 };
 
 
-class LootGroup : public bango::processor::db_object<LootGroup>
+struct LootGroup : public bango::processor::db_object<LootGroup>
 {
     Group m_group;
-public:
 
     unsigned int index() const { return m_group.m_loots_map.GetMaxKey() != 0 ? m_group.m_index : 0; }
 
     void ValidateLootInfo(LootInfo current) const;
     void AssignGroup(std::vector<uint32_t> values_from_bracket);
-    Group& GetGroup() { return m_group; }
-    Group GetGroup() const { return m_group; }
 
     virtual void set(bango::processor::lisp::var param) override;
 };
 
 
-class LootItemGroup : public bango::processor::db_object<LootItemGroup>
+struct LootItemGroup : public bango::processor::db_object<LootItemGroup>
 {
     ItemGroup m_itemgroup;
-public:
     
     unsigned int index() const { return m_itemgroup.m_groups_map.GetMaxKey() != 0 ? m_itemgroup.m_index : 0; }
 
     void ValidateGroupInfo(GroupInfo current) const;
     void AssignItemGroup(std::vector<uint32_t> values_from_bracket);
-    ItemGroup& GetItemGroup()  { return m_itemgroup; }
-    ItemGroup GetItemGroup() const { return m_itemgroup; }
 
     virtual void set(bango::processor::lisp::var param) override;
 };

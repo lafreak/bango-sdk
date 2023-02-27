@@ -9,11 +9,11 @@ namespace bango::utils
 template<typename V>
 class interval_map
 {
-public:
+
 	V m_val_begin;
 	std::map<std::uint32_t, V> m_map;
     std::uint32_t max;
-
+public:
 	interval_map()
 		: m_val_begin()
         , max(0)
@@ -61,6 +61,16 @@ public:
 		else {
 			return (--it)->second;
 		}
+	}
+
+	auto GetMap() const
+	{
+		return m_map;
+	}
+
+	std::size_t size() const
+	{
+		return m_map.size();
 	}
 };
 
