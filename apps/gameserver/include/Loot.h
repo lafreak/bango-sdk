@@ -63,6 +63,7 @@ struct LootGroup : public bango::processor::db_object<LootGroup>
 
     void ValidateLootInfo(LootInfo current) const;
     void AssignGroup(std::vector<uint32_t> values_from_bracket);
+    LootInfo RollLoot() const;
 
     virtual void set(bango::processor::lisp::var param) override;
 };
@@ -76,6 +77,7 @@ struct LootItemGroup : public bango::processor::db_object<LootItemGroup>
 
     void ValidateGroupInfo(GroupInfo current) const;
     void AssignItemGroup(std::vector<uint32_t> values_from_bracket);
+    const LootGroup* RollGroup() const;
 
     virtual void set(bango::processor::lisp::var param) override;
 };

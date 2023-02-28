@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Loot.h"
 #include "Character.h"
 
 #include <bango/processor/db.h>
@@ -13,7 +14,7 @@
 
 struct MonsterItemGroup
 {
-    MonsterItemGroup(std::uint32_t rolls, std::uint32_t index)
+    MonsterItemGroup(std::uint32_t index, std::uint32_t rolls)
         : m_index(index)
         , m_rolls(rolls)
     {}
@@ -90,6 +91,8 @@ public:
     bango::network::packet BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const override;
     static void Summon(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map);
     static std::shared_ptr<Monster> CreateMonster(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map);
+
+    std::vector<LootInfo> RollLoot();
 protected:
     virtual void Die() override;
 };

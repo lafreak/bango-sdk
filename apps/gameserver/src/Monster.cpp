@@ -10,7 +10,6 @@
 #include "RegularMonster.h"
 #include "BeheadableMonster.h"
 #include "Party.h"
-#include "Loot.h"
 
 #include <bango/network/packet.h>
 
@@ -65,7 +64,12 @@ void InitMonster::set(lisp::var param)
                             break;
         case A_ITEMGROUP:
         {
-            m_itemgroups.push_back(MonsterItemGroup(param.pop(), param.pop()));
+            std::uint32_t itemgroup_index = param.pop();
+            std::uint32_t rolls = param.pop();
+            if(!LootItemGroup::Find(itemgroup_index))
+                throw std::runtime_error("ItemGroup index: " + std::to_string(itemgroup_index) + " not found");
+
+            m_itemgroups.push_back(MonsterItemGroup(itemgroup_index, rolls));
             break;
         }
     }
@@ -175,6 +179,10 @@ void Monster::DistributeExp()
 
     }
     // TODO: Distribute party container EXP.
+
+    // TODO: Decide which player(party) will recieve loot.
+    RollLoot();
+
     hostility_map.clear();
     total_hostility = 0;
 }
@@ -182,4 +190,44 @@ void Monster::DistributeExp()
 void Monster::Die()
 {
     DistributeExp();
+}
+
+std::vector<LootInfo> Monster::RollLoot()
+{
+    std::vector<LootInfo> loot_vec;
+
+    for(const auto& itemgroup : m_init->m_itemgroups)
+    {
+        auto* loot_itemgroup = LootItemGroup::Find(itemgroup.m_index);
+
+        if (!loot_itemgroup)
+        {
+            spdlog::error("ItemGroup of index {} not found.", itemgroup.m_index);
+            continue;
+        }
+
+        for(int i = 0; i < itemgroup.m_rolls; i++)
+        {
+            auto* rolled_group = loot_itemgroup->RollGroup();
+
+            // If roll was not successful it returns index of 0.
+            if(rolled_group->index() == 0)
+                continue;
+
+            auto loot_group = LootGroup::Find(rolled_group->index());
+
+            if(!loot_group)
+            {
+                spdlog::error("Group of index {} not found.", rolled_group->index());
+                continue;
+            }
+
+            auto loot_info = loot_group->RollLoot();
+
+            if(loot_info.m_index != 0)
+                loot_vec.push_back(loot_info);
+        }
+    }
+
+    return loot_vec;
 }

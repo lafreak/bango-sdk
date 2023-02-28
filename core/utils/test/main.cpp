@@ -425,8 +425,6 @@ TEST(interval_map, AssignOneRangeAndAddOtherRangeWithDifferentValueUntilKeyBegin
 
 int main(int argc, char **argv)
 {
-    random::init();
-
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

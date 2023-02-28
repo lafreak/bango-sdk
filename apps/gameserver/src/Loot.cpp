@@ -1,5 +1,7 @@
 #include "Loot.h"
 
+#include <bango/utils/random.h>
+
 using namespace bango::processor;
 
 void LootGroup::set(lisp::var param)
@@ -60,6 +62,9 @@ void LootItemGroup::AssignItemGroup(std::vector<uint32_t> values_from_bracket)
     if(values_from_bracket.size() != 2)
         throw std::runtime_error("Invalid amount of values in brackets for itemgroup index: " + std::to_string(m_itemgroup.m_index));
 
+    if(!LootGroup::Find(values_from_bracket.at(1)))
+        throw std::runtime_error("Group index: " + std::to_string(values_from_bracket.at(1)) + " not found");
+
     auto& map = m_itemgroup.m_groups_map;
     auto max_key = map.GetMaxKey();
 
@@ -106,3 +111,14 @@ void LootGroup::ValidateLootInfo(LootInfo current) const
         throw std::runtime_error("Chance value is lower than previous chance value for loot index: " + std::to_string(current.m_index) + " in group:" + std::to_string(m_group.m_index));
 }
 
+LootInfo LootGroup::RollLoot() const
+{
+    return m_group.m_loots_map[bango::utils::random::between(0, 1000)];
+}
+
+const LootGroup* LootItemGroup::RollGroup() const
+{
+    auto group_index = m_itemgroup.m_groups_map[bango::utils::random::between(0, 1000)].m_index;
+    auto* group = LootGroup::Find(group_index);
+    return group != nullptr ? group : nullptr;
+}
