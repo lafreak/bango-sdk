@@ -118,8 +118,8 @@ namespace bango { namespace network {
                 meta.m_remaining_buffer = buffer;
             }
 
-            client->async_read({MAX_PACKET_LENGTH, [this, session_with_meta_ptr, client](const taco_read_result_t& res) {
-                on_new_message(session_with_meta_ptr, client, res);
+            client->async_read({MAX_PACKET_LENGTH, [this, session_with_meta_ptr, client](const taco_read_result_t& result) {
+                on_new_message(session_with_meta_ptr, client, result);
             }});
         }
         else

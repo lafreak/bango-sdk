@@ -336,7 +336,7 @@ void Player::InsertItem(unsigned short index, unsigned int num)
             info.CurEnd = init->Endurance;
             info.Num = init->Plural ? num : 1;
         } catch (const std::exception&) { return; }
-        auto item = m_inventory.Insert(info);
+        item = m_inventory.Insert(info);
         write(((packet)*item).change_type(S2C_INSERTITEM));
         //db insert
         packet out(S2D_INSERTITEM);
