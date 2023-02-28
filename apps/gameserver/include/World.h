@@ -41,7 +41,7 @@ public:
     };
 
 private:
-    const int m_sight;
+    const std::uint32_t m_sight;
 
 public:
     typedef std::function<void(Player&, Character&, bool)>  AppearEvent;
@@ -234,8 +234,10 @@ public:
             {
             case Character::MONSTER:
                 Get().m_monsters.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Monster>(entity)));
+                break;
             case Character::NPC:
                 Get().m_npcs.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<NPC>(entity)));
+                break;
             }
 
         }

@@ -619,7 +619,7 @@ void Player::OnPlayerAnimation(packet& p)
     auto id = p.pop<Character::id_t>();
     auto animation = p.pop<unsigned char>();
 
-    if (animation >= 0 && animation < 20)
+    if (animation < 20)
         WriteInSight(packet(S2C_PLAYER_ANIMATION, "db", GetID(), animation));
 }
 
@@ -695,7 +695,7 @@ void Player::OnAttack(packet& p)
 
 void Player::OnAskParty(packet& p)
 {
-    auto invited_player_id = p.pop<int>();
+    auto invited_player_id = p.pop<id_t>();
     if (invited_player_id == GetID())
         return;
 
@@ -727,7 +727,7 @@ void Player::OnAskParty(packet& p)
 void Player::OnAskPartyAnswer(packet& p)
 {
     auto answer = p.pop<bool>();
-    auto inviter_id = p.pop<int>();
+    auto inviter_id = p.pop<id_t>();
 
     if (inviter_id == GetID())
         return;
@@ -800,7 +800,7 @@ void Player::OnExileParty(bango::network::packet& p)
     BanFromParty(banned_player_id);
 }
 
-void Player::BanFromParty(int banned_player_id)
+void Player::BanFromParty(id_t banned_player_id)
 {
     if (banned_player_id == GetID())
         return;
@@ -844,7 +844,7 @@ void Player::UpdateExp(std::int64_t amount)
     // Decrease
     if (amount < 0)
     {
-        if (std::abs(amount) > m_data.Exp)
+        if (static_cast<std::uint64_t>(std::abs(amount)) > m_data.Exp)
             amount = -static_cast<std::int64_t>(m_data.Exp);
         m_data.Exp += amount;
         SendProperty(P_EXP, amount);

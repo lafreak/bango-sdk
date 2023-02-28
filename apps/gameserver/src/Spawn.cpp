@@ -40,7 +40,7 @@ void GenMonster::set(bango::processor::lisp::var param)
 
 void Spawn::Tick()
 {
-    if((time::now() - m_next_spawn_cycle).count() < GetSpawnCycle())
+    if((time::now() - m_next_spawn_cycle).count() < static_cast<std::uint64_t>(GetSpawnCycle()))
         return;
 
     //NOTE: We always have thread-safety by making sure we always call RemoveDeadMonsters and Spawn::Tick
