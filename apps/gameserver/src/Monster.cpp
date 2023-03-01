@@ -65,11 +65,11 @@ void InitMonster::set(lisp::var param)
         case A_ITEMGROUP:
         {
             std::uint32_t itemgroup_index = param.pop();
-            std::uint32_t rolls = param.pop();
+            std::uint32_t number_of_rolls = param.pop();
             if(!LootItemGroup::Find(itemgroup_index))
                 throw std::runtime_error("ItemGroup index: " + std::to_string(itemgroup_index) + " not found");
 
-            m_itemgroups.push_back(MonsterItemGroup(itemgroup_index, rolls));
+            m_itemgroups.push_back(MonsterItemGroup(itemgroup_index, number_of_rolls));
             break;
         }
     }
@@ -180,16 +180,20 @@ void Monster::DistributeExp()
     }
     // TODO: Distribute party container EXP.
 
-    // TODO: Decide which player(party) will recieve loot.
-    RollLoot();
-
     hostility_map.clear();
     total_hostility = 0;
+}
+
+void Monster::DistributeLoot()
+{
+    // TODO: Decide which player(party) will recieve loot.
+    RollLoot();
 }
 
 void Monster::Die()
 {
     DistributeExp();
+    DistributeLoot();
 }
 
 std::vector<LootInfo> Monster::RollLoot()
@@ -200,13 +204,7 @@ std::vector<LootInfo> Monster::RollLoot()
     {
         auto* loot_itemgroup = LootItemGroup::Find(itemgroup.m_index);
 
-        if (!loot_itemgroup)
-        {
-            spdlog::error("ItemGroup of index {} not found.", itemgroup.m_index);
-            continue;
-        }
-
-        for(int i = 0; i < itemgroup.m_rolls; i++)
+        for(int i = 0; i < itemgroup.m_number_of_rolls; i++)
         {
             auto* rolled_group = loot_itemgroup->RollGroup();
 

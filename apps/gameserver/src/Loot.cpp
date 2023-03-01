@@ -62,13 +62,15 @@ void LootItemGroup::AssignItemGroup(std::vector<uint32_t> values_from_bracket)
     if(values_from_bracket.size() != 2)
         throw std::runtime_error("Invalid amount of values in brackets for itemgroup index: " + std::to_string(m_itemgroup.m_index));
 
-    if(!LootGroup::Find(values_from_bracket.at(1)))
-        throw std::runtime_error("Group index: " + std::to_string(values_from_bracket.at(1)) + " not found");
+    std::uint32_t group_index = values_from_bracket.at(1);
+
+    if(!LootGroup::Find(group_index))
+        throw std::runtime_error("Group index: " + std::to_string(group_index) + " not found");
 
     auto& map = m_itemgroup.m_groups_map;
     auto max_key = map.GetMaxKey();
 
-    GroupInfo group_info(values_from_bracket.at(1), values_from_bracket.at(0));
+    GroupInfo group_info(group_index, values_from_bracket.at(0));
     ValidateGroupInfo(group_info);
     map.assign(max_key, values_from_bracket.at(0), group_info);
 
@@ -83,10 +85,14 @@ void LootItemGroup::AssignItemGroup(std::vector<uint32_t> values_from_bracket)
 
     LootInfo loot_info;
 
+    
+
     if(values_from_bracket.size() == 2)
         loot_info = LootInfo(geon_index, values_from_bracket.at(0), values_from_bracket.at(1), 0);
     else if(values_from_bracket.size() == 3)
         loot_info = LootInfo(values_from_bracket.at(1), values_from_bracket.at(0), 1, values_from_bracket.at(2));
+    else if(values_from_bracket.size() == 4)
+        loot_info = LootInfo(values_from_bracket.at(1), values_from_bracket.at(0), values_from_bracket.at(3), values_from_bracket.at(2));
     else
         throw std::runtime_error("Invalid amount of values in brackets for group index: " + std::to_string(m_group.m_index));
 
@@ -113,12 +119,12 @@ void LootGroup::ValidateLootInfo(LootInfo current) const
 
 LootInfo LootGroup::RollLoot() const
 {
-    return m_group.m_loots_map[bango::utils::random::between(0, 1000)];
+    return m_group.m_loots_map[bango::utils::random::between(1, 1000)];
 }
 
 const LootGroup* LootItemGroup::RollGroup() const
 {
-    auto group_index = m_itemgroup.m_groups_map[bango::utils::random::between(0, 1000)].m_index;
+    auto group_index = m_itemgroup.m_groups_map[bango::utils::random::between(1, 1000)].m_index;
     auto* group = LootGroup::Find(group_index);
     return group != nullptr ? group : nullptr;
 }

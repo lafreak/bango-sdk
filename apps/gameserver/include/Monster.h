@@ -16,11 +16,11 @@ struct MonsterItemGroup
 {
     MonsterItemGroup(std::uint32_t index, std::uint32_t rolls)
         : m_index(index)
-        , m_rolls(rolls)
+        , m_number_of_rolls(rolls)
     {}
 
     std::uint32_t m_index;
-    std::uint32_t m_rolls;
+    std::uint32_t m_number_of_rolls;
 };
 
 struct InitMonster : public bango::processor::db_object<InitMonster>
@@ -47,6 +47,8 @@ class Monster : public Character
     std::unordered_map<id_t, std::uint64_t> hostility_map;
     std::uint64_t total_hostility;
     void DistributeExp();
+    void DistributeLoot();
+    std::vector<LootInfo> RollLoot();
 
 public:
     Monster(const std::unique_ptr<InitMonster>& init, int x, int y, int map=0);
@@ -92,7 +94,6 @@ public:
     static void Summon(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map);
     static std::shared_ptr<Monster> CreateMonster(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map);
 
-    std::vector<LootInfo> RollLoot();
 protected:
     virtual void Die() override;
 };
