@@ -41,7 +41,7 @@ public:
     };
 
 private:
-    const std::uint32_t m_sight;
+    const int m_sight;
 
 public:
     typedef std::function<void(Player&, Character&, bool)>  AppearEvent;

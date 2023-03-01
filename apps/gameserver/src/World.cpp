@@ -3,6 +3,7 @@
 #include "spdlog/spdlog.h"
 
 #include <cstdint>
+#include <utility>
 #include <list>
 
 #include "Player.h"
@@ -276,7 +277,7 @@ void WorldMap::ForEachPlayerAround(const quad_entity& qe, unsigned int radius, c
         for (auto& p : container->players()) {
             auto player = (Player*) p.second;
 
-            if (player->distance(center) <= radius)
+            if (std::cmp_less_equal(player->distance(center), radius))
                 callback(*player);
         }
     });
@@ -293,7 +294,7 @@ void WorldMap::ForEachAround(const quad_entity& qe, unsigned int radius, QUERY_K
             for (auto& p : container->players()) {
                 auto player = (Player*) p.second;
 
-                if (player->distance(center) <= radius)
+                if (std::cmp_less_equal(player->distance(center), radius))
                     callback(*player);
             }
         }
@@ -302,7 +303,7 @@ void WorldMap::ForEachAround(const quad_entity& qe, unsigned int radius, QUERY_K
             for (auto& p : container->monsters()) {
                 auto monster = (Monster*) p.second;
 
-                if (monster->distance(center) <= radius)
+                if (std::cmp_less_equal(monster->distance(center), radius))
                     callback(*monster);
             }
         }
@@ -311,7 +312,7 @@ void WorldMap::ForEachAround(const quad_entity& qe, unsigned int radius, QUERY_K
             for (auto& p : container->npcs()) {
                 auto npc = (NPC*) p.second;
 
-                if (npc->distance(center) <= radius)
+                if (std::cmp_less_equal(npc->distance(center), radius))
                     callback(*npc);
             }
         }

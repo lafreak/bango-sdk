@@ -1,6 +1,7 @@
 #include "Player.h"
 
 #include <string>
+#include <utility>
 
 #include "spdlog/spdlog.h"
 
@@ -844,7 +845,7 @@ void Player::UpdateExp(std::int64_t amount)
     // Decrease
     if (amount < 0)
     {
-        if (static_cast<std::uint64_t>(std::abs(amount)) > m_data.Exp)
+        if (std::cmp_greater(std::abs(amount), m_data.Exp))
             amount = -static_cast<std::int64_t>(m_data.Exp);
         m_data.Exp += amount;
         SendProperty(P_EXP, amount);
@@ -853,7 +854,7 @@ void Player::UpdateExp(std::int64_t amount)
 
     if (GetLevel() >= MAX_LEVEL)
     {
-        spdlog::warn("Level is too large to exp exp: {}", GetLevel());
+        spdlog::warn("Level is too large to recieve exp: {}", GetLevel());
         return;   
     }
 

@@ -37,13 +37,13 @@ namespace bango { namespace space {
         int m_x, m_y;
         unsigned char m_type;
         //! \return Distance between self and 2D point given as parameter.
-        std::uint32_t distance(point p) const { return distance(p.x, p.y); }
+        int distance(point p) const { return distance(p.x, p.y); }
         //! \param x Coordinate X
         //! \param y Coordinate Y
         //! \return Distance between self and pair of numbers representing 2D point given as paramter.
-        std::uint32_t distance(int x, int y) const { return (int) sqrt(pow(m_x-x, 2)+pow(m_y-y, 2)); }
+        int distance(int x, int y) const { return (int) sqrt(pow(m_x-x, 2)+pow(m_y-y, 2)); }
         //! \return Distance between self and entity given as parameter.
-        std::uint32_t distance(const quad_entity* qe) const { return distance(qe->m_x, qe->m_y); }
+        int distance(const quad_entity* qe) const { return distance(qe->m_x, qe->m_y); }
     };
 
     //! Container interface for quad leafs. 
