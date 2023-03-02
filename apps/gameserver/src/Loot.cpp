@@ -54,7 +54,6 @@ std::vector<std::uint32_t> GetValuesFromBrackets(lisp::var& param)
 
     param = param.cdr();
 
-
     return values_from_bracket;
 }
 
