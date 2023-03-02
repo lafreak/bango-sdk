@@ -92,6 +92,9 @@ namespace bango { namespace processor {
                             continue;
                     }
 
+                    if(name_filter.has_value() && std::strcmp(name, name_filter.value()) == 0)
+                        continue;
+
                     T temp = {};
 
                     while (param.consp())
