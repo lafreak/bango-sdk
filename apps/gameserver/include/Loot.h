@@ -40,24 +40,24 @@ struct GroupInfo
     std::uint32_t m_chance;
 };
 
-struct Group
+struct Group2
 {
-    Group() = default;
+    Group2() = default;
     std::uint32_t m_index;
     bango::utils::interval_map<LootInfo> m_loots_map;
 };
 
-struct ItemGroup
+struct ItemGroup2
 {
-    ItemGroup() = default;
+    ItemGroup2() = default;
     std::uint32_t m_index;
     bango::utils::interval_map<GroupInfo> m_groups_map;
 };
 
 
-struct LootGroup : public bango::processor::db_object<LootGroup>
+struct Group : public bango::processor::db_object<Group>
 {
-    Group m_group;
+    Group2 m_group;
 
     unsigned int index() const { return m_group.m_index; }
 
@@ -69,15 +69,15 @@ struct LootGroup : public bango::processor::db_object<LootGroup>
 };
 
 
-struct LootItemGroup : public bango::processor::db_object<LootItemGroup>
+struct ItemGroup : public bango::processor::db_object<ItemGroup>
 {
-    ItemGroup m_itemgroup;
+    ItemGroup2 m_itemgroup;
     
     unsigned int index() const { return m_itemgroup.m_index; }
 
     void ValidateGroupInfo(GroupInfo current) const;
     void AssignItemGroup(std::vector<uint32_t> values_from_bracket);
-    const LootGroup* RollGroup() const;
+    const Group* RollGroup() const;
 
     virtual void set(bango::processor::lisp::var param) override;
 };

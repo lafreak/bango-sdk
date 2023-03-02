@@ -66,7 +66,7 @@ void InitMonster::set(lisp::var param)
         {
             std::uint32_t itemgroup_index = param.pop();
             std::uint32_t number_of_rolls = param.pop();
-            if(!LootItemGroup::Find(itemgroup_index))
+            if(!ItemGroup::Find(itemgroup_index))
                 throw std::runtime_error("ItemGroup index: " + std::to_string(itemgroup_index) + " not found");
 
             m_itemgroups.push_back(MonsterItemGroup(itemgroup_index, number_of_rolls));
@@ -202,7 +202,7 @@ std::vector<LootInfo> Monster::RollLoot()
 
     for(const auto& itemgroup : m_init->m_itemgroups)
     {
-        auto* loot_itemgroup = LootItemGroup::Find(itemgroup.m_index);
+        auto* loot_itemgroup = ItemGroup::Find(itemgroup.m_index);
 
         for(int i = 0; i < itemgroup.m_number_of_rolls; i++)
         {
@@ -212,7 +212,7 @@ std::vector<LootInfo> Monster::RollLoot()
             if(rolled_group->index() == 0)
                 continue;
 
-            auto loot_group = LootGroup::Find(rolled_group->index());
+            auto loot_group = Group::Find(rolled_group->index());
 
             if(!loot_group)
             {

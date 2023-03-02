@@ -4,7 +4,7 @@
 
 using namespace bango::processor;
 
-void LootGroup::set(lisp::var param)
+void Group::set(lisp::var param)
 {
     switch (FindAttribute(param.pop()))
     {
@@ -22,7 +22,7 @@ void LootGroup::set(lisp::var param)
     }
 }
 
-void LootItemGroup::set(lisp::var param)
+void ItemGroup::set(lisp::var param)
 {
     switch (FindAttribute(param.pop()))
     {
@@ -54,17 +54,18 @@ std::vector<std::uint32_t> GetValuesFromBrackets(lisp::var& param)
 
     param = param.cdr();
 
+
     return values_from_bracket;
 }
 
-void LootItemGroup::AssignItemGroup(std::vector<uint32_t> values_from_bracket)
+void ItemGroup::AssignItemGroup(std::vector<uint32_t> values_from_bracket)
 {
     if(values_from_bracket.size() != 2)
         throw std::runtime_error("Invalid amount of values in brackets for itemgroup index: " + std::to_string(m_itemgroup.m_index));
 
     std::uint32_t group_index = values_from_bracket.at(1);
 
-    if(!LootGroup::Find(group_index))
+    if(!Group::Find(group_index))
         throw std::runtime_error("Group index: " + std::to_string(group_index) + " not found");
 
     auto& map = m_itemgroup.m_groups_map;
@@ -76,7 +77,7 @@ void LootItemGroup::AssignItemGroup(std::vector<uint32_t> values_from_bracket)
 
 }
 
- void LootGroup::AssignGroup(std::vector<uint32_t> values_from_bracket)
+ void Group::AssignGroup(std::vector<uint32_t> values_from_bracket)
  {
     static constexpr std::uint32_t geon_index = 31;
 
@@ -101,7 +102,7 @@ void LootItemGroup::AssignItemGroup(std::vector<uint32_t> values_from_bracket)
  }
 
 
-void LootItemGroup::ValidateGroupInfo(GroupInfo current) const
+void ItemGroup::ValidateGroupInfo(GroupInfo current) const
 {
     if(current.m_chance > 1000)
         throw std::runtime_error("Chance value is higher than 1000 for group index: " + std::to_string(current.m_index) + " in itemgroup:" + std::to_string(m_itemgroup.m_index));
@@ -109,7 +110,7 @@ void LootItemGroup::ValidateGroupInfo(GroupInfo current) const
         throw std::runtime_error("Chance value is lower than previous chance value for group index: " + std::to_string(current.m_index) + " in itemgroup:" + std::to_string(m_itemgroup.m_index));
 }
 
-void LootGroup::ValidateLootInfo(LootInfo current) const
+void Group::ValidateLootInfo(LootInfo current) const
 {
     if(current.m_chance > 1000)
         throw std::runtime_error("Chance value is higher than 1000 for loot index: " + std::to_string(current.m_index) + " in group:" + std::to_string(m_group.m_index));
@@ -117,14 +118,14 @@ void LootGroup::ValidateLootInfo(LootInfo current) const
         throw std::runtime_error("Chance value is lower than previous chance value for loot index: " + std::to_string(current.m_index) + " in group:" + std::to_string(m_group.m_index));
 }
 
-LootInfo LootGroup::RollLoot() const
+LootInfo Group::RollLoot() const
 {
     return m_group.m_loots_map[bango::utils::random::between(1, 1000)];
 }
 
-const LootGroup* LootItemGroup::RollGroup() const
+const Group* ItemGroup::RollGroup() const
 {
     auto group_index = m_itemgroup.m_groups_map[bango::utils::random::between(1, 1000)].m_index;
-    auto* group = LootGroup::Find(group_index);
+    auto* group = Group::Find(group_index);
     return group != nullptr ? group : nullptr;
 }
