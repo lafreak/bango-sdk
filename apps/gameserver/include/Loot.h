@@ -59,7 +59,7 @@ struct LootGroup : public bango::processor::db_object<LootGroup>
 {
     Group m_group;
 
-    unsigned int index() const { return m_group.m_loots_map.GetMaxKey() != 0 ? m_group.m_index : 0; }
+    unsigned int index() const { return m_group.m_index; }
 
     void ValidateLootInfo(LootInfo current) const;
     void AssignGroup(std::vector<uint32_t> values_from_bracket);
@@ -73,7 +73,7 @@ struct LootItemGroup : public bango::processor::db_object<LootItemGroup>
 {
     ItemGroup m_itemgroup;
     
-    unsigned int index() const { return m_itemgroup.m_groups_map.GetMaxKey() != 0 ? m_itemgroup.m_index : 0; }
+    unsigned int index() const { return m_itemgroup.m_index; }
 
     void ValidateGroupInfo(GroupInfo current) const;
     void AssignItemGroup(std::vector<uint32_t> values_from_bracket);

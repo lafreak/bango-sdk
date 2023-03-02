@@ -6,6 +6,8 @@
 #include <functional>
 #include <memory>
 #include <stdexcept>
+#include <optional>
+#include <cstring>
 
 namespace bango { namespace processor {
 
@@ -13,7 +15,7 @@ namespace bango { namespace processor {
     class db_object
     {
     public:
-        static bool Load(const char* path) { return container::instance().load(path); }
+        static bool Load(const char* path, std::optional<const char*> name_filter = std::nullopt) { return container::instance().load(path, name_filter); }
 
         static const std::unordered_map<unsigned int, const std::unique_ptr<T>>& DB() { return container::instance().db(); }
 
@@ -50,7 +52,7 @@ namespace bango { namespace processor {
             }
 
         public:
-            bool load(const char* path)
+            bool load(const char* path, std::optional<const char*> name_filter = std::nullopt)
             {
                 XParser parser;
                 XFileEx file;
@@ -68,6 +70,9 @@ namespace bango { namespace processor {
                     lisp::var param = var.pop();
 
                     auto name = (const char*) param.pop();
+
+                    if(name_filter.has_value() && std::strcmp(name, name_filter.value()) == 0)
+                        continue;
 
                     T temp = {};
 

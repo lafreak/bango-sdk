@@ -57,8 +57,8 @@ int main(int argc, char** argv)
         InitItem        ::Load("Config/InitItem.txt");
         InitNPC         ::Load("Config/InitNPC.txt");
         GenMonster      ::Load("Config/GenMonster.txt");
-        LootGroup       ::Load("Config/ItemGroup.txt");
-        LootItemGroup   ::Load("Config/ItemGroup.txt");
+        LootGroup       ::Load("Config/ItemGroup.txt", "(group");
+        LootItemGroup   ::Load("Config/ItemGroup.txt", "(itemgroup");
         InitMonster     ::Load("Config/InitMonster.txt");
     }
     catch (const std::exception& e)
