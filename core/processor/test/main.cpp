@@ -111,6 +111,25 @@ struct Example : public db_object<Example>
     }
 };
 
+struct FilterExample : public db_object<FilterExample>
+{
+    unsigned short Index;
+    std::string Text;
+
+    virtual unsigned int index() const override { return Index; }
+    
+    virtual void set(lisp::var param) override
+    {
+        switch (FindAttribute(param.pop()))
+        {
+            case A_INDEX: Index = (int) param.pop(); break;
+            case A_TEXT:
+                Text = (const char*) param.pop();
+                break;
+        }
+    }
+};
+
 TEST(DBExample, LoadAndFind)
 {
     Example::Load("Test/Test.txt");
@@ -140,6 +159,17 @@ TEST(DBExample, LoadAndFind)
     EXPECT_EQ(8, e->Numbers[3]);
     EXPECT_EQ(8, e->Numbers[4]);
     EXPECT_EQ(10, e->Numbers[5]);
+}
+
+TEST(DBExample, LoadAndFindWithFilter)
+{
+    FilterExample::Load("Test/Test.txt", "filterexample");
+    auto& e = FilterExample::DB().at(40);
+
+    EXPECT_EQ(e->Index, 40);
+    EXPECT_EQ(e->Text, "hi");
+
+    EXPECT_EQ(FilterExample::DB().find(30), FilterExample::DB().end());
 }
 
 int main(int argc, char **argv)
