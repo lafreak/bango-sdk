@@ -92,8 +92,24 @@ namespace bango { namespace processor {
                             continue;
                     }
 
-                    if(name_filter.has_value() && std::strcmp(name, name_filter.value()) == 0)
-                        continue;
+                    // filter if required
+                    if(!name_filter.empty())
+                    {
+                        // ignore ()
+                        std::string skip_chars = "()";
+                        name.erase(std::remove_if(name.begin(), name.end(),
+                            [&skip_chars](const char &c) {
+                                return skip_chars.find(c) != std::string::npos;
+                            }),
+                            name.end());
+
+                        // ignore uppercase
+                        std::transform(name.begin(), name.end(), name.begin(),
+                            [](unsigned char c){ return std::tolower(c); });
+
+                        if (name != name_filter)
+                            continue;
+                    }
 
                     T temp = {};
 
