@@ -211,21 +211,12 @@ std::vector<LootInfo> Monster::RollLoot()
 
         for(int i = 0; i < itemgroup.m_number_of_rolls; i++)
         {
-            auto* rolled_group = loot_itemgroup->RollGroup();
+            auto * rolled_group = loot_itemgroup->RollGroup();
 
-            // If roll was not successful it returns index of 0.
-            if(rolled_group->index() == 0)
+            if(!rolled_group)
                 continue;
 
-            auto loot_group = Group::Find(rolled_group->index());
-
-            if(!loot_group)
-            {
-                spdlog::error("Group of index {} not found.", rolled_group->index());
-                continue;
-            }
-
-            auto loot_info = loot_group->RollLoot();
+            auto loot_info = rolled_group->RollLoot();
 
             if(loot_info.m_index != 0)
                 loot_vec.push_back(loot_info);

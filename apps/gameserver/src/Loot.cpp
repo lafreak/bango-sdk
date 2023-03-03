@@ -120,6 +120,18 @@ LootInfo Group::RollLoot() const
 
 const Group* ItemGroup::RollGroup() const
 {
-    auto group_index = m_groups_map[bango::utils::random::between(1, 1000)].m_index;
-    return Group::Find(group_index);
+    std::uint32_t rolled_group_index = m_groups_map[bango::utils::random::between(1, 1000)].m_index;
+
+    //If nothing was chosen
+    if(rolled_group_index == 0)
+        return nullptr;
+
+    auto* group = Group::Find(rolled_group_index);
+    if(!group)
+    {
+        spdlog::error("Group index: " + std::to_string(rolled_group_index) + " not found");
+        return nullptr;
+    }
+
+    return group;
 }

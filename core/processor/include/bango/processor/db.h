@@ -22,11 +22,12 @@ namespace bango { namespace processor {
 
         static const T* Find(unsigned int index)
         {
-            try {
-                return container::instance().db().at(index).get();
-            } catch (const std::out_of_range&) {
-                return nullptr;
-            }
+            const auto& db = container::instance().db();
+            const auto it = db.find(index);
+            if (it != db.end())
+                return it->second.get();
+
+            return nullptr;
         }
 
     private:
