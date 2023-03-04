@@ -3,6 +3,7 @@
 #include <bango/utils/random.h>
 
 using namespace bango::processor;
+using namespace bango::network;
 
 void Group::set(lisp::var param)
 {

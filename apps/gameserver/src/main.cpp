@@ -249,6 +249,10 @@ int main(int argc, char** argv)
                 World::ForEachSpawn([](Spawn& spawn) {
                     spawn.Tick();
                 });
+
+                World::ForEachLoot([](Loot& loot) {
+                    loot.Tick();
+                });
             }
         } while (status != std::future_status::ready);
     });

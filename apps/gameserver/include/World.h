@@ -7,6 +7,7 @@
 #include "Monster.h"
 #include "NPC.h"
 #include "Spawn.h"
+#include "Loot.h"
 
 #include <bango/space/quadtree.h>
 
@@ -132,12 +133,14 @@ class World
     typedef std::unordered_map<Character::id_t, std::shared_ptr<NPC>>       NpcContainer;
     typedef std::list<std::shared_ptr<Spawn>>                               SpawnContainer;
     typedef std::unordered_map<Character::id_t, std::shared_ptr<Party>>     PartyContainer;
+    typedef std::unordered_map<Character::id_t, std::shared_ptr<Loot>>      LootContainer;
 
     PlayerContainer m_players;
     MonsterContainer m_monsters;
     NpcContainer m_npcs;
     SpawnContainer m_spawns;
     PartyContainer m_parties;
+    LootContainer m_loots;
 
     std::recursive_mutex m_entities_rmtx;
 
@@ -359,6 +362,7 @@ public:
     }
 
     static void ForEachSpawn(const std::function<void(Spawn&)>& callback);
+    static void ForEachLoot(const std::function<void(Loot&)>& callback);
 };
 
 inline WorldMap::QUERY_KIND operator|(WorldMap::QUERY_KIND a, WorldMap::QUERY_KIND b)

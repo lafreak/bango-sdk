@@ -224,5 +224,11 @@ std::vector<LootInfo> Monster::RollLoot()
         }
     }
 
+    for(auto& loot : loot_vec)
+    {
+        auto l = std::make_shared<Loot>(loot, m_x, m_y);
+        World::Add(l);
+    }
+
     return loot_vec;
 }

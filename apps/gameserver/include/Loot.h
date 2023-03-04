@@ -77,3 +77,53 @@ struct ItemGroup : public bango::processor::db_object<ItemGroup>
 };
 
 std::vector<std::uint32_t> GetValuesFromBrackets(bango::processor::lisp::var& param);
+
+
+class Loot : public Character
+{
+    static constexpr std::uint32_t disappear_time = 180000;
+    static constexpr std::uint32_t priority_time = 120000;
+
+    enum class State
+    {
+        PRIORITY,
+        NON_PRIORITY,
+        DISAPPEAR
+    };
+
+    Loot::State m_state;
+    ITEMINFO m_item_info;
+public:
+
+    Loot(LootInfo loot_info, int x, int y, Loot::State state = Loot::State::PRIORITY)
+        : Character(Character::LOOT)
+        {
+            m_x = x;
+            m_y = y;
+            m_item_info.Index = loot_info.m_index;
+            m_item_info.Num = loot_info.m_amount;
+            m_item_info.Prefix = loot_info.m_prefix;
+        }
+
+    Loot(ITEMINFO item_info, int x, int y, Loot::State state = Loot::State::NON_PRIORITY);
+
+    std::uint8_t GetIndex() const { return m_item_info.Index; }
+    std::uint8_t GetX() const { return m_x; }
+    std::uint8_t GetY() const { return m_y; }
+    std::uint8_t GetAmount() const { return m_item_info.Num; }
+    std::uint8_t GetPrefix() const { return m_item_info.Prefix; }
+
+    bango::network::packet BuildAppearPacket(bool hero=false) const override
+    {
+        bango::network::packet p(S2C_CREATEITEM);
+        // ...
+        return p;
+    }
+
+    bango::network::packet BuildDisappearPacket() const override
+    {
+        //TODO: Implement
+    }
+    void Tick() override {}
+    void Die() override {}
+};

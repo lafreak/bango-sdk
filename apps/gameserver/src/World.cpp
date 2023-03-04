@@ -99,6 +99,14 @@ void WorldMap::Add(Character* entity)
             if (monster->distance(center) <= m_sight)
                 m_on_appear(*(Player*) entity, *monster, false);
         }
+
+        for (auto& p : container->loots())
+        {
+            auto loot = p.second;
+
+            if (loot->distance(center) <= m_sight)
+                m_on_appear(*(Player*) entity, *loot, false);
+        }
     });
 
     try {
@@ -353,6 +361,12 @@ void World::ForEachSpawn(const std::function<void(Spawn&)>& callback)
 
     for (auto it : Get().m_spawns)
         callback(*it);
+}
+
+void World::ForEachLoot(const std::function<void(Loot&)>& callback)
+{
+    // for (auto it : Get().m_loots)
+    //     callback(*it);
 }
 
 
