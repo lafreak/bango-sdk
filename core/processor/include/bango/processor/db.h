@@ -7,7 +7,8 @@
 #include <memory>
 #include <stdexcept>
 #include <optional>
-#include <cstring>
+#include <algorithm>
+#include <string>
 
 namespace bango { namespace processor {
 
@@ -15,17 +16,18 @@ namespace bango { namespace processor {
     class db_object
     {
     public:
-        static bool Load(const char* path, std::optional<const char*> name_filter = std::nullopt) { return container::instance().load(path, name_filter); }
+        static bool Load(const char* path, const std::string& name_filter = "") { return container::instance().load(path, name_filter); }
 
         static const std::unordered_map<unsigned int, const std::unique_ptr<T>>& DB() { return container::instance().db(); }
 
         static const T* Find(unsigned int index)
         {
-            try {
-                return container::instance().db().at(index).get();
-            } catch (const std::out_of_range&) {
-                return nullptr;
-            }
+            const auto& db = container::instance().db();
+            const auto it = db.find(index);
+            if (it != db.end())
+                return it->second.get();
+
+            return nullptr;
         }
 
     private:
@@ -52,7 +54,7 @@ namespace bango { namespace processor {
             }
 
         public:
-            bool load(const char* path, std::optional<const char*> name_filter = std::nullopt)
+            bool load(const char* path, const std::string& name_filter = "")
             {
                 XParser parser;
                 XFileEx file;
@@ -69,10 +71,26 @@ namespace bango { namespace processor {
                 {
                     lisp::var param = var.pop();
 
-                    auto name = (const char*) param.pop();
+                    std::string name = (const char*) param.pop();
 
-                    if(name_filter.has_value() && std::strcmp(name, name_filter.value()) == 0)
-                        continue;
+                    // filter if required
+                    if(!name_filter.empty())
+                    {
+                        // ignore ()
+                        std::string skip_chars = "()";
+                        name.erase(std::remove_if(name.begin(), name.end(),
+                            [&skip_chars](const char &c) {
+                                return skip_chars.find(c) != std::string::npos;
+                            }),
+                            name.end());
+
+                        // ignore uppercase
+                        std::transform(name.begin(), name.end(), name.begin(),
+                            [](unsigned char c){ return std::tolower(c); });
+
+                        if (name != name_filter)
+                            continue;
+                    }
 
                     T temp = {};
 
