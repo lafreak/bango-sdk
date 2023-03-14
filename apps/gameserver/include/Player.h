@@ -137,15 +137,15 @@ public:
     bool TrashItem(unsigned int local);
     void Teleport(int x, int y, int z=0);
 
-    void SetPartyInviterID(int id)                        { m_party_inviter_id = id; }
+    void SetPartyInviterID(id_t id)                       { m_party_inviter_id = id; }
     void ResetPartyInviterID()                            { m_party_inviter_id = 0; }
-    int  GetPartyInviterID()                  const       { return m_party_inviter_id; }
+    id_t  GetPartyInviterID()                  const      { return m_party_inviter_id; }
     
     //! Leave from party.
     //! Display proper message if forced by leader via kick. 
     void LeaveParty(bool is_kicked = false);
 
-    void BanFromParty(int banned_player_id);
+    void BanFromParty(id_t banned_player_id);
     void SetParty(const std::shared_ptr<Party>& party)          { m_party = party; m_party_id = party->GetID(); }
     void ResetParty()                                           { m_party = nullptr; m_party_id = 0; }
     bool HasParty()                                     const   { return m_party != nullptr; }

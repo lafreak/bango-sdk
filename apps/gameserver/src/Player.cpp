@@ -1,6 +1,7 @@
 #include "Player.h"
 
 #include <string>
+#include <utility>
 
 #include "spdlog/spdlog.h"
 
@@ -336,7 +337,7 @@ void Player::InsertItem(unsigned short index, unsigned int num)
             info.CurEnd = init->Endurance;
             info.Num = init->Plural ? num : 1;
         } catch (const std::exception&) { return; }
-        auto item = m_inventory.Insert(info);
+        item = m_inventory.Insert(info);
         write(((packet)*item).change_type(S2C_INSERTITEM));
         //db insert
         packet out(S2D_INSERTITEM);
@@ -619,7 +620,7 @@ void Player::OnPlayerAnimation(packet& p)
     auto id = p.pop<Character::id_t>();
     auto animation = p.pop<unsigned char>();
 
-    if (animation >= 0 && animation < 20)
+    if (animation < 20)
         WriteInSight(packet(S2C_PLAYER_ANIMATION, "db", GetID(), animation));
 }
 
@@ -695,7 +696,7 @@ void Player::OnAttack(packet& p)
 
 void Player::OnAskParty(packet& p)
 {
-    auto invited_player_id = p.pop<int>();
+    auto invited_player_id = p.pop<id_t>();
     if (invited_player_id == GetID())
         return;
 
@@ -727,7 +728,7 @@ void Player::OnAskParty(packet& p)
 void Player::OnAskPartyAnswer(packet& p)
 {
     auto answer = p.pop<bool>();
-    auto inviter_id = p.pop<int>();
+    auto inviter_id = p.pop<id_t>();
 
     if (inviter_id == GetID())
         return;
@@ -800,7 +801,7 @@ void Player::OnExileParty(bango::network::packet& p)
     BanFromParty(banned_player_id);
 }
 
-void Player::BanFromParty(int banned_player_id)
+void Player::BanFromParty(id_t banned_player_id)
 {
     if (banned_player_id == GetID())
         return;
@@ -844,7 +845,7 @@ void Player::UpdateExp(std::int64_t amount)
     // Decrease
     if (amount < 0)
     {
-        if (std::abs(amount) > m_data.Exp)
+        if (std::cmp_greater(std::abs(amount), m_data.Exp))
             amount = -static_cast<std::int64_t>(m_data.Exp);
         m_data.Exp += amount;
         SendProperty(P_EXP, amount);
@@ -853,7 +854,7 @@ void Player::UpdateExp(std::int64_t amount)
 
     if (GetLevel() >= MAX_LEVEL)
     {
-        spdlog::warn("Level is too large to exp exp: {}", GetLevel());
+        spdlog::warn("Level is too large to recieve exp: {}", GetLevel());
         return;   
     }
 

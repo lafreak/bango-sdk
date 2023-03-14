@@ -4,7 +4,7 @@ namespace bango { namespace persistence {
 
     query::query(Connection_T conn, const char* q)
     {
-        m_pstatement = Connection_prepareStatement(conn, q);
+        m_pstatement = Connection_prepareStatement(conn, "%s", q);
         m_result = nullptr;
         m_index = 1;
     }
