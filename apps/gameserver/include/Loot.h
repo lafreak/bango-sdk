@@ -1,9 +1,12 @@
+#pragma once
+
+#include <map>
+
 #include "Inventory.h"
 #include "Character.h"
 #include "spdlog/spdlog.h"
 
 #include <bango/processor/db.h>
-#include <bango/utils/interval_map.h>
 #include <inix/attributes.h>
 
 
@@ -43,13 +46,15 @@ struct GroupInfo
 struct Group : public bango::processor::db_object<Group>
 {
     std::uint32_t m_index;
-    bango::utils::interval_map<LootInfo> m_loots_map;
+    std::map<std::uint32_t, LootInfo> m_loots_map;
+
+    std::uint32_t GetMaxMapKey() const { return m_loots_map.empty() ? 0 : m_loots_map.rbegin()->first;}
 
     unsigned int index() const { return m_index; }
 
     void ValidateLootInfo(LootInfo current) const;
     void AssignGroup(std::vector<uint32_t> values_from_bracket);
-    LootInfo RollLoot() const;
+    std::map<std::uint32_t, LootInfo>::const_iterator RollLoot() const;
 
     virtual void set(bango::processor::lisp::var param) override;
 };
@@ -58,7 +63,9 @@ struct Group : public bango::processor::db_object<Group>
 struct ItemGroup : public bango::processor::db_object<ItemGroup>
 {
     std::uint32_t m_index;
-    bango::utils::interval_map<GroupInfo> m_groups_map;
+    std::map<std::uint32_t, GroupInfo> m_groups_map;
+
+    std::uint32_t GetMaxMapKey() const { return m_groups_map.empty() ? 0 : m_groups_map.rbegin()->first;}
     
     unsigned int index() const { return m_index; }
 

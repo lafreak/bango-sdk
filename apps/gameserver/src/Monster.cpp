@@ -211,15 +211,16 @@ std::vector<LootInfo> Monster::RollLoot()
 
         for(int i = 0; i < itemgroup.m_number_of_rolls; i++)
         {
-            auto * rolled_group = loot_itemgroup->RollGroup();
+            const auto* rolled_group = loot_itemgroup->RollGroup();
 
             if(!rolled_group)
                 continue;
 
-            auto loot_info = rolled_group->RollLoot();
+            const auto loot_info_it = rolled_group->RollLoot();
 
-            if(loot_info.m_index != 0)
-                loot_vec.push_back(loot_info);
+
+            if(loot_info_it != rolled_group->m_loots_map.end())
+                loot_vec.push_back(loot_info_it->second);
         }
     }
 
