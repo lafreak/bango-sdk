@@ -1,12 +1,14 @@
 #include "Loot.h"
 
+#include <bango/utils/random.h>
+
 using namespace bango::processor;
 
-void LootGroup::set(lisp::var param)
+void Group::set(lisp::var param)
 {
     switch (FindAttribute(param.pop()))
     {
-        case A_INDEX: m_group.m_index = param.pop(); break;
+        case A_INDEX: m_index = param.pop(); break;
         case IC_MONEY:
         case A_ITEM:
         {
@@ -20,11 +22,11 @@ void LootGroup::set(lisp::var param)
     }
 }
 
-void LootItemGroup::set(lisp::var param)
+void ItemGroup::set(lisp::var param)
 {
     switch (FindAttribute(param.pop()))
     {
-        case A_INDEX: m_itemgroup.m_index = param.pop(); break;
+        case A_INDEX: m_index = param.pop(); break;
         case A_GROUP:
         {
             while (!param.null()) 
@@ -52,57 +54,86 @@ std::vector<std::uint32_t> GetValuesFromBrackets(lisp::var& param)
 
     param = param.cdr();
 
+
     return values_from_bracket;
 }
 
-void LootItemGroup::AssignItemGroup(std::vector<uint32_t> values_from_bracket)
+void ItemGroup::AssignItemGroup(std::vector<uint32_t> values_from_bracket)
 {
     if(values_from_bracket.size() != 2)
-        throw std::runtime_error("Invalid amount of values in brackets for itemgroup index: " + std::to_string(m_itemgroup.m_index));
+        throw std::runtime_error("Invalid amount of values in brackets for itemgroup index: " + std::to_string(m_index));
 
-    auto& map = m_itemgroup.m_groups_map;
-    auto max_key = map.GetMaxKey();
+    std::uint32_t group_index = values_from_bracket.at(1);
 
-    GroupInfo group_info(values_from_bracket.at(1), values_from_bracket.at(0));
+    if(!Group::Find(group_index))
+        throw std::runtime_error("Group index: " + std::to_string(group_index) + " not found");
+
+    auto max_key = GetMaxMapKey();
+    auto new_key = values_from_bracket.at(0);
+
+    GroupInfo group_info(group_index, new_key);
     ValidateGroupInfo(group_info);
-    map.assign(max_key, values_from_bracket.at(0), group_info);
-
+    m_groups_map.insert({new_key, group_info});
 }
 
- void LootGroup::AssignGroup(std::vector<uint32_t> values_from_bracket)
+ void Group::AssignGroup(std::vector<uint32_t> values_from_bracket)
  {
+    if(values_from_bracket.size() < 2 || values_from_bracket.size() > 4)
+        throw std::runtime_error("Invalid amount of values in brackets for group index: " + std::to_string(m_index));
+
     static constexpr std::uint32_t geon_index = 31;
 
-    auto& map = m_group.m_loots_map;
-    auto max_key = map.GetMaxKey();
+    auto max_key = GetMaxMapKey();
 
-    LootInfo loot_info;
+    auto item_index = values_from_bracket.size() == 2 ? geon_index : values_from_bracket.at(1);
+    auto item_chance = values_from_bracket.at(0);
+    auto item_amount = values_from_bracket.size() == 2 ? values_from_bracket.at(1) : (values_from_bracket.size() == 3 ? 1 : values_from_bracket.at(3));
+    auto item_prefix = values_from_bracket.size() == 2 ? 0 : values_from_bracket.at(2);
 
-    if(values_from_bracket.size() == 2)
-        loot_info = LootInfo(geon_index, values_from_bracket.at(0), values_from_bracket.at(1), 0);
-    else if(values_from_bracket.size() == 3)
-        loot_info = LootInfo(values_from_bracket.at(1), values_from_bracket.at(0), 1, values_from_bracket.at(2));
-    else
-        throw std::runtime_error("Invalid amount of values in brackets for group index: " + std::to_string(m_group.m_index));
+    LootInfo loot_info(item_index, item_chance, item_amount, item_prefix);
 
     ValidateLootInfo(loot_info);
-    map.assign(max_key, values_from_bracket.at(0), loot_info);
+    m_loots_map.insert({item_chance, loot_info});
  }
 
 
-void LootItemGroup::ValidateGroupInfo(GroupInfo current) const
+void ItemGroup::ValidateGroupInfo(GroupInfo current) const
 {
     if(current.m_chance > 1000)
-        throw std::runtime_error("Chance value is higher than 1000 for group index: " + std::to_string(current.m_index) + " in itemgroup:" + std::to_string(m_itemgroup.m_index));
-    else if(current.m_chance <= m_itemgroup.m_groups_map.GetMaxKey())
-        throw std::runtime_error("Chance value is lower than previous chance value for group index: " + std::to_string(current.m_index) + " in itemgroup:" + std::to_string(m_itemgroup.m_index));
+        throw std::runtime_error("Chance value is higher than 1000 for group index: " + std::to_string(current.m_index) + " in itemgroup:" + std::to_string(m_index));
+    else if(current.m_chance <= GetMaxMapKey())
+        throw std::runtime_error("Chance value is lower than previous chance value for group index: " + std::to_string(current.m_index) + " in itemgroup:" + std::to_string(m_index));
 }
 
-void LootGroup::ValidateLootInfo(LootInfo current) const
+void Group::ValidateLootInfo(LootInfo current) const
 {
     if(current.m_chance > 1000)
-        throw std::runtime_error("Chance value is higher than 1000 for loot index: " + std::to_string(current.m_index) + " in group:" + std::to_string(m_group.m_index));
-    else if(current.m_chance <= m_group.m_loots_map.GetMaxKey())
-        throw std::runtime_error("Chance value is lower than previous chance value for loot index: " + std::to_string(current.m_index) + " in group:" + std::to_string(m_group.m_index));
+        throw std::runtime_error("Chance value is higher than 1000 for loot index: " + std::to_string(current.m_index) + " in group:" + std::to_string(m_index));
+    else if(current.m_chance <= GetMaxMapKey())
+        throw std::runtime_error("Chance value is lower than previous chance value for loot index: " + std::to_string(current.m_index) + " in group:" + std::to_string(m_index));
 }
 
+std::map<std::uint32_t, LootInfo>::const_iterator Group::RollLoot() const
+{
+    return m_loots_map.upper_bound(bango::utils::random::between(1, 1000));
+}
+
+const Group* ItemGroup::RollGroup() const
+{
+    auto rolled_group_it = m_groups_map.upper_bound(bango::utils::random::between(1, 1000));
+
+    //If nothing was chosen
+    if(rolled_group_it == m_groups_map.end())
+        return nullptr;
+
+    auto group_index = rolled_group_it->second.m_index;
+
+    const auto* group = Group::Find(group_index);
+    if(!group)
+    {
+        spdlog::error("Group index: " + std::to_string(group_index) + " not found");
+        return nullptr;
+    }
+
+    return group;
+}

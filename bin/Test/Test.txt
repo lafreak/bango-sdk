@@ -12,3 +12,4 @@
     ; comment in middle
 
 ) ;end
+( FilterExample (index 40) (text "hi"))

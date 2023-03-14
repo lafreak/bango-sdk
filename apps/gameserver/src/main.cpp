@@ -17,7 +17,6 @@
 #include "BeheadableMonster.h"
 #include "RegularMonster.h"
 #include "Spawn.h"
-#include "Loot.h"
 
 #include "CommandDispatcher.h"
 #include "DBListener.h"
@@ -53,16 +52,14 @@ int main(int argc, char** argv)
     spdlog::set_level(spdlog::level::trace);
     spdlog::set_pattern("[%H:%M:%S.%e] [%l] [tid %t] %v");
 
-    random::init();
-
     try
     {
         InitItem        ::Load("Config/InitItem.txt");
         InitNPC         ::Load("Config/InitNPC.txt");
-        InitMonster     ::Load("Config/InitMonster.txt");
         GenMonster      ::Load("Config/GenMonster.txt");
-        LootGroup       ::Load("Config/ItemGroup.txt");
-        LootItemGroup   ::Load("Config/ItemGroup.txt");
+        Group           ::Load("Config/ItemGroup.txt", "group");
+        ItemGroup       ::Load("Config/ItemGroup.txt", "itemgroup");
+        InitMonster     ::Load("Config/InitMonster.txt");
     }
     catch (const std::exception& e)
     {

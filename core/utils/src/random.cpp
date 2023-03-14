@@ -1,16 +1,13 @@
 #include <bango/utils/random.h>
 
-#include <cstdlib>
-#include <ctime>
+#include <random>
 
 using namespace bango::utils;
 
-void random::init()
-{
-    srand(time(0));
-}
-
 unsigned int random::between(unsigned int min, unsigned int max)
 {
-    return (rand() % (max+1 - min)) + min;
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_int_distribution<unsigned int> distr(min, max);
+    return distr(gen);
 }

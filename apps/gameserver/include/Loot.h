@@ -1,9 +1,12 @@
+#pragma once
+
+#include <map>
+
 #include "Inventory.h"
 #include "Character.h"
 #include "spdlog/spdlog.h"
 
 #include <bango/processor/db.h>
-#include <bango/utils/interval_map.h>
 #include <inix/attributes.h>
 
 
@@ -40,42 +43,35 @@ struct GroupInfo
     std::uint32_t m_chance;
 };
 
-struct Group
+struct Group : public bango::processor::db_object<Group>
 {
-    Group() = default;
     std::uint32_t m_index;
-    bango::utils::interval_map<LootInfo> m_loots_map;
-};
+    std::map<std::uint32_t, LootInfo> m_loots_map;
 
-struct ItemGroup
-{
-    ItemGroup() = default;
-    std::uint32_t m_index;
-    bango::utils::interval_map<GroupInfo> m_groups_map;
-};
+    std::uint32_t GetMaxMapKey() const { return m_loots_map.empty() ? 0 : m_loots_map.rbegin()->first;}
 
-
-struct LootGroup : public bango::processor::db_object<LootGroup>
-{
-    Group m_group;
-
-    unsigned int index() const { return m_group.m_loots_map.GetMaxKey() != 0 ? m_group.m_index : 0; }
+    unsigned int index() const { return m_index; }
 
     void ValidateLootInfo(LootInfo current) const;
     void AssignGroup(std::vector<uint32_t> values_from_bracket);
+    std::map<std::uint32_t, LootInfo>::const_iterator RollLoot() const;
 
     virtual void set(bango::processor::lisp::var param) override;
 };
 
 
-struct LootItemGroup : public bango::processor::db_object<LootItemGroup>
+struct ItemGroup : public bango::processor::db_object<ItemGroup>
 {
-    ItemGroup m_itemgroup;
+    std::uint32_t m_index;
+    std::map<std::uint32_t, GroupInfo> m_groups_map;
+
+    std::uint32_t GetMaxMapKey() const { return m_groups_map.empty() ? 0 : m_groups_map.rbegin()->first;}
     
-    unsigned int index() const { return m_itemgroup.m_groups_map.GetMaxKey() != 0 ? m_itemgroup.m_index : 0; }
+    unsigned int index() const { return m_index; }
 
     void ValidateGroupInfo(GroupInfo current) const;
     void AssignItemGroup(std::vector<uint32_t> values_from_bracket);
+    const Group* RollGroup() const;
 
     virtual void set(bango::processor::lisp::var param) override;
 };
