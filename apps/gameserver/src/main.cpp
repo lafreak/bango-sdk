@@ -241,18 +241,17 @@ int main(int argc, char** argv)
                 World::ForEachPlayer([](Player& player) {
                     player.Tick();
                 });
+
                 World::ForEachMonster([](Monster& monster) {
                     monster.Tick();
                 });
-                World::RemoveDeadMonsters();
 
                 World::ForEachSpawn([](Spawn& spawn) {
                     spawn.Tick();
                 });
 
-                World::ForEachLoot([](Loot& loot) {
-                    loot.Tick();
-                });
+                World::RemoveDeadMonsters();
+                World::RemoveExpiredLoot();
             }
         } while (status != std::future_status::ready);
     });

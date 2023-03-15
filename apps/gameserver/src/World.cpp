@@ -365,8 +365,10 @@ void World::ForEachSpawn(const std::function<void(Spawn&)>& callback)
 
 void World::ForEachLoot(const std::function<void(Loot&)>& callback)
 {
-    // for (auto it : Get().m_loots)
-    //     callback(*it);
+    std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+    for (auto it : Get().m_loots)
+        callback(*it.second);
 }
 
 

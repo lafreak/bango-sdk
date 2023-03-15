@@ -7,6 +7,7 @@
 #include "spdlog/spdlog.h"
 
 #include <bango/processor/db.h>
+#include <bango/utils/time.h>
 #include <inix/attributes.h>
 
 
@@ -81,49 +82,25 @@ std::vector<std::uint32_t> GetValuesFromBrackets(bango::processor::lisp::var& pa
 
 class Loot : public Character
 {
-    static constexpr std::uint32_t disappear_time = 180000;
-    static constexpr std::uint32_t priority_time = 120000;
-
-    enum class State
-    {
-        PRIORITY,
-        NON_PRIORITY,
-        DISAPPEAR
-    };
-
-    Loot::State m_state;
     ITEMINFO m_item_info;
+    bango::utils::time::point m_appear_time;
 public:
+    static constexpr std::uint32_t DISAPPEAR_TIME = 180000;
+    static constexpr std::uint32_t PRIORITY_TIME = 120000;
 
-    Loot(LootInfo loot_info, int x, int y, Loot::State state = Loot::State::PRIORITY)
-        : Character(Character::LOOT)
-        {
-            m_x = x;
-            m_y = y;
-            m_item_info.Index = loot_info.m_index;
-            m_item_info.Num = loot_info.m_amount;
-            m_item_info.Prefix = loot_info.m_prefix;
-        }
+    Loot(LootInfo loot_info, int x, int y, int map);
 
-    Loot(ITEMINFO item_info, int x, int y, Loot::State state = Loot::State::NON_PRIORITY);
-
-    std::uint8_t GetIndex() const { return m_item_info.Index; }
-    std::uint8_t GetX() const { return m_x; }
-    std::uint8_t GetY() const { return m_y; }
-    std::uint8_t GetAmount() const { return m_item_info.Num; }
+    std::uint16_t GetItemIndex() const { return m_item_info.Index; }
+    std::uint32_t GetAmount() const { return m_item_info.Num; }
     std::uint8_t GetPrefix() const { return m_item_info.Prefix; }
 
-    bango::network::packet BuildAppearPacket(bool hero=false) const override
-    {
-        bango::network::packet p(S2C_CREATEITEM);
-        // ...
-        return p;
-    }
+    bango::utils::time::point GetAppearTime() const;
+    void                      SetAppearTime(bango::utils::time::point appear_time);
 
-    bango::network::packet BuildDisappearPacket() const override
-    {
-        //TODO: Implement
-    }
-    void Tick() override {}
+    bango::network::packet BuildAppearPacket(bool hero=false) const override;
+
+    bango::network::packet BuildDisappearPacket() const override;
+
+    void Tick() override;
     void Die() override {}
 };

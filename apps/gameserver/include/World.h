@@ -10,6 +10,7 @@
 #include "Loot.h"
 
 #include <bango/space/quadtree.h>
+#include <bango/utils/time.h>
 
 #define MAP_WIDTH 50*8192
 #define MAP_SIGHT 1024
@@ -205,9 +206,27 @@ public:
         for (auto it = Get().m_monsters.begin(); it != Get().m_monsters.end(); )
         {
             auto& monster = it->second;
-            if (monster->IsGState(CGS_KO)) {
+            if (monster->IsGState(CGS_KO))
+            {
                 Map(monster->GetMap()).Remove(monster.get(), true);
                 it = Get().m_monsters.erase(it);
+            }
+            else
+                ++it;
+        }
+    }
+
+    static void RemoveExpiredLoot()
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+        for (auto it = Get().m_loots.begin(); it != Get().m_loots.end(); )
+        {
+            auto& loot = it->second;
+            if((bango::utils::time::now() - loot->GetAppearTime()).count() >= Loot::DISAPPEAR_TIME)
+            {
+                Map(loot->GetMap()).Remove(loot.get());
+                it = Get().m_loots.erase(it);
             }
             else
                 ++it;
@@ -240,6 +259,10 @@ public:
                 break;
             case Character::NPC:
                 Get().m_npcs.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<NPC>(entity)));
+                break;
+            case Character::LOOT:
+                Get().m_loots.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Loot>(entity)));
+                auto loots = Get().m_loots;
                 break;
             }
 
