@@ -95,7 +95,7 @@ public:
     std::uint8_t GetPrefix() const { return m_item_info.Prefix; }
 
     bango::utils::time::point GetAppearTime() const;
-    void                      SetAppearTime(bango::utils::time::point appear_time);
+    void                      ResetAppearTime();
 
     bango::network::packet BuildAppearPacket(bool hero=false) const override;
 

@@ -1,7 +1,6 @@
 #include "Loot.h"
 
 #include <bango/utils/random.h>
-#include "World.h"
 
 using namespace bango::processor;
 using namespace bango::network;
@@ -144,11 +143,12 @@ const Group* ItemGroup::RollGroup() const
 Loot::Loot(LootInfo loot_info, int x, int y, int map)
     : Character(Character::LOOT)
 {
-    AssignNewId();
-    SetAppearTime(time::now());
+    ResetAppearTime();
     m_x = x;
     m_y = y;
     m_map = map;
+
+    memset(&m_item_info, 0, sizeof(m_item_info));
     m_item_info.Index = loot_info.m_index;
     m_item_info.Num = loot_info.m_amount;
     m_item_info.Prefix = loot_info.m_prefix;
@@ -170,9 +170,9 @@ time::point Loot::GetAppearTime() const
 {
     return m_appear_time;
 }
-void Loot::SetAppearTime(time::point appear_time)
+void Loot::ResetAppearTime()
 {
-    m_appear_time = appear_time;
+    m_appear_time = time::now();
 }
 
 void Loot::Tick()

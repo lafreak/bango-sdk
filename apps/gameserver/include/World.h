@@ -262,7 +262,6 @@ public:
                 break;
             case Character::LOOT:
                 Get().m_loots.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Loot>(entity)));
-                auto loots = Get().m_loots;
                 break;
             }
 

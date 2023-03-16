@@ -199,6 +199,14 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
             if (monster->distance(old_center) <= m_sight && monster->distance(new_center) > m_sight) 
                 m_on_disappear(*(Player*) entity, *monster);
         }
+
+        for (auto& p : container->loots())
+        {
+            auto loot = p.second;
+
+            if (loot->distance(old_center) <= m_sight && loot->distance(new_center) > m_sight)
+                m_on_disappear(*(Player*) entity, *loot);
+        }
     });
 
     m_quad.query(new_center, m_sight, [&](const Container* container) {
