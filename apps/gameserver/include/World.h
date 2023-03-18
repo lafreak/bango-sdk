@@ -7,8 +7,10 @@
 #include "Monster.h"
 #include "NPC.h"
 #include "Spawn.h"
+#include "Loot.h"
 
 #include <bango/space/quadtree.h>
+#include <bango/utils/time.h>
 
 #define MAP_WIDTH 50*8192
 #define MAP_SIGHT 1024
@@ -132,12 +134,14 @@ class World
     typedef std::unordered_map<Character::id_t, std::shared_ptr<NPC>>       NpcContainer;
     typedef std::list<std::shared_ptr<Spawn>>                               SpawnContainer;
     typedef std::unordered_map<Character::id_t, std::shared_ptr<Party>>     PartyContainer;
+    typedef std::unordered_map<Character::id_t, std::shared_ptr<Loot>>      LootContainer;
 
     PlayerContainer m_players;
     MonsterContainer m_monsters;
     NpcContainer m_npcs;
     SpawnContainer m_spawns;
     PartyContainer m_parties;
+    LootContainer m_loots;
 
     std::recursive_mutex m_entities_rmtx;
 
@@ -202,9 +206,27 @@ public:
         for (auto it = Get().m_monsters.begin(); it != Get().m_monsters.end(); )
         {
             auto& monster = it->second;
-            if (monster->IsGState(CGS_KO)) {
+            if (monster->IsGState(CGS_KO))
+            {
                 Map(monster->GetMap()).Remove(monster.get(), true);
                 it = Get().m_monsters.erase(it);
+            }
+            else
+                ++it;
+        }
+    }
+
+    static void RemoveExpiredLoot()
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+        for (auto it = Get().m_loots.begin(); it != Get().m_loots.end(); )
+        {
+            auto& loot = it->second;
+            if((bango::utils::time::now() - loot->GetAppearTime()).count() >= Loot::DISAPPEAR_TIME)
+            {
+                Map(loot->GetMap()).Remove(loot.get());
+                it = Get().m_loots.erase(it);
             }
             else
                 ++it;
@@ -237,6 +259,9 @@ public:
                 break;
             case Character::NPC:
                 Get().m_npcs.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<NPC>(entity)));
+                break;
+            case Character::LOOT:
+                Get().m_loots.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Loot>(entity)));
                 break;
             }
 
@@ -359,6 +384,7 @@ public:
     }
 
     static void ForEachSpawn(const std::function<void(Spawn&)>& callback);
+    static void ForEachLoot(const std::function<void(Loot&)>& callback);
 };
 
 inline WorldMap::QUERY_KIND operator|(WorldMap::QUERY_KIND a, WorldMap::QUERY_KIND b)

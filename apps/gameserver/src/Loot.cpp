@@ -3,6 +3,8 @@
 #include <bango/utils/random.h>
 
 using namespace bango::processor;
+using namespace bango::network;
+using namespace bango::utils;
 
 void Group::set(lisp::var param)
 {
@@ -136,4 +138,43 @@ const Group* ItemGroup::RollGroup() const
     }
 
     return group;
+}
+
+Loot::Loot(LootInfo loot_info, int x, int y, int map)
+    : Character(Character::LOOT)
+{
+    ResetAppearTime();
+    m_x = x;
+    m_y = y;
+    m_map = map;
+
+    memset(&m_item_info, 0, sizeof(m_item_info));
+    m_item_info.Index = loot_info.m_index;
+    m_item_info.Num = loot_info.m_amount;
+    m_item_info.Prefix = loot_info.m_prefix;
+}
+
+packet Loot::BuildAppearPacket(bool hero) const
+{
+    packet p(S2C_CREATEITEM);
+    p << GetItemIndex() << GetID() << GetX() << GetY() << static_cast<std::int32_t>(-1) << GetAmount();
+    return p;
+}
+
+packet Loot::BuildDisappearPacket() const
+{
+    return packet(S2C_REMOVEITEM, "d", GetID());
+}
+
+time::point Loot::GetAppearTime() const
+{
+    return m_appear_time;
+}
+void Loot::ResetAppearTime()
+{
+    m_appear_time = time::now();
+}
+
+void Loot::Tick()
+{
 }

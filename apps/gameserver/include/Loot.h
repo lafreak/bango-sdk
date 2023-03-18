@@ -7,6 +7,7 @@
 #include "spdlog/spdlog.h"
 
 #include <bango/processor/db.h>
+#include <bango/utils/time.h>
 #include <inix/attributes.h>
 
 
@@ -77,3 +78,29 @@ struct ItemGroup : public bango::processor::db_object<ItemGroup>
 };
 
 std::vector<std::uint32_t> GetValuesFromBrackets(bango::processor::lisp::var& param);
+
+
+class Loot : public Character
+{
+    ITEMINFO m_item_info;
+    bango::utils::time::point m_appear_time;
+public:
+    static constexpr std::uint32_t DISAPPEAR_TIME = 180000;
+    static constexpr std::uint32_t PRIORITY_TIME = 120000;
+
+    Loot(LootInfo loot_info, int x, int y, int map);
+
+    std::uint16_t GetItemIndex() const { return m_item_info.Index; }
+    std::uint32_t GetAmount() const { return m_item_info.Num; }
+    std::uint8_t GetPrefix() const { return m_item_info.Prefix; }
+
+    bango::utils::time::point GetAppearTime() const;
+    void                      ResetAppearTime();
+
+    bango::network::packet BuildAppearPacket(bool hero=false) const override;
+
+    bango::network::packet BuildDisappearPacket() const override;
+
+    void Tick() override;
+    void Die() override {}
+};

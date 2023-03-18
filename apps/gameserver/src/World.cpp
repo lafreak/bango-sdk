@@ -99,6 +99,14 @@ void WorldMap::Add(Character* entity)
             if (monster->distance(center) <= m_sight)
                 m_on_appear(*(Player*) entity, *monster, false);
         }
+
+        for (auto& p : container->loots())
+        {
+            auto loot = p.second;
+
+            if (loot->distance(center) <= m_sight)
+                m_on_appear(*(Player*) entity, *loot, false);
+        }
     });
 
     try {
@@ -190,6 +198,14 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
 
             if (monster->distance(old_center) <= m_sight && monster->distance(new_center) > m_sight) 
                 m_on_disappear(*(Player*) entity, *monster);
+        }
+
+        for (auto& p : container->loots())
+        {
+            auto loot = p.second;
+
+            if (loot->distance(old_center) <= m_sight && loot->distance(new_center) > m_sight)
+                m_on_disappear(*(Player*) entity, *loot);
         }
     });
 
@@ -353,6 +369,14 @@ void World::ForEachSpawn(const std::function<void(Spawn&)>& callback)
 
     for (auto it : Get().m_spawns)
         callback(*it);
+}
+
+void World::ForEachLoot(const std::function<void(Loot&)>& callback)
+{
+    std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+    for (auto it : Get().m_loots)
+        callback(*it.second);
 }
 
 

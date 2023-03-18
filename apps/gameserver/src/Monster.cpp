@@ -224,5 +224,11 @@ std::vector<LootInfo> Monster::RollLoot()
         }
     }
 
+    for(auto& loot : loot_vec)
+    {
+        auto new_loot_ptr = std::make_shared<Loot>(loot, GetX(), GetY(), GetMap());
+        World::Add(new_loot_ptr);
+    }
+
     return loot_vec;
 }
