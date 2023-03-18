@@ -781,13 +781,11 @@ void Player::OnItemPick(packet& p)
     auto x = p.pop<std::int32_t>();
     auto y = p.pop<std::int32_t>();
 
-    bool success = World::ForLoot(item_id, [this](Loot& loot) {
+    World::ForLoot(item_id, [&](Loot& loot) {
                     auto info = loot.GetItemInfo();
                     InsertItem(info.Index, info.Num);
+                    World::RemoveLootById(item_id);
                 });
-
-    if(success)
-        World::RemoveLootById(item_id);
 }
 
 void Player::LeaveParty(bool is_kicked)

@@ -153,8 +153,8 @@ Loot::Loot(LootInfo loot_info, int x, int y, int map)
     : Character(Character::LOOT)
 {
     ResetAppearTime();
-    m_x = x + random::between_signed(MIN_DISTANCE_FROM_TARGET, MAX_DISTANCE_FROM_TARGET);
-    m_y = y + random::between_signed(MIN_DISTANCE_FROM_TARGET, MAX_DISTANCE_FROM_TARGET);
+    m_x = x;
+    m_y = y;
     m_map = map;
 
     memset(&m_item_info, 0, sizeof(m_item_info));
