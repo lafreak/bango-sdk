@@ -132,7 +132,7 @@ struct FilterExample : public db_object<FilterExample>
 
 TEST(DBExample, LoadAndFind)
 {
-    Example::Load("Test/Test.txt");
+    Example::Load("Test", "Test.txt");
     auto& e = Example::DB().at(30);//Example::Find(30);
 
     EXPECT_EQ(30, e->Index);
@@ -163,7 +163,7 @@ TEST(DBExample, LoadAndFind)
 
 TEST(DBExample, LoadAndFindWithFilter)
 {
-    FilterExample::Load("Test/Test.txt", "filterexample");
+    FilterExample::Load("Test", "Test.txt", "filterexample");
     auto& e = FilterExample::DB().at(40);
 
     EXPECT_EQ(e->Index, 40);

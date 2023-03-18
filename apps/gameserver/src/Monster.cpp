@@ -67,7 +67,10 @@ void InitMonster::set(lisp::var param)
             std::uint32_t itemgroup_index = param.pop();
             std::uint32_t number_of_rolls = param.pop();
             if(!ItemGroup::Find(itemgroup_index))
-                throw std::runtime_error("ItemGroup index: " + std::to_string(itemgroup_index) + " not found");
+            {
+                spdlog::warn("Cannot find itemgroup {} for monster {}", itemgroup_index, index());
+                break;
+            }
 
             m_itemgroups.push_back(MonsterItemGroup(itemgroup_index, number_of_rolls));
             break;

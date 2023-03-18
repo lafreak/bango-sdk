@@ -70,12 +70,17 @@ void ItemGroup::AssignItemGroup(std::vector<uint32_t> values_from_bracket)
     if(!Group::Find(group_index))
         throw std::runtime_error("Group index: " + std::to_string(group_index) + " not found");
 
-    auto max_key = GetMaxMapKey();
-    auto new_key = values_from_bracket.at(0);
+    auto new_chance = values_from_bracket.at(0);
 
-    GroupInfo group_info(group_index, new_key);
+    if(GetMaxMapKey() == 0 && new_chance == 0)
+    {
+        spdlog::warn("Ignoring group_index {} for itemgroup {} due to 0 chance", group_index, index());
+        return;
+    }
+
+    GroupInfo group_info(group_index, new_chance);
     ValidateGroupInfo(group_info);
-    m_groups_map.insert({new_key, group_info});
+    m_groups_map.insert({new_chance, group_info});
 }
 
  void Group::AssignGroup(std::vector<uint32_t> values_from_bracket)
@@ -85,12 +90,16 @@ void ItemGroup::AssignItemGroup(std::vector<uint32_t> values_from_bracket)
 
     static constexpr std::uint32_t geon_index = 31;
 
-    auto max_key = GetMaxMapKey();
-
     auto item_index = values_from_bracket.size() == 2 ? geon_index : values_from_bracket.at(1);
     auto item_chance = values_from_bracket.at(0);
     auto item_amount = values_from_bracket.size() == 2 ? values_from_bracket.at(1) : (values_from_bracket.size() == 3 ? 1 : values_from_bracket.at(3));
     auto item_prefix = values_from_bracket.size() == 2 ? 0 : values_from_bracket.at(2);
+
+    if(GetMaxMapKey() == 0 && item_chance == 0)
+    {
+        spdlog::warn("Ignoring item_index {} for group {} due to 0 chance", item_index, index());
+        return;
+    }
 
     LootInfo loot_info(item_index, item_chance, item_amount, item_prefix);
 

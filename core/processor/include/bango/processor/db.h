@@ -9,6 +9,7 @@
 #include <optional>
 #include <algorithm>
 #include <string>
+#include <filesystem>
 
 namespace bango { namespace processor {
 
@@ -16,7 +17,11 @@ namespace bango { namespace processor {
     class db_object
     {
     public:
-        static bool Load(const char* path, const std::string& name_filter = "") { return container::instance().load(path, name_filter); }
+        static bool Load(const std::string& path, const std::string& file_name, const std::string& name_filter = "")
+        {
+            std::filesystem::path full_file_path = (std::filesystem::path) path / (std::filesystem::path) file_name;
+            return container::instance().load(full_file_path.c_str(), name_filter);
+        }
 
         static const std::unordered_map<unsigned int, const std::unique_ptr<T>>& DB() { return container::instance().db(); }
 

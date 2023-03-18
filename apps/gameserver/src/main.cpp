@@ -5,6 +5,7 @@
 #include <future>
 #include <chrono>
 #include <cstdint>
+#include <string>
 
 #include "spdlog/spdlog.h"
 
@@ -36,12 +37,14 @@ int main(int argc, char** argv)
     std::string game_address{"0.0.0.0"};
     std::uint16_t game_port = 3000;
     std::size_t processing_threads = 8;  // TODO: Default value should depend on nproc
+    std::string config_path = "./Config";
 
     app.add_option("--db_address", db_address, "DB server address");
     app.add_option("--db_port", db_port, "DB server port");
     app.add_option("--game_address", game_address, "Game server address");
     app.add_option("--game_port", game_port, "Game server port");
     app.add_option("--processing_threads", processing_threads, "Number of processing threads for incoming packets from players");
+    app.add_option("--config_path", config_path, "Path to server configuration files");
 
     try {
         app.parse(argc, argv);
@@ -54,12 +57,12 @@ int main(int argc, char** argv)
 
     try
     {
-        InitItem        ::Load("Config/InitItem.txt");
-        InitNPC         ::Load("Config/InitNPC.txt");
-        GenMonster      ::Load("Config/GenMonster.txt");
-        Group           ::Load("Config/ItemGroup.txt", "group");
-        ItemGroup       ::Load("Config/ItemGroup.txt", "itemgroup");
-        InitMonster     ::Load("Config/InitMonster.txt");
+        InitItem        ::Load(config_path, "InitItem.txt");
+        InitNPC         ::Load(config_path, "InitNPC.txt");
+        GenMonster      ::Load(config_path, "GenMonster.txt");
+        Group           ::Load(config_path, "ItemGroup.txt", "group");
+        ItemGroup       ::Load(config_path, "ItemGroup.txt", "itemgroup");
+        InitMonster     ::Load(config_path, "InitMonster.txt");
     }
     catch (const std::exception& e)
     {
