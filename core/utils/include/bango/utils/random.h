@@ -6,6 +6,7 @@ namespace bango { namespace utils {
     {
     public:
         static unsigned int between(unsigned int min, unsigned int max);
+        static int between_signed(int min, int max);
     };
 
 }}

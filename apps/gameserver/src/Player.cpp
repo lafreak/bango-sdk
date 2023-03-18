@@ -775,6 +775,21 @@ void Player::OnLeaveParty(packet& p)
     LeaveParty();
 }
 
+void Player::OnItemPick(packet& p)
+{
+    auto item_id = p.pop<id_t>();
+    auto x = p.pop<std::int32_t>();
+    auto y = p.pop<std::int32_t>();
+
+    bool success = World::ForLoot(item_id, [this](Loot& loot) {
+                    auto info = loot.GetItemInfo();
+                    InsertItem(info.Index, info.Num);
+                });
+
+    if(success)
+        World::RemoveLootById(item_id);
+}
+
 void Player::LeaveParty(bool is_kicked)
 {
     if (HasParty())

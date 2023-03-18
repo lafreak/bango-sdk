@@ -60,6 +60,7 @@ public:
     void OnAskPartyAnswer       (bango::network::packet& p);
     void OnExileParty           (bango::network::packet& p);
     void OnLeaveParty           (bango::network::packet& p);
+    void OnItemPick             (bango::network::packet& p);
 
     // Command Endpoints
     void OnGetItem(CommandDispatcher::Token& token);

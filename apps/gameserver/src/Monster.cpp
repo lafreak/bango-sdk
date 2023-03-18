@@ -212,7 +212,7 @@ std::vector<LootInfo> Monster::RollLoot()
             continue;
         }
 
-        for(int i = 0; i < itemgroup.m_number_of_rolls; i++)
+        for(std::uint32_t i = 0; i < itemgroup.m_number_of_rolls; i++)
         {
             const auto* rolled_group = loot_itemgroup->RollGroup();
 
