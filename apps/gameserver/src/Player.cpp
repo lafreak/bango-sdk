@@ -485,6 +485,7 @@ void Player::SendInventoryProperty() const
 
     SendProperty(P_ABSORB);
     SendProperty(P_DEFENSE);
+    SendProperty(P_ASPEED);
 }
 
 void Player::SendProperty(std::uint8_t kind, std::int64_t amount) const
@@ -523,6 +524,8 @@ void Player::SendProperty(std::uint8_t kind, std::int64_t amount) const
             write(S2C_UPDATEPROPERTY, "bw",     P_SUPOINT, GetSUPoint()); break;
         case P_LEVEL:
             write(S2C_UPDATEPROPERTY, "bw",     P_LEVEL, GetLevel()); break;
+        case P_ASPEED:
+            write(S2C_UPDATEPROPERTY, "bw",     P_ASPEED, GetAttackSpeed()); break; //TODO: Should be updated on buff aswell
         case P_EXP:
             write(S2C_UPDATEPROPERTY, "bII",    P_EXP, GetExp(), amount); break;
     }
