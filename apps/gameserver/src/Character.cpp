@@ -133,6 +133,11 @@ void Character::WriteInSight(const packet& p) const
     World::Map(GetMap()).WriteInSight(*this, p);
 }
 
+void Character::ApplyVisualEffect(std::uint8_t effect_id)
+{
+    WriteInSight(packet(S2C_EFFECT, "db", GetID(), effect_id));
+}
+
 std::unique_lock<std::mutex> Character::Lock()
 {
     return std::unique_lock<std::mutex>(m_mtx);
