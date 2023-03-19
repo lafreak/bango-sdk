@@ -782,7 +782,7 @@ void Player::OnItemPick(packet& p)
     auto y = p.pop<std::int32_t>();
 
     World::ForLoot(item_id, [&](Loot& loot) {
-                    auto info = loot.GetItemInfo();
+                    auto& info = loot.GetItemInfo();
                     InsertItem(info.Index, info.Num);
                     World::RemoveLootById(item_id);
                 });
