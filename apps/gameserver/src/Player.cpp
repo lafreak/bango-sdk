@@ -906,5 +906,6 @@ void Player::LevelUp()
     SendProperty(P_LEVEL);
     SendProperty(P_SUPOINT);
     SendProperty(P_PUPOINT);
+    ApplyVisualEffect(E_LEVELUP);
     //m_data.Exp = 0;
 }
