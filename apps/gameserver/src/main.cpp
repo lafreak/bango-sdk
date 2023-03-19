@@ -18,6 +18,7 @@
 #include "BeheadableMonster.h"
 #include "RegularMonster.h"
 #include "Spawn.h"
+#include "Skill.h"
 
 #include "CommandDispatcher.h"
 #include "DBListener.h"
@@ -63,6 +64,7 @@ int main(int argc, char** argv)
         Group           ::Load(config_path, "ItemGroup.txt", "group");
         ItemGroup       ::Load(config_path, "ItemGroup.txt", "itemgroup");
         InitMonster     ::Load(config_path, "InitMonster.txt");
+        InitSkill       ::Load(config_path, "InitSkill.txt");
     }
     catch (const std::exception& e)
     {
