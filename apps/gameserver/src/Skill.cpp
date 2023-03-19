@@ -30,7 +30,7 @@ void InitSkill::set(bango::processor::lisp::var param)
         {
             CastTime = param.pop();
             CoolDown = param.pop();
-            Unknown  = param.pop();
+            // Unknown  = param.pop();
             break;
         }
         case A_VALUE1:       Value1       = param.pop(); break;
