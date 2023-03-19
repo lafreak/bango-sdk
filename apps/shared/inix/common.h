@@ -2034,7 +2034,14 @@ enum ATTRIBUTE
 
 	// ItemGroup
 	A_GROUP,
-	A_ITEMGROUP
+	A_ITEMGROUP,
+
+	// InitSkill
+	A_REDISTRIBUTE,
+	A_LASTTIME,
+	A_DELAY,
+	A_VALUE1,
+	A_VALUE2
 };
 
 enum ATT

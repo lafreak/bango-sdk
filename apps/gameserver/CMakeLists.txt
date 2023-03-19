@@ -43,6 +43,7 @@ set(SOURCES
   src/Party.cpp
   src/Spawn.cpp
   src/Loot.cpp
+  src/Skill.cpp
   )
 
 add_executable(gameserver ${SOURCES})
