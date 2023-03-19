@@ -12,9 +12,11 @@
 #include "Party.h"
 
 #include <bango/network/packet.h>
+#include <bango/utils/random.h>
 
 using namespace bango::network;
 using namespace bango::processor;
+using namespace bango::utils;
 
 
 void InitMonster::set(lisp::var param)
@@ -212,7 +214,7 @@ std::vector<LootInfo> Monster::RollLoot()
             continue;
         }
 
-        for(int i = 0; i < itemgroup.m_number_of_rolls; i++)
+        for(std::uint32_t i = 0; i < itemgroup.m_number_of_rolls; i++)
         {
             const auto* rolled_group = loot_itemgroup->RollGroup();
 
@@ -229,7 +231,9 @@ std::vector<LootInfo> Monster::RollLoot()
 
     for(auto& loot : loot_vec)
     {
-        auto new_loot_ptr = std::make_shared<Loot>(loot, GetX(), GetY(), GetMap());
+        int new_loot_x = GetX() + (random::between(0, Loot::MAX_RANDOM_DISTANCE_FROM_THROWER * 2)) - Loot::MAX_RANDOM_DISTANCE_FROM_THROWER;
+        int new_loot_y = GetY() + (random::between(0, Loot::MAX_RANDOM_DISTANCE_FROM_THROWER * 2)) - Loot::MAX_RANDOM_DISTANCE_FROM_THROWER;
+        auto new_loot_ptr = std::make_shared<Loot>(loot, new_loot_x, new_loot_y, GetMap());
         World::Add(new_loot_ptr);
     }
 

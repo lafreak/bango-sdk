@@ -197,6 +197,8 @@ public:
         Get().m_spawns.clear();
         Get().m_monsters.clear();
         Get().m_npcs.clear();
+        Get().m_parties.clear();
+        Get().m_loots.clear();
     }
 
     static void RemoveDeadMonsters()
@@ -385,6 +387,8 @@ public:
 
     static void ForEachSpawn(const std::function<void(Spawn&)>& callback);
     static void ForEachLoot(const std::function<void(Loot&)>& callback);
+    static bool ForLoot(Character::id_t id, const std::function<void(Loot&)>& callback);
+    static bool RemoveLootById(Character::id_t id);
 };
 
 inline WorldMap::QUERY_KIND operator|(WorldMap::QUERY_KIND a, WorldMap::QUERY_KIND b)

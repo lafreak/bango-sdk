@@ -126,12 +126,12 @@ void Group::ValidateLootInfo(LootInfo current) const
 
 std::map<std::uint32_t, LootInfo>::const_iterator Group::RollLoot() const
 {
-    return m_loots_map.upper_bound(bango::utils::random::between(1, 1000));
+    return m_loots_map.upper_bound(random::between(1, 1000));
 }
 
 const Group* ItemGroup::RollGroup() const
 {
-    auto rolled_group_it = m_groups_map.upper_bound(bango::utils::random::between(1, 1000));
+    auto rolled_group_it = m_groups_map.upper_bound(random::between(1, 1000));
 
     //If nothing was chosen
     if(rolled_group_it == m_groups_map.end())
