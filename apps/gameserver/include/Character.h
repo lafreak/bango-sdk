@@ -18,6 +18,7 @@ private:
     id_t   m_id;
     std::uint8_t    m_type;
     std::uint16_t   m_dir;
+    std::int16_t some_int;
 
 protected: //TODO: Add method to inherit?
     std::uint32_t m_curhp=1, m_curmp=1;
