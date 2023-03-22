@@ -57,4 +57,4 @@ volumes:
     driver_opts:
       type: "none"
       o: "bind"
-      device: ${CONFIGS_PATH}
+      device: ${CONFIG_PATH}
