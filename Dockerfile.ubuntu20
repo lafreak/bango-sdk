@@ -37,6 +37,9 @@ RUN cd /bango-sdk/bin && \
     ./bangospace_test && \
     ./bangoutils_test
 
+ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh /
+RUN chmod +x /wait-for-it.sh
+
 #FROM ubuntu:22.04
 #
 #RUN apt update && apt install -y libmysqlclient-dev

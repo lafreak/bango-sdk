@@ -19,11 +19,11 @@ CREATE TABLE player (
 	name VARCHAR(30) NOT NULL,
 	job TINYINT NOT NULL DEFAULT 1,
 	class TINYINT NOT NULL,
-	level TINYINT NOT NULL DEFAULT 70,
+	level TINYINT NOT NULL DEFAULT 1,
 	map TINYINT NOT NULL DEFAULT 0,
-	x INT NOT NULL DEFAULT 342373,#360931, #map 44 
-	y INT NOT NULL DEFAULT 217534,#187024, #map 22
-	z INT NOT NULL DEFAULT 22780,#42140,
+	x INT NOT NULL DEFAULT 258039,
+	y INT NOT NULL DEFAULT 259336,
+	z INT NOT NULL DEFAULT 16044,
 	strength SMALLINT NOT NULL,
 	health SMALLINT NOT NULL,
 	inteligence SMALLINT NOT NULL,
@@ -33,8 +33,8 @@ CREATE TABLE player (
 	curhp INT NOT NULL,
 	curmp SMALLINT NOT NULL,
 	exp BIGINT NOT NULL DEFAULT 0,
-	pupoint SMALLINT NOT NULL DEFAULT 345,
-	supoint SMALLINT NOT NULL DEFAULT 69,
+	pupoint SMALLINT NOT NULL DEFAULT 0,
+	supoint SMALLINT NOT NULL DEFAULT 0,
 	anger INT NOT NULL DEFAULT 0,
 	face TINYINT NOT NULL,
 	hair TINYINT NOT NULL,
@@ -129,15 +129,6 @@ INSERT INTO account (login, password, secondary)
 		('bot4', 'passwd', '00000000'),
 		('bot5', 'passwd', '00000000');
 
-INSERT INTO player (idaccount, name, level, pupoint, supoint, class, strength, health, inteligence, wisdom, dexterity, curhp, curmp, face, hair)
-	VALUES
-	(1, 'bot1', 100, 628, 99, 0, 18, 21, 8, 8, 10, 200, 200, 1, 1),
-	(2, 'bot2', 100, 628, 99, 1, 8, 15, 18, 16, 8, 200, 200, 1, 1),
-	(3, 'bot3', 100, 628, 99, 2, 14, 15, 8, 10, 18, 200, 200, 1, 1),
-	(4, 'bot4', 100, 628, 99, 3, 14, 15, 8, 10, 18, 200, 200, 1, 1),
-	(5, 'bot5', 100, 628, 99, 4, 8, 15, 20, 14, 8, 200, 200, 1, 1);
-	
-
 DELIMITER $$
 DROP PROCEDURE IF EXISTS create_bot_accounts $$
 CREATE PROCEDURE create_bot_accounts ()
@@ -147,56 +138,10 @@ DECLARE accounts_to_create INT DEFAULT 1000;
 
 WHILE i <= accounts_to_create DO
     INSERT INTO account (login, password, secondary) VALUES (CONCAT('bot', i), 'passwd', '00000000');
-	INSERT INTO player (idaccount, name, level, pupoint, supoint, class, strength, health, inteligence, wisdom, dexterity, curhp, curmp, face, hair)
-		VALUES (i, CONCAT('bot', i), 100, 628, 99, 0, 18, 21, 8, 8, 10, 200, 200, 1, 1);
-	INSERT INTO item (idplayer, `index`, info, curend) VALUES (i, 799, 1, 36);
-    SET i = i + 1;
+	SET i = i + 1;
 END WHILE;
 
 END $$
 DELIMITER ;
 
 CALL create_bot_accounts();
-
-
-INSERT INTO item (idplayer, `index`, info, curend)
-VALUES
-	(1, 1125, 1, 14),
-	(1, 1126, 1, 10),
-	(1, 1127, 1, 12),
-	(1, 621, 1, 24),
-	(1, 625, 1, 20),
-	(1, 795, 1, 34),
-	(1, 1747, 1, 0),
-
-	(2, 1489, 1, 14),
-	(2, 1490, 1, 10),
-	(2, 1491, 1, 12),
-	(2, 1134, 1, 24),
-	(2, 1138, 1, 20),
-	(2, 797, 1, 32),
-	(2, 2007, 1, 0),
-
-	(3, 1129, 1, 24),
-	(3, 1130, 1, 14),
-	(3, 1131, 1, 10),
-	(3, 1132, 1, 12),
-	(3, 1133, 1, 20),
-	(3, 796, 1, 32),
-	(3, 2004, 1, 0),
-
-	(4, 1591, 1, 14),
-	(4, 1592, 1, 10),
-	(4, 1593, 1, 12),
-	(4, 1585, 1, 24),
-	(4, 1589, 1, 20),
-	(4, 1439, 1, 32),
-	(4, 1753, 1, 0),
-
-	(5, 7321, 1, 24),
-	(5, 7308, 1, 14),
-	(5, 7334, 1, 20),
-	(5, 7347, 1, 10),
-	(5, 7360, 1, 12),
-	(5, 7252, 1, 40),
-	(5, 1751, 1, 0);
