@@ -880,8 +880,8 @@ void Player::UpdateExp(std::int64_t amount)
     std::uint64_t required_exp = g_n64NeedExpFinal[GetLevel()];
     while (m_data.Exp > required_exp)
     {
-        spdlog::debug("More exp than required ({}/{}). Performing level up from {} to {}.", m_data.Exp, required_exp,
-            GetLevel(), GetLevel()+1);
+        spdlog::debug("More exp than required ({}/{}). Performing level up from {} to {} amount increased {} for player {}.", m_data.Exp, required_exp,
+            GetLevel(), GetLevel()+1, amount, GetID());
         m_data.Exp -= required_exp;
         LevelUp();
         required_exp = g_n64NeedExpFinal[GetLevel()];
@@ -900,17 +900,29 @@ std::uint64_t Player::CalculateExp(std::uint64_t exp, std::uint8_t monster_level
 {
     //TODO: Calculate exp buffs like exp stone, asadal, exp event.
     std::int32_t level_difference =  static_cast<std::int32_t>(monster_level - GetLevel());
+    if(((GetLevel() - 1) / 10) > 9)
+    {
+        spdlog::debug("(GetLevel() - 1) / 10) is higher than 9 for player {}", GetID());
+        return 0;
+    }
+    if(level_difference > 20)
+    {
+        spdlog::debug("level_difference is higher than 20 for player {}", GetID());
+        return 0;
+    }
     if (level_difference < 0)
     {
         level_difference = std::min(std::abs(level_difference), 20);
         //When monster_level < player_level, use g_nReviseExpB to calculate color ratio
         exp = (exp - exp * (g_nReviseExpB[(GetLevel() - 1) / 10][level_difference] / 100.0));
+        spdlog::debug("Exp calculated to increase {} for player {}.", exp, GetID());
         return exp;
     }
 
     level_difference = std::min(level_difference, 20);
     //When monster_level > player_level, use g_nReviseExpA to calculate color ratio
     exp = (exp * (g_nReviseExpA[(GetLevel() - 1) / 10][level_difference] / 100.0) + exp);
+    spdlog::debug("Exp calculated to increase {} for player {}.", exp, GetID());
     return exp;
 }
 
