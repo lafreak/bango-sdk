@@ -252,12 +252,16 @@ int main(int argc, char** argv)
                     monster.Tick();
                 });
 
+
+                World::RemoveExpiredLoot();
+
+                //NOTE: We always have thread-safety by making sure we always call RemoveDeadMonsters and Spawn::Tick
+                //in the same thread and Spawn::Tick is always called after RemoveDeadMonsters.
+                //Do not change order of these two calls below.
+                World::RemoveDeadMonsters();
                 World::ForEachSpawn([](Spawn& spawn) {
                     spawn.Tick();
                 });
-
-                World::RemoveDeadMonsters();
-                World::RemoveExpiredLoot();
             }
         } while (status != std::future_status::ready);
     });
