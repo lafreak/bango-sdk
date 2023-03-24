@@ -21,7 +21,7 @@ RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/nul
     apt install -y cmake g++-11
 
 # Build DB & Game servers
-RUN apt update && apt install -y libmysqlclient-dev
+RUN apt update && apt install -y libmysqlclient-dev gdb
 WORKDIR /
 COPY ./apps /bango-sdk/apps
 # for unit test sample data

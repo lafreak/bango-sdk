@@ -1,5 +1,4 @@
-.devcontainer/
-.vscode/
+.env
 build
 core/network/build
 core/persistence/build

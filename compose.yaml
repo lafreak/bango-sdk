@@ -46,6 +46,26 @@ services:
     command: /wait-for-it.sh -t 60 dbserver:2999 -- /bango-sdk/bin/gameserver --db_address dbserver --db_port 2999 --game_address 0.0.0.0 --game_port 3000 --processing_threads 8 --config_path /config
     volumes:
       - config:/config
+  gameserver-dbg:
+    image: gameserver
+    build:
+      dockerfile: ./Dockerfile.ubuntu20
+    networks:
+      - my-net
+    ports:
+      - "3000:3000"
+    depends_on:
+      - dbserver
+    cap_add:
+    - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+    command: tail -F anything
+    volumes:
+      - config:/config
+      - ./:/bango-sdk:rw
+    profiles:
+      - dbg
 
 networks:
   my-net:
