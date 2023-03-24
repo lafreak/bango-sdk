@@ -150,8 +150,28 @@ int main(int argc, char** argv)
         });
     });
 
+    CommandDispatcher::Register("/naro", [&](Player& player, CommandDispatcher::Token& token) {
+        player.Teleport(258039, 259336);
+    });
+
+    CommandDispatcher::Register("/cargo", [&](Player& player, CommandDispatcher::Token& token) {
+        player.Teleport(264975, 262548);
+    });
+
+    CommandDispatcher::Register("/mine", [&](Player& player, CommandDispatcher::Token& token) {
+        player.Teleport(266044, 285024);
+    });
+
     CommandDispatcher::Register("/fort", [&](Player& player, CommandDispatcher::Token& token) {
-        player.Teleport(268622, 242944);
+        player.Teleport(267590, 242885);
+    });
+
+    CommandDispatcher::Register("/bird", [&](Player& player, CommandDispatcher::Token& token) {
+        player.Teleport(255856, 288742);
+    });
+
+    CommandDispatcher::Register("/cop", [&](Player& player, CommandDispatcher::Token& token) {
+        player.Teleport(232899, 294628);
     });
 
     CommandDispatcher::Register("/ghost", [&](Player& player, CommandDispatcher::Token& token) {
