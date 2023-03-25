@@ -663,6 +663,9 @@ void Player::OnAttack(packet& p)
 
         auto defender_lock = character.Lock();
 
+        if(character.IsGState(CGS_KNEE) || character.IsGState(CGS_KO))
+            return;
+
         // CheckBlock
         if (!CheckHit(&character))
         {
@@ -692,7 +695,7 @@ void Player::OnAttack(packet& p)
 
         character.ReceiveDamage(GetID(), damage);
 
-        if (character.GetCurHP() <= 0 && !character.IsGState(CGS_KNEE) && !character.IsGState(CGS_KO))
+        if (character.GetCurHP() <= 0)
             character.Die();
     });
 }
