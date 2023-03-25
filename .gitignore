@@ -1,5 +1,4 @@
 .env
-build
 core/network/build
 core/persistence/build
 apps/gameserver.1
