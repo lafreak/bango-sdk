@@ -54,8 +54,6 @@ services:
       - my-net
     ports:
       - "3000:3000"
-    depends_on:
-      - dbserver
     cap_add:
     - SYS_PTRACE
     security_opt:

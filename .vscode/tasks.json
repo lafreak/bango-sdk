@@ -9,7 +9,8 @@
             "command": "cmake .. -DUSE_GTEST=OFF -DCMAKE_C_COMPILER=/usr/bin/gcc-11 -DCMAKE_CXX_COMPILER=/usr/bin/g++-11 -DCMAKE_BUILD_TYPE=Debug && make -j$(nproc)",
             "options": {
                 "cwd": "/bango-sdk/build"
-            }
+            },
+            "problemMatcher": []
         }
     ]
 }

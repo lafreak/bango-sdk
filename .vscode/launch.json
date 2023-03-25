@@ -5,23 +5,42 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "debugging",
+            "name": "DBServer",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/bango-sdk/bin/dbserver",
+            "args": [
+                "--db_address", "mysql",
+                "--db_port", "3306",
+                "--db_user", "root",
+                "--db_password", "password",
+                "--server_address", "localhost",
+                "--server_port", "2999"
+            ],
+            "stopAtEntry": false,
+            "MIMode": "gdb",
+            "externalConsole": false,
+            "cwd": "/",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": false
+                }
+            ]
+        },
+        {
+            "name": "GameServer",
             "type": "cppdbg",
             "request": "launch",
             "program": "/bango-sdk/bin/gameserver",
             "args": [
-                "--db_address",
-                "dbserver",
-                "--db_port",
-                "2999",
-                "--game_address",
-                "0.0.0.0",
-                "--game_port",
-                "3000",
-                "--processing_threads",
-                "8",
-                "--config_path",
-                "/config"
+                "--db_address", "localhost",
+                "--db_port", "2999",
+                "--game_address", "0.0.0.0",
+                "--game_port", "3000",
+                "--processing_threads", "8",
+                "--config_path", "/config"
             ],
             "stopAtEntry": false,
             "MIMode": "gdb",
