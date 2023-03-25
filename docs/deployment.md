@@ -43,17 +43,34 @@ ms-vscode-remote.remote-containers`
 
 `> Reopen in Container`
 
+This will re-open the directory inside docker container which is created out of `Dockerfile.ubuntu20`. It contains GDB and building tools required to build and debug DBServer and GameServer. It will expose port 3000 to the host, so if you start the server inside the container on port 3000, you can connect to it using client on Windows host.
+
+It will also setup MySQL 8 container and PHPMyAdmin so you can debug data persistence issues via web app. http://localhost:8082
+
 After reopened:
 
 `CTRL+SHIFT+P`
 
 `> Run Task`  
-`> build-dbg`
+`Run CMake`
+
+`> Run Task`  
+`Build`
+
+This will build DBServer and GameServer with debug flags.
 
 After build is completed:
 
 `CTRL+SHIFT+P`
 
 `> Debug: Select and Start Debugging`  
-`> debugging`
+`DBServer`
 
+`> Debug: Select and Start Debugging`  
+`GameServer`
+
+To start both - DB and Game server. You are not ready to login from client on Windows and put breakpoints to the server code using debugger.
+
+## Put your first breakpoint
+
+![breakpoint](breakpoint.png)

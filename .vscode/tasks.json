@@ -4,9 +4,18 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build-dbg",
+            "label": "Run CMake",
             "type": "shell",
-            "command": "cmake .. -DUSE_GTEST=OFF -DCMAKE_C_COMPILER=/usr/bin/gcc-11 -DCMAKE_CXX_COMPILER=/usr/bin/g++-11 -DCMAKE_BUILD_TYPE=Debug && make -j$(nproc)",
+            "command": "cmake .. -DUSE_GTEST=OFF -DCMAKE_C_COMPILER=/usr/bin/gcc-11 -DCMAKE_CXX_COMPILER=/usr/bin/g++-11 -DCMAKE_BUILD_TYPE=Debug",
+            "options": {
+                "cwd": "/bango-sdk/build"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "make -j$(nproc)",
             "options": {
                 "cwd": "/bango-sdk/build"
             },
