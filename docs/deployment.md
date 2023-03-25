@@ -74,3 +74,13 @@ To start both - DB and Game server. You are not ready to login from client on Wi
 ## Put your first breakpoint
 
 ![breakpoint](breakpoint.png)
+
+## View database data
+
+Visit http://localhost:8082
+```
+ID: root
+Pass: password
+```
+
+![db-data](db-data.png)
