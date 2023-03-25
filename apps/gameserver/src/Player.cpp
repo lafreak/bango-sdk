@@ -692,7 +692,7 @@ void Player::OnAttack(packet& p)
 
         character.ReceiveDamage(GetID(), damage);
 
-        if (character.GetCurHP() <= 0)
+        if (character.GetCurHP() <= 0 && !character.IsGState(CGS_KNEE) && !character.IsGState(CGS_KO))
             character.Die();
     });
 }

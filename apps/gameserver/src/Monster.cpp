@@ -167,6 +167,11 @@ void Monster::ReceiveDamage(id_t id, std::uint32_t damage)
 
 void Monster::DistributeExp()
 {
+    if(total_hostility == 0)
+    {
+        spdlog::error("total_hostility is 0. MonsterID: {}, hostility_map size {}", GetIndex(), hostility_map.size());
+        return;
+    }
     std::map<id_t, std::uint64_t> party_container;
     for (auto&[id, damage] : hostility_map)
     {
