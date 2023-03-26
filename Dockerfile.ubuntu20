@@ -21,7 +21,7 @@ RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/nul
     apt install -y cmake g++-11
 
 # Build DB & Game servers
-RUN apt update && apt install -y libmysqlclient-dev
+RUN apt update && apt install -y libmysqlclient-dev gdb
 WORKDIR /
 COPY ./apps /bango-sdk/apps
 # for unit test sample data
@@ -36,6 +36,9 @@ RUN cd /bango-sdk/bin && \
     ./bangoprocessor_test && \
     ./bangospace_test && \
     ./bangoutils_test
+
+ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh /
+RUN chmod +x /wait-for-it.sh
 
 #FROM ubuntu:22.04
 #

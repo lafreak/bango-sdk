@@ -1,0 +1,78 @@
+services:
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    networks:
+      - my-net
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./build.sql:/docker-entrypoint-initdb.d/init.sql
+  phpmyadmin:
+    image: phpmyadmin
+    environment:
+      PMA_HOST: mysql
+    networks:
+      - my-net
+    ports:
+      - "8082:80"
+  dbserver:
+    image: dbserver
+    build:
+      dockerfile: ./Dockerfile.ubuntu20
+    networks:
+      - my-net
+    ports:
+      - "2999:2999"
+    depends_on:
+      - mysql
+    stdin_open: true
+    tty: true
+    command: /wait-for-it.sh -t 60 mysql:3306 -- /bango-sdk/bin/dbserver --db_address mysql --db_port 3306 --db_user root --db_password password --server_address dbserver --server_port 2999
+  gameserver:
+    image: gameserver
+    build:
+      dockerfile: ./Dockerfile.ubuntu20
+    networks:
+      - my-net
+    ports:
+      - "3000:3000"
+    depends_on:
+      - dbserver
+    stdin_open: true
+    tty: true
+    command: /wait-for-it.sh -t 60 dbserver:2999 -- /bango-sdk/bin/gameserver --db_address dbserver --db_port 2999 --game_address 0.0.0.0 --game_port 3000 --processing_threads 8 --config_path /config
+    volumes:
+      - config:/config
+  gameserver-dbg:
+    image: gameserver
+    build:
+      dockerfile: ./Dockerfile.ubuntu20
+    networks:
+      - my-net
+    ports:
+      - "3000:3000"
+    cap_add:
+    - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+    command: tail -F anything
+    volumes:
+      - config:/config
+      - ./:/bango-sdk:rw
+    profiles:
+      - dbg
+
+networks:
+  my-net:
+
+volumes:
+  db-data:
+  config:
+    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: ${CONFIG_PATH}

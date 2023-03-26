@@ -1,0 +1,25 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run CMake",
+            "type": "shell",
+            "command": "cmake .. -DUSE_GTEST=OFF -DCMAKE_C_COMPILER=/usr/bin/gcc-11 -DCMAKE_CXX_COMPILER=/usr/bin/g++-11 -DCMAKE_BUILD_TYPE=Debug",
+            "options": {
+                "cwd": "/bango-sdk/build"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "make -j$(nproc)",
+            "options": {
+                "cwd": "/bango-sdk/build"
+            },
+            "problemMatcher": []
+        }
+    ]
+}
