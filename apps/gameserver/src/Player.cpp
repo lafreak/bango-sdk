@@ -11,6 +11,7 @@
 
 #include <bango/utils/random.h>
 #include <bango/network/packet.h>
+#include <bango/utils/time.h>
 #include <inix.h>
 
 using namespace bango::network;
@@ -662,7 +663,8 @@ void Player::OnAttack(packet& p)
         LookAt(&character);
 
         auto defender_lock = character.Lock();
-
+        if(character.IsGState(AT_KNEE) || character.IsGState(AT_DIE))
+            return;
         // CheckBlock
         if (!CheckHit(&character))
         {
@@ -780,14 +782,15 @@ void Player::OnLeaveParty(packet& p)
 
 void Player::OnItemPick(packet& p)
 {
-    auto item_id = p.pop<id_t>();
+    auto loot_id = p.pop<id_t>();
     auto x = p.pop<std::int32_t>();
     auto y = p.pop<std::int32_t>();
 
-    World::ForLoot(item_id, [&](Loot& loot) {
+    World::ForLoot(loot_id, [&](Loot& loot) {
+
                     auto& info = loot.GetItemInfo();
                     InsertItem(info.Index, info.Num);
-                    World::RemoveLootById(item_id);
+                    World::RemoveLootById(loot_id);
                 });
 }
 
@@ -896,24 +899,6 @@ bool Player::CanReciveExp()
     return !IsGState(CGS_KNEE | CGS_KO | CGS_FISH);
 }
 
-std::uint64_t Player::CalculateExp(std::uint64_t exp, std::uint8_t monster_level)
-{
-    //TODO: Calculate exp buffs like exp stone, asadal, exp event.
-    std::int32_t level_difference =  static_cast<std::int32_t>(monster_level - GetLevel());
-    if (level_difference < 0)
-    {
-        level_difference = std::min(std::abs(level_difference), 20);
-        //When monster_level < player_level, use g_nReviseExpB to calculate color ratio
-        exp = (exp - exp * (g_nReviseExpB[(GetLevel() - 1) / 10][level_difference] / 100.0));
-        return exp;
-    }
-
-    level_difference = std::min(level_difference, 20);
-    //When monster_level > player_level, use g_nReviseExpA to calculate color ratio
-    exp = (exp * (g_nReviseExpA[(GetLevel() - 1) / 10][level_difference] / 100.0) + exp);
-    return exp;
-}
-
 void Player::LevelUp()
 {
     m_data.SUPoint += 1;
@@ -923,5 +908,13 @@ void Player::LevelUp()
     SendProperty(P_SUPOINT);
     SendProperty(P_PUPOINT);
     ApplyVisualEffect(E_LEVELUP);
+    if(HasParty())
+    {
+        World::ForParty(GetPartyID(), [&](Party& party)
+        {
+            party.UpdateTopLevel();
+            party.SendPartyInfo();
+        });
+    }
     //m_data.Exp = 0;
 }

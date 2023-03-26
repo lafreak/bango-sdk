@@ -196,6 +196,24 @@ static unsigned short FIND_NEED_PU_EX(unsigned short cur, unsigned char add) {
 	return needPU;
 }
 
+static std::uint64_t CalculateExp(std::uint64_t exp, std::uint8_t monster_level, std::uint8_t level)
+{
+    //TODO: Calculate exp buffs like exp stone, asadal, exp event.
+    std::int32_t level_difference =  static_cast<std::int32_t>(monster_level - level);
+    if (level_difference < 0)
+    {
+        level_difference = std::min(std::abs(level_difference), 20);
+        //When monster_level < player_level, use g_nReviseExpB to calculate color ratio
+        exp = (exp - exp * (g_nReviseExpB[(level - 1) / 10][level_difference] / 100.0));
+        return exp;
+    }
+
+    level_difference = std::min(level_difference, 20);
+    //When monster_level > player_level, use g_nReviseExpA to calculate color ratio
+    exp = (exp * (g_nReviseExpA[(level - 1) / 10][level_difference] / 100.0) + exp);
+    return exp;
+}
+
 static int g_denoHP[] = { 10, 14, 13, 13, 13 }; // mob deno 10
 static int g_denoMP[] = { 13, 10, 12, 12, 12 }; // mob deno 10
 

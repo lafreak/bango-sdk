@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cstdint>
 #include <memory>
+#include <unordered_map>
 
 #include "spdlog/spdlog.h"
 
@@ -165,9 +166,11 @@ void Monster::ReceiveDamage(id_t id, std::uint32_t damage)
 }
 
 
-void Monster::DistributeExp()
+void Monster::AllotExpAndLoot()
 {
-    std::map<id_t, std::uint64_t> party_container;
+    std::unordered_map<id_t, std::uint64_t> party_container;
+    std::pair<id_t, std::uint64_t> max_player_damage = {0, 0};
+    std::pair<id_t, std::uint64_t> max_party_damage = {0, 0};
     for (auto&[id, damage] : hostility_map)
     {
         World::ForPlayer(id, [&](Player& player){
@@ -176,32 +179,50 @@ void Monster::DistributeExp()
                 party_container[player.GetPartyID()] += damage;
             else
             {
+                max_player_damage = max_player_damage.second < damage ? std::make_pair(id, damage) : max_player_damage;
                 long double exp_share = static_cast<long double>(damage) / static_cast<long double>(total_hostility);
                 std::uint64_t exp = exp_share * m_init->Exp;
-                player.UpdateExp(player.CalculateExp(exp, GetLevel()));
+                player.UpdateExp(CalculateExp(exp, GetLevel(), player.GetLevel()));
             }
         });
-
     }
-    // TODO: Distribute party container EXP.
 
+    for (auto&[party_id, damage] : party_container)
+    {
+        max_party_damage = max_party_damage.second < damage ? std::make_pair(party_id, damage) : max_player_damage;
+        long double exp_share = static_cast<long double>(damage) / static_cast<long double>(total_hostility);
+        std::uint64_t exp = exp_share * m_init->Exp;
+
+        World::ForParty(party_id, [&](Party& party)
+        {
+            party.AllotExp(CalculateExp(exp, GetLevel(), party.GetTopLevel()), {GetX(), GetY()});
+        });
+    }
+
+    if(max_party_damage.second > max_player_damage.second)
+    {
+        World::ForParty(max_party_damage.first, [&](Party& party)
+        {
+            AllotLoot(party.GetID(), true);
+        });
+    }
+    else
+    {
+        World::ForPlayer(max_player_damage.first, [&](Player& player)
+        {
+            AllotLoot(player.GetID());
+        });
+    }
     hostility_map.clear();
     total_hostility = 0;
 }
 
-void Monster::DistributeLoot()
-{
-    // TODO: Decide which player(party) will recieve loot.
-    RollLoot();
-}
-
 void Monster::Die()
 {
-    DistributeExp();
-    DistributeLoot();
+    AllotExpAndLoot();
 }
 
-std::vector<LootInfo> Monster::RollLoot()
+void Monster::AllotLoot(std::unordered_set<id_t> loot_owners)
 {
     std::vector<LootInfo> loot_vec;
 
@@ -233,9 +254,7 @@ std::vector<LootInfo> Monster::RollLoot()
     {
         int new_loot_x = GetX() + (random::between(0, Loot::MAX_RANDOM_DISTANCE_FROM_THROWER * 2)) - Loot::MAX_RANDOM_DISTANCE_FROM_THROWER;
         int new_loot_y = GetY() + (random::between(0, Loot::MAX_RANDOM_DISTANCE_FROM_THROWER * 2)) - Loot::MAX_RANDOM_DISTANCE_FROM_THROWER;
-        auto new_loot_ptr = std::make_shared<Loot>(loot, new_loot_x, new_loot_y, GetMap());
+        auto new_loot_ptr = std::make_shared<Loot>(loot, new_loot_x, new_loot_y, GetMap(), loot_owners);
         World::Add(new_loot_ptr);
     }
-
-    return loot_vec;
 }
