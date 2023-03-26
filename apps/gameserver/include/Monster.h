@@ -50,11 +50,12 @@ class Monster : public Character
     void DistributeLoot();
     std::vector<LootInfo> RollLoot();
 
+    bool is_removed = true;
+
 public:
     Monster(const std::unique_ptr<InitMonster>& init, int x, int y, int map=0);
     ~Monster();
 
-    void RestoreInitialState(int new_x, int new_y);
     virtual void ReceiveDamage(id_t id, std::uint32_t damage) override;
 
     std::uint16_t   GetIndex()      const { return m_init->Index; }
@@ -94,6 +95,14 @@ public:
     static void Summon(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map);
     static std::shared_ptr<Monster> CreateMonster(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map);
 
+    void FlagRemoved()
+    {
+        is_removed = true;
+    }
+
+    bool IsRemoved() const { return is_removed; }
+
+    void RestoreInitialState(int new_x, int new_y);
 protected:
     virtual void Die() override;
 };

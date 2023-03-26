@@ -47,9 +47,12 @@ void Spawn::Tick()
 
     //NOTE: We always have thread-safety by making sure we always call RemoveDeadMonsters and Spawn::Tick
     //in the same thread and Spawn::Tick is always called after RemoveDeadMonsters.
+
+    // CGS_KO is a contract for us that the monsters is up for respawn.
+    // Since Remove
     for(auto& monster : m_area_monsters)
     {
-        if(monster->IsGState(CGS_KO))
+        if(monster->IsRemoved())
             RespawnOnWorld(monster);
     }
 
@@ -82,7 +85,7 @@ void Spawn::CreateSpawn()
 
 void Spawn::SetNextSpawnCycle()
 {
-    m_next_spawn_cycle = (time::now() + time::duration(GetSpawnCycle()));
+    m_next_spawn_cycle = time::now() + time::duration(GetSpawnCycle());
 }
 
 std::int32_t Spawn::GetArea() const
@@ -128,11 +131,17 @@ GenMonster::RectXY Spawn::GetRect() const
 std::int32_t GenMonster::RectXY::GetRandomX() const
 {
     return bango::utils::random::between(X1, X2) * 32;
+    // FIXME: Current implementation spawns monsters on x/y which are multiply of 32.
+    // Possible fix:
+    // return bango::utils::random::between(X1 * 32, X2 * 32);
 }
 
 std::int32_t GenMonster::RectXY::GetRandomY() const
 {
     return bango::utils::random::between(Y1, Y2) * 32;
+    // FIXME: Current implementation spawns monsters on x/y which are multiply of 32.
+    // Possible fix:
+    // return bango::utils::random::between(Y1 * 32, Y2 * 32);
 }
 
 unsigned int GenMonster::index() const

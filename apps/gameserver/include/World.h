@@ -99,6 +99,8 @@ public:
     //! Thread-safe.
     void Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z=0, bool stop=false);
 
+    //! Executed given function for character id of given kind.
+    //! Thread-safe.
     void For(QUERY_KIND kind, Character::id_t id, const std::function<void(Character&)>&& callback);
 
     //! Executes callback for all players around in given radius.
@@ -127,7 +129,7 @@ class World
 {
     constexpr static unsigned short MAP_COUNT = 32;
 
-    std::vector<std::unique_ptr<WorldMap>> m_maps;
+    const std::vector<std::unique_ptr<WorldMap>> m_maps;
 
     typedef std::unordered_map<Character::id_t, Player*>                    PlayerContainer;
     typedef std::unordered_map<Character::id_t, std::shared_ptr<Monster>>   MonsterContainer;
@@ -145,10 +147,16 @@ class World
 
     std::recursive_mutex m_entities_rmtx;
 
-    World()
+    World() : m_maps(std::move(CreateMaps()))
     {
+    }
+
+    static std::vector<std::unique_ptr<WorldMap>> CreateMaps()
+    {
+        auto maps = std::vector<std::unique_ptr<WorldMap>>();
         for (int i = 0; i < MAP_COUNT; i++)
-            m_maps.push_back(std::make_unique<WorldMap>(MAP_WIDTH, MAP_SIGHT));
+            maps.push_back(std::make_unique<WorldMap>(MAP_WIDTH, MAP_SIGHT));
+        return std::move(maps);
     }
 
     static World& Get()
@@ -159,37 +167,52 @@ class World
 
 public:
 
+    //! Thread-safe due to the fact that maps are generated at the beginning and m_maps itself is never modified.
     static WorldMap& Map(size_t id)
     {
         return *Get().m_maps[id >= MAP_COUNT ? 0 : id].get();
     }
 
+    //! Set callback to be executed when entity appears in the world.
+    //! Not thread-safe. To be called upon server start before other threads start running. (Tick/Network)
     static void OnAppear(const WorldMap::AppearEvent& callback)
     {
         for (auto& map : Get().m_maps)
             map->OnAppear(callback);
     }
 
+    //! Set callback to be executed when entity is removed from the world.
+    //! Not thread-safe. To be called upon server start before other threads start running. (Tick/Network)
     static void OnDisappear(const WorldMap::DisappearEvent& callback)
     {
         for (auto& map : Get().m_maps)
             map->OnDisappear(callback);
     }
 
+    //! Set callback to be executed when entity is moving around the world.
+    //! Not thread-safe. To be called upon server start before other threads start running. (Tick/Network)
     static void OnMove(const WorldMap::MoveEvent& callback)
     {
         for (auto& map : Get().m_maps)
             map->OnMove(callback);
     }
 
+    //! Adds npcs to the world based on previously loaded InitNPC.txt.
+    //! Not thread-safe. To be called upon server start before other threads start running. (Tick/Network)
     static void SpawnNpcs()
     {
         for (const auto& init : InitNPC::DB())
             Add(std::make_shared<NPC>(init.second));
     }
 
+    //! Adds spawns to the world based on previously loaded GenMonsters.txt.
+    //! Includes adding monsters to the world related to the spawns.
+    //! Not thread-safe. To be called upon server start before other threads start running. (Tick/Network)
     static void CreateSpawnsAndSpawnMonsters();
 
+    //! Thread-safe cleanup of the world.
+    //! To be called upon server closure.
+    //! Order of containers is important.
     static void Cleanup()
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
@@ -201,6 +224,34 @@ public:
         Get().m_loots.clear();
     }
 
+    //! Thread-safe in context of world entities.
+    //! Not thread safe in terms of entity properties.
+    //! Executes every second on separate thread.
+    static void Tick()
+    {
+        ForEachPlayer([](Player& player) {
+            player.Tick();
+        });
+
+        ForEachMonster([](Monster& monster) {
+            monster.Tick();
+        });
+
+        RemoveExpiredLoot();
+
+        // Removes monsters from world flagged as dead with CGS_KO state.
+        // Flags those as removed.
+        RemoveDeadMonsters();
+
+        // Re-inserts monsters with flagged as removed, tagged to spawns into the world with given delay.
+        ForEachSpawn([](Spawn& spawn) {
+            spawn.Tick();
+        });
+    }
+
+    //! Removes monsters flagged as CGS_KO from the world.
+    //! Monsters summoned via Summon are destructed.
+    //! Monsters created via Spawns are flagged as removed for further re-spawn via Spawn::Tick.
     static void RemoveDeadMonsters()
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
@@ -210,6 +261,7 @@ public:
             auto& monster = it->second;
             if (monster->IsGState(CGS_KO))
             {
+                monster->FlagRemoved();
                 Map(monster->GetMap()).Remove(monster.get(), true);
                 it = Get().m_monsters.erase(it);
             }
@@ -218,6 +270,7 @@ public:
         }
     }
 
+    //! Removes loots expired due to timeout from the world.
     static void RemoveExpiredLoot()
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
@@ -225,7 +278,7 @@ public:
         for (auto it = Get().m_loots.begin(); it != Get().m_loots.end(); )
         {
             auto& loot = it->second;
-            if((bango::utils::time::now() - loot->GetAppearTime()).count() >= Loot::DISAPPEAR_TIME)
+            if(loot->IsExpired())
             {
                 Map(loot->GetMap()).Remove(loot.get());
                 it = Get().m_loots.erase(it);
@@ -239,6 +292,7 @@ public:
     static void Add(Player* entity)
     {
         {
+            // FIXME: Don't we need to lock for the entire time of adding to the map as well?
             std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
             Get().m_players.insert(std::make_pair(entity->GetID(), entity));
         }

@@ -264,24 +264,7 @@ int main(int argc, char** argv)
         do {
             status = done_future.wait_for(1s);
             if (status == std::future_status::timeout) {
-                World::ForEachPlayer([](Player& player) {
-                    player.Tick();
-                });
-
-                World::ForEachMonster([](Monster& monster) {
-                    monster.Tick();
-                });
-
-
-                World::RemoveExpiredLoot();
-
-                //NOTE: We always have thread-safety by making sure we always call RemoveDeadMonsters and Spawn::Tick
-                //in the same thread and Spawn::Tick is always called after RemoveDeadMonsters.
-                //Do not change order of these two calls below.
-                World::RemoveDeadMonsters();
-                World::ForEachSpawn([](Spawn& spawn) {
-                    spawn.Tick();
-                });
+                World::Tick();
             }
         } while (status != std::future_status::ready);
     });

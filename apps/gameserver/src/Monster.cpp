@@ -155,6 +155,7 @@ void Monster::RestoreInitialState(int new_x, int new_y)
     m_curhp = GetMaxHP();
     m_x = new_x;
     m_y = new_y;
+    is_removed = false;
 }
 
 void Monster::ReceiveDamage(id_t id, std::uint32_t damage)

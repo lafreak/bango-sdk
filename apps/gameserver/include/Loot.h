@@ -84,8 +84,8 @@ class Loot : public Character
 {
     ITEMINFO m_item_info;
     bango::utils::time::point m_appear_time;
-public:
     static constexpr std::uint32_t DISAPPEAR_TIME = 180000;
+public:
     static constexpr std::uint32_t PRIORITY_TIME = 120000;
     static constexpr std::int32_t MAX_RANDOM_DISTANCE_FROM_THROWER = 20;
 
@@ -96,8 +96,7 @@ public:
     std::uint8_t GetPrefix() const { return m_item_info.Prefix; }
     const ITEMINFO& GetItemInfo() const { return m_item_info; }
 
-    bango::utils::time::point GetAppearTime() const;
-    void                      ResetAppearTime();
+    bool IsExpired() const;
 
     bango::network::packet BuildAppearPacket(bool hero=false) const override;
 
