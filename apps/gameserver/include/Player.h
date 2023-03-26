@@ -160,7 +160,7 @@ public:
     void Die() override;
 
     void UpdateExp(std::int64_t amount);
-    bool CanReciveExp();
+    bool CanReceiveExp();  // TODO: Make use of it
     std::uint64_t CalculateExp(std::uint64_t exp, std::uint8_t monster_level);
     void LevelUp();
 };

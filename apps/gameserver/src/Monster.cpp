@@ -169,7 +169,7 @@ void Monster::ReceiveDamage(id_t id, std::uint32_t damage)
 void Monster::DistributeExp()
 {
     std::map<id_t, std::uint64_t> party_container;
-    for (auto&[id, damage] : hostility_map)
+    for (auto& [id, damage] : hostility_map)
     {
         World::ForPlayer(id, [&](Player& player){
             auto player_lock = player.Lock();

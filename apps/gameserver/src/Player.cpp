@@ -663,7 +663,11 @@ void Player::OnAttack(packet& p)
 
         auto defender_lock = character.Lock();
         if (!CanAttack(character))
+        {
+            spdlog::debug("Player {} cannot attack monster character id {} due to some reason",
+                this->GetName(), character.GetID());
             return;
+        }
 
         // TODO: CheckBlock
         if (!CheckHit(character))
@@ -856,6 +860,8 @@ void Player::Die()
 
 void Player::UpdateExp(std::int64_t amount)
 {
+    spdlog::debug("Updating player: {} exp by {}", GetName(), amount);
+
     // No effect
     if (amount == 0)
         return;
@@ -886,14 +892,19 @@ void Player::UpdateExp(std::int64_t amount)
             GetLevel(), GetLevel()+1);
         m_data.Exp -= required_exp;
         LevelUp();
+        if (GetLevel() >= MAX_LEVEL)
+        {
+            spdlog::warn("Level is too large to recieve remaining exp: {}", GetLevel());
+            m_data.Exp = 0;
+            break;
+        }
         required_exp = g_n64NeedExpFinal[GetLevel()];
     }
 
     SendProperty(P_EXP, amount);
-    return;
 }
 
-bool Player::CanReciveExp()
+bool Player::CanReceiveExp()
 {
     return !IsGState(CGS_KNEE | CGS_KO | CGS_FISH);
 }
