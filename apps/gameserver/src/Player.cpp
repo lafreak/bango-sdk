@@ -662,9 +662,11 @@ void Player::OnAttack(packet& p)
         LookAt(&character);
 
         auto defender_lock = character.Lock();
+        if (!CanAttack(character))
+            return;
 
-        // CheckBlock
-        if (!CheckHit(&character))
+        // TODO: CheckBlock
+        if (!CheckHit(character))
         {
             WriteInSight(packet(S2C_ATTACK, "ddddb",
                 GetID(), character.GetID(), 0, 0, ATF_MISS));

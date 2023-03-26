@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "spdlog/spdlog.h"
+
 #include "World.h"
 #include "RegularMonster.h"
 #include "BeheadableMonster.h"
@@ -61,9 +62,12 @@ void Spawn::Tick()
 
 void Spawn::RespawnOnWorld(const std::shared_ptr<Monster> monster)
 {
-    //TODO: World add/remove API to check if the monster with given ID already exists.
+    Character::id_t previous_id = monster->GetID();
     monster->RestoreInitialState(GetRandomX(), GetRandomY());
     World::Add(monster);
+
+    spdlog::debug("Respawning monster index: {}; with previous id: {}; now with id: {}",
+        monster->GetIndex(), previous_id, monster->GetID());
 }
 
 void Spawn::CreateSpawn()

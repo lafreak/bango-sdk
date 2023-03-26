@@ -288,13 +288,16 @@ public:
         }
     }
 
-    //! Adds player to the world without ownership. 
+    //! Adds player to the world without ownership.
+    //! Ownership is held in core server.
     static void Add(Player* entity)
     {
         {
             // FIXME: Don't we need to lock for the entire time of adding to the map as well?
             std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-            Get().m_players.insert(std::make_pair(entity->GetID(), entity));
+            auto [_, inserted] =  Get().m_players.insert(std::make_pair(entity->GetID(), entity));
+            if (!inserted)
+                throw std::logic_error("player already present in world"); 
         }
         Map(entity->GetMap()).Add(entity);
     }
@@ -311,14 +314,26 @@ public:
             switch(entity->GetType())
             {
             case Character::MONSTER:
-                Get().m_monsters.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Monster>(entity)));
+            {
+                auto [_, inserted] = Get().m_monsters.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Monster>(entity)));
+                if (!inserted)
+                    throw std::logic_error("monster already present in world"); 
                 break;
+            }
             case Character::NPC:
-                Get().m_npcs.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<NPC>(entity)));
+            {
+                auto [_, inserted] = Get().m_npcs.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<NPC>(entity)));
+                if (!inserted)
+                    throw std::logic_error("npc already present in world"); 
                 break;
+            }
             case Character::LOOT:
-                Get().m_loots.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Loot>(entity)));
+            {
+                auto [_, inserted] = Get().m_loots.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Loot>(entity)));
+                if (!inserted)
+                    throw std::logic_error("loot already present in world"); 
                 break;
+            }
             }
 
         }

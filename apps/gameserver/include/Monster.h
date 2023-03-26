@@ -50,7 +50,9 @@ class Monster : public Character
     void DistributeLoot();
     std::vector<LootInfo> RollLoot();
 
-    bool is_removed = true;
+    // FIXME: At this moment we ensure that each creation of a monster ends up adding it to the world.
+    // It does not need to be the case since some systems may prepare monsters beforehand.
+    bool is_removed = false;
 
 public:
     Monster(const std::unique_ptr<InitMonster>& init, int x, int y, int map=0);
@@ -92,6 +94,7 @@ public:
     bango::network::packet BuildAppearPacket(bool hero=false) const override;
     bango::network::packet BuildDisappearPacket() const override;
     bango::network::packet BuildMovePacket(std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z, bool stop) const override;
+
     static void Summon(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map);
     static std::shared_ptr<Monster> CreateMonster(std::uint32_t index, std::int32_t x, std::int32_t y, std::int32_t map);
 
