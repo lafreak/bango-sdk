@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "Loot.h"
@@ -46,9 +47,8 @@ class Monster : public Character
     const std::unique_ptr<InitMonster>& m_init;
     std::unordered_map<id_t, std::uint64_t> hostility_map;
     std::uint64_t total_hostility;
-    void DistributeExp();
-    void DistributeLoot();
-    std::vector<LootInfo> RollLoot();
+    void AllotExpAndLoot();
+    void AllotLoot(id_t id, bool is_party = false);
 
 public:
     Monster(const std::unique_ptr<InitMonster>& init, int x, int y, int map=0);

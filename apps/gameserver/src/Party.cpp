@@ -16,7 +16,7 @@ using namespace bango::network;
 
 Party::Party(Player* leader, Player* player)
 {
-    static id_t g_max_id=0;
+    static id_t g_max_id=1;
     m_id = g_max_id++;
 
     spdlog::trace("Party constructor between: {} and {}, index:{}", leader->GetName(), player->GetName(), m_id);
@@ -124,10 +124,39 @@ std::uint8_t Party::GetTopLevel() const
     return m_top_level;
 }
 
-void Party::DistributeExp(std::uint64_t exp, std::uint8_t monster_level, bango::space::point p)
+void Party::AllotExp(std::uint64_t exp, bango::space::point p)
 {
-    //TODO
     std::lock_guard<std::recursive_mutex> guard(m_rmtx_list);
+    std::uint32_t level_sum = 0;
+    std::uint32_t extra_exp = 0; // The more players are within 20 levels of top level, the more total exp to share.
+    std::list<Player*> players_to_give_exp;
+    for (auto* player : m_members_list)
+    {
+        auto player_lock = player->Lock();
+        if(player->distance(p) && player->CanReciveExp())
+        {
+            level_sum += player->GetLevel();
+            players_to_give_exp.push_back(player);
+            if(GetTopLevel() - player->GetLevel() <= 20)
+                extra_exp++;
+        }
+    }
+
+    if(extra_exp > 1)
+        exp += static_cast<long double>(extra_exp - 1 / 10) * exp;
+
+    for (auto* player : players_to_give_exp)
+    {
+        auto player_lock = player->Lock();
+        std::uint64_t exp_for_player = static_cast<long double>(exp) * player->GetLevel() / level_sum;
+        std::uint8_t level_difference = GetTopLevel() - player->GetLevel();
+
+        if(level_difference <= MAX_LEVEL_DIFFERENCE_TO_RECEIVE_EXP)
+        {
+            exp_for_player -= static_cast<long double>(exp_for_player) * g_nRevisePartyExp[level_difference] / 100;
+            player->UpdateExp(exp_for_player);
+        }
+    }
 }
 
 std::uint8_t Party::GetSize() const
@@ -166,4 +195,12 @@ void Party::UpdateTopLevel()
     m_top_level = (*std::max_element(m_members_list.begin(), m_members_list.end(), [](auto& p1, auto& p2){
         return p1->GetLevel() < p2->GetLevel(); 
     }))->GetLevel();
+}
+
+std::unordered_set<id_t> Party::GetMembersPID() const
+{
+    std::unordered_set<id_t> pids;
+    for (auto* player : m_members_list)
+        pids.insert(player->GetID());
+    return pids;
 }

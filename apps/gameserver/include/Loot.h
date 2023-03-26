@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <unordered_set>
 
 #include "Inventory.h"
 #include "Character.h"
@@ -95,6 +96,7 @@ public:
     std::uint32_t GetAmount() const { return m_item_info.Num; }
     std::uint8_t GetPrefix() const { return m_item_info.Prefix; }
     const ITEMINFO& GetItemInfo() const { return m_item_info; }
+    id_t GetOwnerId() const { return m_owner_id; }
 
     bango::utils::time::point GetAppearTime() const;
     void                      ResetAppearTime();
