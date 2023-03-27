@@ -216,6 +216,11 @@ public:
     static void Cleanup()
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+        for (auto& [_, player] : Get().m_players)
+        {
+            auto lock = player->Lock();
+            player->SaveAllProperty();
+        }
         Get().m_players.clear();
         Get().m_spawns.clear();
         Get().m_monsters.clear();
@@ -349,7 +354,6 @@ public:
     //! Callback function for party
     static bool ForParty(Character::id_t id, const std::function<void(Party&)>& callback);
 
-
     //! Removes player from the world.
     static void Remove(Player* entity)
     {
@@ -357,6 +361,15 @@ public:
         {
             std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
             Get().m_players.erase(entity->GetID());
+        }
+    }
+
+    static void Remove(Loot* entity)
+    {
+        Map(entity->GetMap()).Remove(entity);
+        {
+            std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+            Get().m_loots.erase(entity->GetID());
         }
     }
 
@@ -457,7 +470,6 @@ public:
     static void ForEachSpawn(const std::function<void(Spawn&)>& callback);
     static void ForEachLoot(const std::function<void(Loot&)>& callback);
     static bool ForLoot(Character::id_t id, const std::function<void(Loot&)>& callback);
-    static bool RemoveLootById(Character::id_t id);
 };
 
 inline WorldMap::QUERY_KIND operator|(WorldMap::QUERY_KIND a, WorldMap::QUERY_KIND b)

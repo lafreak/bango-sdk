@@ -415,16 +415,3 @@ bool World::ForLoot(Character::id_t id, const std::function<void(Loot&)>& callba
     callback(*it->second);
     return true;
 }
-
-bool World::RemoveLootById(Character::id_t id)
-{
-    std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-
-    auto it = Get().m_loots.find(id);
-    if (it == Get().m_loots.end())
-        return false;
-
-    Map(it->second->GetMap()).Remove(it->second.get());
-    Get().m_loots.erase(it);
-    return true;
-}

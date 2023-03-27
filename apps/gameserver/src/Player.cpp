@@ -793,7 +793,8 @@ void Player::OnItemPick(packet& p)
     World::ForLoot(item_id, [&](Loot& loot) {
                     auto& info = loot.GetItemInfo();
                     InsertItem(info.Index, info.Num);
-                    World::RemoveLootById(item_id);
+                    //World::RemoveLootById(item_id);
+                    World::Remove(&loot);
                 });
 }
 
@@ -888,8 +889,8 @@ void Player::UpdateExp(std::int64_t amount)
     std::uint64_t required_exp = g_n64NeedExpFinal[GetLevel()];
     while (m_data.Exp > required_exp)
     {
-        spdlog::debug("More exp than required ({}/{}). Performing level up from {} to {}.", m_data.Exp, required_exp,
-            GetLevel(), GetLevel()+1);
+        spdlog::debug("Player {} has more exp than required ({}/{}). Performing level up from {} to {}.",
+            GetName(), m_data.Exp, required_exp, GetLevel(), GetLevel()+1);
         m_data.Exp -= required_exp;
         LevelUp();
         if (GetLevel() >= MAX_LEVEL)
