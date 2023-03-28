@@ -804,6 +804,7 @@ void Player::OnItemPick(packet& p)
     World::ForLoot(item_id, [&](Loot& loot) {
                     auto& info = loot.GetItemInfo();
                     InsertItem(info.Index, info.Num);
+                    spdlog::debug("Player {} picked item index {} num {}", GetName(), info.Index, info.Num);
                     //World::RemoveLootById(item_id);
                     World::Remove(&loot);
                 });
@@ -952,6 +953,9 @@ void Player::LevelUp()
     m_data.SUPoint += 1;
     m_data.Level += 1;
     m_data.PUPoint += GET_PU_ON_LEVEL_UP(GetLevel());
+    m_curhp = GetMaxHP();
+    m_curmp = GetMaxMP();
+    SaveAllProperty();
     SendProperty(P_LEVEL);
     SendProperty(P_SUPOINT);
     SendProperty(P_PUPOINT);

@@ -199,7 +199,7 @@ void Monster::DistributeLoot()
 void Monster::Die()
 {
     DistributeExp();
-    // DistributeLoot();
+    DistributeLoot();
 }
 
 std::vector<LootInfo> Monster::RollLoot()
