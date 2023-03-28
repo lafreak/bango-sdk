@@ -13,7 +13,7 @@
 #include <bango/utils/time.h>
 
 #define MAP_WIDTH 50*8192
-#define MAP_SIGHT 1024
+#define MAP_SIGHT 920//1024
 
 class WorldMap
 {
@@ -101,15 +101,15 @@ public:
 
     //! Executed given function for character id of given kind.
     //! Thread-safe.
-    void For(QUERY_KIND kind, Character::id_t id, const std::function<void(Character&)>&& callback);
+    void For(QUERY_KIND kind, Character::id_t id, const std::function<void(Character&)>& callback);
 
     //! Executes callback for all players around in given radius.
     //! Thread-safe.
-    void ForEachPlayerAround(const bango::space::quad_entity& qe, unsigned int radius, const std::function<void(Player&)>&& callback);
+    void ForEachPlayerAround(const bango::space::quad_entity& qe, unsigned int radius, const std::function<void(Player&)>& callback);
 
     //! Executes callback for all queried entities around in given radius.
     //! Thread-safe.
-    void ForEachAround(const bango::space::quad_entity& qe, unsigned int radius, QUERY_KIND kind, const std::function<void(Character&)>&& callback);
+    void ForEachAround(const bango::space::quad_entity& qe, unsigned int radius, QUERY_KIND kind, const std::function<void(Character&)>& callback);
 
     //! Writes packet to players in sight.
     //! Thread-safe.
@@ -165,13 +165,12 @@ class World
         return instance;
     }
 
-public:
-
-    //! Thread-safe due to the fact that maps are generated at the beginning and m_maps itself is never modified.
     static WorldMap& Map(size_t id)
     {
         return *Get().m_maps[id >= MAP_COUNT ? 0 : id].get();
     }
+
+public:
 
     //! Set callback to be executed when entity appears in the world.
     //! Not thread-safe. To be called upon server start before other threads start running. (Tick/Network)
@@ -297,10 +296,11 @@ public:
     //! Ownership is held in core server.
     static void Add(Player* entity)
     {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
         {
             // FIXME: Don't we need to lock for the entire time of adding to the map as well?
-            std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-            auto [_, inserted] =  Get().m_players.insert(std::make_pair(entity->GetID(), entity));
+            //std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+            auto [_, inserted] = Get().m_players.insert(std::make_pair(entity->GetID(), entity));
             if (!inserted)
                 throw std::logic_error("player already present in world"); 
         }
@@ -313,8 +313,9 @@ public:
         if (entity->GetType() == Character::PLAYER)
             throw std::logic_error("player should be added to the world by reference");
 
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
         {
-            std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+            //std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
         
             switch(entity->GetType())
             {
@@ -357,29 +358,34 @@ public:
     //! Removes player from the world.
     static void Remove(Player* entity)
     {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
         Map(entity->GetMap()).Remove(entity);
         {
-            std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+            // std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
             Get().m_players.erase(entity->GetID());
         }
     }
 
     static void Remove(Loot* entity)
     {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
         Map(entity->GetMap()).Remove(entity);
         {
-            std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+            // std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
             Get().m_loots.erase(entity->GetID());
         }
     }
 
     static void Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z=0, bool stop=false)
     {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
         Map(entity->GetMap()).Move(entity, delta_x, delta_y, delta_z, stop);
     }
 
     static void Teleport(Player* entity, int x, int y, int z, int spread=0, int map=-1)
     {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+    
         // TODO: Add random spread.
         Map(entity->GetMap()).Remove(entity);
         entity->m_x = x;
@@ -470,6 +476,24 @@ public:
     static void ForEachSpawn(const std::function<void(Spawn&)>& callback);
     static void ForEachLoot(const std::function<void(Loot&)>& callback);
     static bool ForLoot(Character::id_t id, const std::function<void(Loot&)>& callback);
+
+    static void WriteInSight(const Character& character, const bango::network::packet& p)
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+        Map(character.GetMap()).WriteInSight(character, p);
+    }
+
+    static void ForEachAround(const Character& character, unsigned int radius, WorldMap::QUERY_KIND kind, const std::function<void(Character&)>& callback)
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+        Map(character.GetMap()).ForEachAround(character, radius, kind, callback);
+    }
+
+    static void ForCharacterInMap(std::uint8_t map_id, WorldMap::QUERY_KIND kind, Character::id_t id, const std::function<void(Character&)>& callback)
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+        Map(map_id).For(kind, id, callback);
+    }
 };
 
 inline WorldMap::QUERY_KIND operator|(WorldMap::QUERY_KIND a, WorldMap::QUERY_KIND b)

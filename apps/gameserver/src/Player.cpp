@@ -384,12 +384,22 @@ void Player::OnTeleportAnswer(packet& p)
     m_teleport_x = m_teleport_y = 0;
 }
 
-void Player::OnMoveTo(CommandDispatcher::Token& token)
+void Player::OnMove2(CommandDispatcher::Token& token)
 {
     int x = token;
     int y = token;
 
     Teleport(x, y);
+}
+
+void Player::OnMoveTo(CommandDispatcher::Token& token)
+{
+    std::string name = token;
+
+    World::ForPlayerWithName(name, [&](Player& player) {
+        spdlog::debug("Teleporting {} to {} via /moveto", GetName(), player.GetName());
+        Teleport(player.GetX(), player.GetY());
+    });
 }
 
 packet Player::BuildAppearPacket(bool hero) const
@@ -633,7 +643,8 @@ void Player::OnAttack(packet& p)
     auto id = p.pop<Character::id_t>();
     auto z = p.pop<unsigned int>();
 
-    World::Map(GetMap()).For(WorldMap::QK_PLAYER | WorldMap::QK_MONSTER, id, [&](Character& character) 
+    //World::Map(GetMap()).For(WorldMap::QK_PLAYER | WorldMap::QK_MONSTER, id, [&](Character& character) 
+    World::ForCharacterInMap(GetMap(), WorldMap::QK_PLAYER | WorldMap::QK_MONSTER, id, [&](Character& character) 
     {
         // Check if is both actors are valid
         // Check for GState 4?+
@@ -851,6 +862,14 @@ void Player::BanFromParty(id_t banned_player_id)
 
 void Player::Tick()
 {
+    auto now = time::now();
+    if ((now - m_last_save).count() > 60'000)
+    {
+        auto lock = Lock();
+        m_last_save = now;
+        spdlog::debug("Saving player {} snapshot to database", GetName());
+        SaveAllProperty();
+    }
 }
 
 void Player::Die()

@@ -29,8 +29,8 @@ class Player : public Character, public User
     int m_teleport_x=0;
     int m_teleport_y=0;
 
-    bango::utils::time::point 
-        m_last_attack;
+    bango::utils::time::point m_last_attack = bango::utils::time::now();
+    bango::utils::time::point m_last_save = bango::utils::time::now();
 
 public:
     Player(const bango::network::taco_client_t& client);
@@ -64,6 +64,7 @@ public:
 
     // Command Endpoints
     void OnGetItem(CommandDispatcher::Token& token);
+    void OnMove2(CommandDispatcher::Token& token);
     void OnMoveTo(CommandDispatcher::Token& token);
 
     // Map Endpoints
