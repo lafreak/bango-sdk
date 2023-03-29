@@ -284,6 +284,7 @@ public:
             auto& loot = it->second;
             if(loot->IsExpired())
             {
+                spdlog::debug("Removing loot id {} due to expiration", loot->GetID());
                 Map(loot->GetMap()).Remove(loot.get());
                 it = Get().m_loots.erase(it);
             }

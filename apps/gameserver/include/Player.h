@@ -23,7 +23,7 @@ class Player : public Character, public User
     Inventory m_inventory;
     std::shared_ptr<Party> m_party;
     int m_party_inviter_id;
-    id_t m_party_id;
+    id_t m_party_id=0;
 
     //! Teleportation coordinates waiting for Z coordinate from client.
     int m_teleport_x=0;
