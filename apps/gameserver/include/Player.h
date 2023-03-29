@@ -22,16 +22,17 @@ class Player : public Character, public User
 
     Inventory m_inventory;
     std::shared_ptr<Party> m_party;
-    int m_party_inviter_id;
-    id_t m_party_id;
+    int m_party_inviter_id=0;
+    id_t m_party_id=0;
 
     //! Teleportation coordinates waiting for Z coordinate from client.
     int m_teleport_x=0;
     int m_teleport_y=0;
 
-    bango::utils::time::point 
-        m_last_attack;
+    bango::utils::time::point m_last_attack = bango::utils::time::now();
+    bango::utils::time::point m_last_save = bango::utils::time::now();
 
+    static constexpr std::uint32_t SAVE_ALL_PROPERTY_INTERVAL = 60'000;
 public:
     Player(const bango::network::taco_client_t& client);
     ~Player();
@@ -64,6 +65,7 @@ public:
 
     // Command Endpoints
     void OnGetItem(CommandDispatcher::Token& token);
+    void OnMove2(CommandDispatcher::Token& token);
     void OnMoveTo(CommandDispatcher::Token& token);
 
     // Map Endpoints
@@ -160,7 +162,7 @@ public:
     void Die() override;
 
     void UpdateExp(std::int64_t amount);
-    bool CanReciveExp();
+    bool CanReceiveExp();  // TODO: Make use of it
     std::uint64_t CalculateExp(std::uint64_t exp, std::uint8_t monster_level);
     void LevelUp();
 };

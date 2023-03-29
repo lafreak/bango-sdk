@@ -384,12 +384,22 @@ void Player::OnTeleportAnswer(packet& p)
     m_teleport_x = m_teleport_y = 0;
 }
 
-void Player::OnMoveTo(CommandDispatcher::Token& token)
+void Player::OnMove2(CommandDispatcher::Token& token)
 {
     int x = token;
     int y = token;
 
     Teleport(x, y);
+}
+
+void Player::OnMoveTo(CommandDispatcher::Token& token)
+{
+    std::string name = token;
+
+    World::ForPlayerWithName(name, [&](Player& player) {
+        spdlog::debug("Teleporting {} to {} via /moveto", GetName(), player.GetName());
+        Teleport(player.GetX(), player.GetY());
+    });
 }
 
 packet Player::BuildAppearPacket(bool hero) const
@@ -633,7 +643,7 @@ void Player::OnAttack(packet& p)
     auto id = p.pop<Character::id_t>();
     auto z = p.pop<unsigned int>();
 
-    World::Map(GetMap()).For(WorldMap::QK_PLAYER | WorldMap::QK_MONSTER, id, [&](Character& character) 
+    World::ForCharacterInMap(GetMap(), WorldMap::QK_PLAYER | WorldMap::QK_MONSTER, id, [&](Character& character) 
     {
         // Check if is both actors are valid
         // Check for GState 4?+
@@ -662,9 +672,14 @@ void Player::OnAttack(packet& p)
         LookAt(&character);
 
         auto defender_lock = character.Lock();
+        if (!CanAttack(character))
+        {
+            spdlog::debug("Player {} cannot attack monster character id {}", this->GetName(), character.GetID());
+            return;
+        }
 
-        // CheckBlock
-        if (!CheckHit(&character))
+        // TODO: CheckBlock
+        if (!CheckHit(character))
         {
             WriteInSight(packet(S2C_ATTACK, "ddddb",
                 GetID(), character.GetID(), 0, 0, ATF_MISS));
@@ -787,7 +802,12 @@ void Player::OnItemPick(packet& p)
     World::ForLoot(item_id, [&](Loot& loot) {
                     auto& info = loot.GetItemInfo();
                     InsertItem(info.Index, info.Num);
-                    World::RemoveLootById(item_id);
+                    spdlog::debug("Removing loot; ID {} from ({},{}) due to pickup by {}",
+                        loot.GetID(),
+                        loot.GetX(),
+                        loot.GetY(),
+                        GetName());
+                    World::Remove(&loot);
                 });
 }
 
@@ -844,6 +864,14 @@ void Player::BanFromParty(id_t banned_player_id)
 
 void Player::Tick()
 {
+    auto now = time::now();
+    if ((now - m_last_save).count() > SAVE_ALL_PROPERTY_INTERVAL)
+    {
+        auto lock = Lock();
+        m_last_save = now;
+        spdlog::debug("Saving player {} snapshot to database", GetName());
+        SaveAllProperty();
+    }
 }
 
 void Player::Die()
@@ -854,6 +882,8 @@ void Player::Die()
 
 void Player::UpdateExp(std::int64_t amount)
 {
+    spdlog::debug("Updating player: {} exp by {}", GetName(), amount);
+
     // No effect
     if (amount == 0)
         return;
@@ -880,18 +910,23 @@ void Player::UpdateExp(std::int64_t amount)
     std::uint64_t required_exp = g_n64NeedExpFinal[GetLevel()];
     while (m_data.Exp > required_exp)
     {
-        spdlog::debug("More exp than required ({}/{}). Performing level up from {} to {}.", m_data.Exp, required_exp,
-            GetLevel(), GetLevel()+1);
+        spdlog::debug("Player {} has more exp than required ({}/{}). Performing level up from {} to {}.",
+            GetName(), m_data.Exp, required_exp, GetLevel(), GetLevel()+1);
         m_data.Exp -= required_exp;
         LevelUp();
+        if (GetLevel() >= MAX_LEVEL)
+        {
+            spdlog::warn("Level is too large to recieve remaining exp: {}", GetLevel());
+            m_data.Exp = 0;
+            break;
+        }
         required_exp = g_n64NeedExpFinal[GetLevel()];
     }
 
     SendProperty(P_EXP, amount);
-    return;
 }
 
-bool Player::CanReciveExp()
+bool Player::CanReceiveExp()
 {
     return !IsGState(CGS_KNEE | CGS_KO | CGS_FISH);
 }
@@ -919,6 +954,9 @@ void Player::LevelUp()
     m_data.SUPoint += 1;
     m_data.Level += 1;
     m_data.PUPoint += GET_PU_ON_LEVEL_UP(GetLevel());
+    m_curhp = GetMaxHP();
+    m_curmp = GetMaxMP();
+    SaveAllProperty();
     SendProperty(P_LEVEL);
     SendProperty(P_SUPOINT);
     SendProperty(P_PUPOINT);

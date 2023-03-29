@@ -251,7 +251,7 @@ void WorldMap::Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y,
     }
 }
 
-void WorldMap::For(QUERY_KIND kind, Character::id_t id, const std::function<void(Character&)>&& callback)
+void WorldMap::For(QUERY_KIND kind, Character::id_t id, const std::function<void(Character&)>& callback)
 {
     std::lock_guard<std::recursive_mutex> lock(m_rmtx);
 
@@ -284,7 +284,7 @@ void WorldMap::For(QUERY_KIND kind, Character::id_t id, const std::function<void
     }
 }
 
-void WorldMap::ForEachPlayerAround(const quad_entity& qe, unsigned int radius, const std::function<void(Player&)>&& callback)
+void WorldMap::ForEachPlayerAround(const quad_entity& qe, unsigned int radius, const std::function<void(Player&)>& callback)
 {
     std::lock_guard<std::recursive_mutex> lock(m_rmtx);
 
@@ -299,7 +299,7 @@ void WorldMap::ForEachPlayerAround(const quad_entity& qe, unsigned int radius, c
     });
 }
 
-void WorldMap::ForEachAround(const quad_entity& qe, unsigned int radius, QUERY_KIND kind, const std::function<void(Character&)>&& callback)
+void WorldMap::ForEachAround(const quad_entity& qe, unsigned int radius, QUERY_KIND kind, const std::function<void(Character&)>& callback)
 {
     std::lock_guard<std::recursive_mutex> lock(m_rmtx);
 
@@ -413,18 +413,5 @@ bool World::ForLoot(Character::id_t id, const std::function<void(Loot&)>& callba
         return false;
 
     callback(*it->second);
-    return true;
-}
-
-bool World::RemoveLootById(Character::id_t id)
-{
-    std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-
-    auto it = Get().m_loots.find(id);
-    if (it == Get().m_loots.end())
-        return false;
-
-    Map(it->second->GetMap()).Remove(it->second.get());
-    Get().m_loots.erase(it);
     return true;
 }

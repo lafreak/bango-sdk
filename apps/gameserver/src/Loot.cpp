@@ -152,7 +152,7 @@ const Group* ItemGroup::RollGroup() const
 Loot::Loot(LootInfo loot_info, int x, int y, int map)
     : Character(Character::LOOT)
 {
-    ResetAppearTime();
+    m_appear_time = time::now();
     m_x = x;
     m_y = y;
     m_map = map;
@@ -175,15 +175,12 @@ packet Loot::BuildDisappearPacket() const
     return packet(S2C_REMOVEITEM, "d", GetID());
 }
 
-time::point Loot::GetAppearTime() const
+bool Loot::IsExpired() const
 {
-    return m_appear_time;
-}
-void Loot::ResetAppearTime()
-{
-    m_appear_time = time::now();
+    return (time::now() - m_appear_time).count() >= Loot::DISAPPEAR_TIME;
 }
 
 void Loot::Tick()
 {
+    
 }

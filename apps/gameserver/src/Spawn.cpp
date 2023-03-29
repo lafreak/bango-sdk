@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "spdlog/spdlog.h"
+
 #include "World.h"
 #include "RegularMonster.h"
 #include "BeheadableMonster.h"
@@ -46,10 +47,11 @@ void Spawn::Tick()
         return;
 
     //NOTE: We always have thread-safety by making sure we always call RemoveDeadMonsters and Spawn::Tick
-    //in the same thread and Spawn::Tick is always called after RemoveDeadMonsters.
+    // in the same thread and Spawn::Tick is always called after RemoveDeadMonsters.
+    // This way we ensure that monsters are removed from the world before they are respawned.
     for(auto& monster : m_area_monsters)
     {
-        if(monster->IsGState(CGS_KO))
+        if(monster->IsRemoved())
             RespawnOnWorld(monster);
     }
 
@@ -58,9 +60,12 @@ void Spawn::Tick()
 
 void Spawn::RespawnOnWorld(const std::shared_ptr<Monster> monster)
 {
-    //TODO: World add/remove API to check if the monster with given ID already exists.
+    Character::id_t previous_id = monster->GetID();
     monster->RestoreInitialState(GetRandomX(), GetRandomY());
     World::Add(monster);
+
+    spdlog::debug("Respawning monster index: {}; with previous id: {}; now with id: {}",
+        monster->GetIndex(), previous_id, monster->GetID());
 }
 
 void Spawn::CreateSpawn()
@@ -82,7 +87,7 @@ void Spawn::CreateSpawn()
 
 void Spawn::SetNextSpawnCycle()
 {
-    m_next_spawn_cycle = (time::now() + time::duration(GetSpawnCycle()));
+    m_next_spawn_cycle = time::now() + time::duration(GetSpawnCycle());
 }
 
 std::int32_t Spawn::GetArea() const
@@ -128,11 +133,17 @@ GenMonster::RectXY Spawn::GetRect() const
 std::int32_t GenMonster::RectXY::GetRandomX() const
 {
     return bango::utils::random::between(X1, X2) * 32;
+    // FIXME: Current implementation spawns monsters on x/y which are multiply of 32.
+    // Possible fix:
+    // return bango::utils::random::between(X1 * 32, X2 * 32);
 }
 
 std::int32_t GenMonster::RectXY::GetRandomY() const
 {
     return bango::utils::random::between(Y1, Y2) * 32;
+    // FIXME: Current implementation spawns monsters on x/y which are multiply of 32.
+    // Possible fix:
+    // return bango::utils::random::between(Y1 * 32, Y2 * 32);
 }
 
 unsigned int GenMonster::index() const

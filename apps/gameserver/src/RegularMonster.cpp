@@ -1,5 +1,4 @@
 #include "RegularMonster.h"
-#include "World.h"
 
 #include <bango/network/packet.h>
 #include <bango/utils/time.h>

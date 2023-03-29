@@ -9,11 +9,13 @@
 #include "Spawn.h"
 #include "Loot.h"
 
+#include "spdlog/spdlog.h"
+
 #include <bango/space/quadtree.h>
 #include <bango/utils/time.h>
 
 #define MAP_WIDTH 50*8192
-#define MAP_SIGHT 1024
+#define MAP_SIGHT 920//1024
 
 class WorldMap
 {
@@ -99,15 +101,17 @@ public:
     //! Thread-safe.
     void Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z=0, bool stop=false);
 
-    void For(QUERY_KIND kind, Character::id_t id, const std::function<void(Character&)>&& callback);
+    //! Executed given function for character id of given kind.
+    //! Thread-safe.
+    void For(QUERY_KIND kind, Character::id_t id, const std::function<void(Character&)>& callback);
 
     //! Executes callback for all players around in given radius.
     //! Thread-safe.
-    void ForEachPlayerAround(const bango::space::quad_entity& qe, unsigned int radius, const std::function<void(Player&)>&& callback);
+    void ForEachPlayerAround(const bango::space::quad_entity& qe, unsigned int radius, const std::function<void(Player&)>& callback);
 
     //! Executes callback for all queried entities around in given radius.
     //! Thread-safe.
-    void ForEachAround(const bango::space::quad_entity& qe, unsigned int radius, QUERY_KIND kind, const std::function<void(Character&)>&& callback);
+    void ForEachAround(const bango::space::quad_entity& qe, unsigned int radius, QUERY_KIND kind, const std::function<void(Character&)>& callback);
 
     //! Writes packet to players in sight.
     //! Thread-safe.
@@ -127,7 +131,7 @@ class World
 {
     constexpr static unsigned short MAP_COUNT = 32;
 
-    std::vector<std::unique_ptr<WorldMap>> m_maps;
+    const std::vector<std::unique_ptr<WorldMap>> m_maps;
 
     typedef std::unordered_map<Character::id_t, Player*>                    PlayerContainer;
     typedef std::unordered_map<Character::id_t, std::shared_ptr<Monster>>   MonsterContainer;
@@ -145,10 +149,16 @@ class World
 
     std::recursive_mutex m_entities_rmtx;
 
-    World()
+    World() : m_maps(std::move(CreateMaps()))
     {
+    }
+
+    static std::vector<std::unique_ptr<WorldMap>> CreateMaps()
+    {
+        auto maps = std::vector<std::unique_ptr<WorldMap>>();
         for (int i = 0; i < MAP_COUNT; i++)
-            m_maps.push_back(std::make_unique<WorldMap>(MAP_WIDTH, MAP_SIGHT));
+            maps.push_back(std::make_unique<WorldMap>(MAP_WIDTH, MAP_SIGHT));
+        return std::move(maps);
     }
 
     static World& Get()
@@ -157,42 +167,64 @@ class World
         return instance;
     }
 
-public:
-
     static WorldMap& Map(size_t id)
     {
         return *Get().m_maps[id >= MAP_COUNT ? 0 : id].get();
     }
 
+public:
+
+    //! Set callback to be executed when entity appears in the world.
+    //! Not thread-safe. To be called upon server start before other threads start running. (Tick/Network)
     static void OnAppear(const WorldMap::AppearEvent& callback)
     {
         for (auto& map : Get().m_maps)
             map->OnAppear(callback);
     }
 
+    //! Set callback to be executed when entity is removed from the world.
+    //! Not thread-safe. To be called upon server start before other threads start running. (Tick/Network)
     static void OnDisappear(const WorldMap::DisappearEvent& callback)
     {
         for (auto& map : Get().m_maps)
             map->OnDisappear(callback);
     }
 
+    //! Set callback to be executed when entity is moving around the world.
+    //! Not thread-safe. To be called upon server start before other threads start running. (Tick/Network)
     static void OnMove(const WorldMap::MoveEvent& callback)
     {
         for (auto& map : Get().m_maps)
             map->OnMove(callback);
     }
 
+    //! Adds npcs to the world based on previously loaded InitNPC.txt.
+    //! Not thread-safe. To be called upon server start before other threads start running. (Tick/Network)
     static void SpawnNpcs()
     {
         for (const auto& init : InitNPC::DB())
             Add(std::make_shared<NPC>(init.second));
     }
 
+    //! Adds spawns to the world based on previously loaded GenMonsters.txt.
+    //! Includes adding monsters to the world related to the spawns.
+    //! Not thread-safe. To be called upon server start before other threads start running. (Tick/Network)
     static void CreateSpawnsAndSpawnMonsters();
 
+    //! Thread-safe cleanup of the world.
+    //! To be called upon server closure.
+    //! Order of containers is important.
     static void Cleanup()
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+        for (auto& [_, player] : Get().m_players)
+        {
+            auto lock = player->Lock();
+            player->SaveAllProperty();
+        }
+
+        // BUG: Players stay in world map after this call.
+        // This leads to monster/npc/loot Remove packet propagation in sight.
         Get().m_players.clear();
         Get().m_spawns.clear();
         Get().m_monsters.clear();
@@ -201,6 +233,34 @@ public:
         Get().m_loots.clear();
     }
 
+    //! Thread-safe in context of world entities.
+    //! Not thread safe in terms of entity properties.
+    //! Executes every second on separate thread.
+    static void Tick()
+    {
+        ForEachPlayer([](Player& player) {
+            player.Tick();
+        });
+
+        ForEachMonster([](Monster& monster) {
+            monster.Tick();
+        });
+
+        RemoveExpiredLoot();
+
+        // Removes monsters from world flagged as dead with CGS_KO state.
+        // Flags those as removed.
+        RemoveDeadMonsters();
+
+        // Re-inserts monsters with flagged as removed, tagged to spawns into the world with given delay.
+        ForEachSpawn([](Spawn& spawn) {
+            spawn.Tick();
+        });
+    }
+
+    //! Removes monsters flagged as CGS_KO from the world.
+    //! Monsters summoned via Summon are destructed.
+    //! Monsters created via Spawns are flagged as removed for further re-spawn via Spawn::Tick.
     static void RemoveDeadMonsters()
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
@@ -210,6 +270,7 @@ public:
             auto& monster = it->second;
             if (monster->IsGState(CGS_KO))
             {
+                monster->FlagRemoved();
                 Map(monster->GetMap()).Remove(monster.get(), true);
                 it = Get().m_monsters.erase(it);
             }
@@ -218,6 +279,7 @@ public:
         }
     }
 
+    //! Removes loots expired due to timeout from the world.
     static void RemoveExpiredLoot()
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
@@ -225,8 +287,12 @@ public:
         for (auto it = Get().m_loots.begin(); it != Get().m_loots.end(); )
         {
             auto& loot = it->second;
-            if((bango::utils::time::now() - loot->GetAppearTime()).count() >= Loot::DISAPPEAR_TIME)
+            if(loot->IsExpired())
             {
+                spdlog::debug("Removing loot; ID {} from ({},{}) due to expiration",
+                        loot->GetID(),
+                        loot->GetX(),
+                        loot->GetY());
                 Map(loot->GetMap()).Remove(loot.get());
                 it = Get().m_loots.erase(it);
             }
@@ -235,13 +301,17 @@ public:
         }
     }
 
-    //! Adds player to the world without ownership. 
+    //! Adds player to the world without ownership.
+    //! Ownership is held in core server.
     static void Add(Player* entity)
     {
-        {
-            std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-            Get().m_players.insert(std::make_pair(entity->GetID(), entity));
-        }
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+        // FIXME: Don't we need to lock for the entire time of adding to the map as well?
+        auto [_, inserted] = Get().m_players.insert(std::make_pair(entity->GetID(), entity));
+        if (!inserted)
+            throw std::logic_error("player already present in world");
+
         Map(entity->GetMap()).Add(entity);
     }
 
@@ -251,23 +321,33 @@ public:
         if (entity->GetType() == Character::PLAYER)
             throw std::logic_error("player should be added to the world by reference");
 
-        {
-            std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
         
-            switch(entity->GetType())
-            {
-            case Character::MONSTER:
-                Get().m_monsters.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Monster>(entity)));
-                break;
-            case Character::NPC:
-                Get().m_npcs.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<NPC>(entity)));
-                break;
-            case Character::LOOT:
-                Get().m_loots.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Loot>(entity)));
-                break;
-            }
-
+        switch(entity->GetType())
+        {
+        case Character::MONSTER:
+        {
+            auto [_, inserted] = Get().m_monsters.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Monster>(entity)));
+            if (!inserted)
+                throw std::logic_error("monster already present in world"); 
+            break;
         }
+        case Character::NPC:
+        {
+            auto [_, inserted] = Get().m_npcs.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<NPC>(entity)));
+            if (!inserted)
+                throw std::logic_error("npc already present in world"); 
+            break;
+        }
+        case Character::LOOT:
+        {
+            auto [_, inserted] = Get().m_loots.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Loot>(entity)));
+            if (!inserted)
+                throw std::logic_error("loot already present in world"); 
+            break;
+        }
+        }
+
         Map(entity->GetMap()).Add(entity.get());
     }
 
@@ -280,24 +360,38 @@ public:
     //! Callback function for party
     static bool ForParty(Character::id_t id, const std::function<void(Party&)>& callback);
 
-
     //! Removes player from the world.
     static void Remove(Player* entity)
     {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
         Map(entity->GetMap()).Remove(entity);
-        {
-            std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-            Get().m_players.erase(entity->GetID());
-        }
+
+        if (!Get().m_players.erase(entity->GetID()))
+            throw std::logic_error("cannot remove player; does not exist in world");
+    }
+
+    static void Remove(Loot* entity)
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
+        Map(entity->GetMap()).Remove(entity);
+
+        if (!Get().m_loots.erase(entity->GetID()))
+            throw std::logic_error("cannot remove loot; does not exist in world");
     }
 
     static void Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z=0, bool stop=false)
     {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
         Map(entity->GetMap()).Move(entity, delta_x, delta_y, delta_z, stop);
     }
 
     static void Teleport(Player* entity, int x, int y, int z, int spread=0, int map=-1)
     {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+    
         // TODO: Add random spread.
         Map(entity->GetMap()).Remove(entity);
         entity->m_x = x;
@@ -388,7 +482,24 @@ public:
     static void ForEachSpawn(const std::function<void(Spawn&)>& callback);
     static void ForEachLoot(const std::function<void(Loot&)>& callback);
     static bool ForLoot(Character::id_t id, const std::function<void(Loot&)>& callback);
-    static bool RemoveLootById(Character::id_t id);
+
+    static void WriteInSight(const Character& character, const bango::network::packet& p)
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+        Map(character.GetMap()).WriteInSight(character, p);
+    }
+
+    static void ForEachAround(const Character& character, unsigned int radius, WorldMap::QUERY_KIND kind, const std::function<void(Character&)>& callback)
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+        Map(character.GetMap()).ForEachAround(character, radius, kind, callback);
+    }
+
+    static void ForCharacterInMap(std::uint8_t map_id, WorldMap::QUERY_KIND kind, Character::id_t id, const std::function<void(Character&)>& callback)
+    {
+        std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+        Map(map_id).For(kind, id, callback);
+    }
 };
 
 inline WorldMap::QUERY_KIND operator|(WorldMap::QUERY_KIND a, WorldMap::QUERY_KIND b)

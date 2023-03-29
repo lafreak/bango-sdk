@@ -17,7 +17,7 @@ void BeheadableMonster::Die()
 
 void BeheadableMonster::Tick()
 {
-    if(IsGState(CGS_KNEE) && (time::now() - GetDeathTime()).count() >= 10000)
+    if(IsGState(CGS_KNEE) && (time::now() - GetDeathTime()).count() >= MAX_KNEE_TIME)
     {
         SetGState(CGS_KO);
         WriteInSight(packet(S2C_ACTION, "db", GetID(), AT_DIE));

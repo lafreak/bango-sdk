@@ -38,7 +38,6 @@ public:
     Character(std::uint8_t type) : m_type(type)
     {
         //TODO: Make ID pool for players.
-        //BUG: Not thread safe.
         AssignNewId();
     }
 
@@ -113,11 +112,11 @@ public:
     void SubGStateEx(std::uint64_t gstate_ex)   { m_gstate_ex &= ~gstate_ex; }
     void SubMStateEx(std::uint64_t mstate_ex)   { m_mstate_ex &= ~mstate_ex; }
 
-    bool IsGState(std::uint64_t gstate)        { return m_gstate & gstate; }
-    bool IsMState(std::uint64_t mstate)        { return m_mstate & mstate; }
+    bool IsGState(std::uint64_t gstate) const  { return m_gstate & gstate; }
+    bool IsMState(std::uint64_t mstate) const  { return m_mstate & mstate; }
 
-    bool IsGStateEx(std::uint64_t gstate_ex)    { return m_gstate_ex & gstate_ex; }
-    bool IsMStateEx(std::uint64_t mstate_ex)    { return m_mstate_ex & mstate_ex; }
+    bool IsGStateEx(std::uint64_t gstate_ex) const  { return m_gstate_ex & gstate_ex; }
+    bool IsMStateEx(std::uint64_t mstate_ex) const  { return m_mstate_ex & mstate_ex; }
 
     virtual bango::network::packet BuildAppearPacket(bool hero=false)   const { return bango::network::packet(); };
     virtual bango::network::packet BuildDisappearPacket()               const { return bango::network::packet(); };
@@ -127,7 +126,8 @@ public:
     void LookAt(int x, int y) { SetDirection(x - m_x, y - m_y); }
     void SetDirection(std::int8_t delta_x, std::int8_t delta_y);
 
-    bool            CheckHit(Character* target, int bonus=0);
+    bool            CanAttack(const Character& target) const;
+    bool            CheckHit(const Character& target, int bonus=0) const;
     std::int64_t    GetFinalDamage(Character* attacker, std::int64_t damage, bool magical=false);
 
     void WriteInSight(const bango::network::packet& p) const;

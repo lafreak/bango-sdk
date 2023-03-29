@@ -3,6 +3,7 @@
 #include <exception>
 #include <mutex>
 #include <algorithm>
+#include <atomic>
 
 #include "spdlog/spdlog.h"
 
@@ -16,7 +17,7 @@ using namespace bango::network;
 
 Party::Party(Player* leader, Player* player)
 {
-    static id_t g_max_id=0;
+    static std::atomic<id_t> g_max_id=0;
     m_id = g_max_id++;
 
     spdlog::trace("Party constructor between: {} and {}, index:{}", leader->GetName(), player->GetName(), m_id);

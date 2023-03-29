@@ -2,6 +2,7 @@
 
 #include <exception>
 #include <cstdint>
+#include <atomic>
 
 #include "World.h"
 
@@ -47,9 +48,18 @@ std::uint16_t Character::GetResist(std::uint8_t type) const
     }
 }
 
-bool Character::CheckHit(Character* target, int bonus)
+bool Character::CanAttack(const Character& target) const
 {
-    int level_diff = (int) GetLevel() - target->GetLevel();
+    if (target.GetCurHP() <= 0)
+        return false;
+    if (target.IsGState(CGS_KNEE | CGS_KO))
+        return false;
+    return true;
+}
+
+bool Character::CheckHit(const Character& target, int bonus) const
+{
+    int level_diff = (int) GetLevel() - target.GetLevel();
 
     if (level_diff > 100)
         level_diff = 100;
@@ -64,7 +74,7 @@ bool Character::CheckHit(Character* target, int bonus)
         otp += g_nAddOTPLv[abs(level_diff)];
 
     otp += GetHit();
-    otp -= target->GetDodge();
+    otp -= target.GetDodge();
     otp += bonus;
 
     if (otp > 41)
@@ -130,7 +140,7 @@ void Character::ReceiveDamage(id_t id, std::uint32_t damage)
 
 void Character::WriteInSight(const packet& p) const
 {
-    World::Map(GetMap()).WriteInSight(*this, p);
+    World::WriteInSight(*this, p);
 }
 
 void Character::ApplyVisualEffect(std::uint8_t effect_id)
@@ -145,6 +155,6 @@ std::unique_lock<std::mutex> Character::Lock()
 
 void Character::AssignNewId()
 {
-    static id_t g_max_id=0;
+    static std::atomic<id_t> g_max_id=0;
     m_id = g_max_id++;
 }
