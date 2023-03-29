@@ -643,7 +643,6 @@ void Player::OnAttack(packet& p)
     auto id = p.pop<Character::id_t>();
     auto z = p.pop<unsigned int>();
 
-    //World::Map(GetMap()).For(WorldMap::QK_PLAYER | WorldMap::QK_MONSTER, id, [&](Character& character) 
     World::ForCharacterInMap(GetMap(), WorldMap::QK_PLAYER | WorldMap::QK_MONSTER, id, [&](Character& character) 
     {
         // Check if is both actors are valid
@@ -675,8 +674,7 @@ void Player::OnAttack(packet& p)
         auto defender_lock = character.Lock();
         if (!CanAttack(character))
         {
-            spdlog::debug("Player {} cannot attack monster character id {} due to some reason",
-                this->GetName(), character.GetID());
+            spdlog::debug("Player {} cannot attack monster character id {}", this->GetName(), character.GetID());
             return;
         }
 
@@ -804,8 +802,11 @@ void Player::OnItemPick(packet& p)
     World::ForLoot(item_id, [&](Loot& loot) {
                     auto& info = loot.GetItemInfo();
                     InsertItem(info.Index, info.Num);
-                    spdlog::debug("Player {} picked item index {} num {}", GetName(), info.Index, info.Num);
-                    //World::RemoveLootById(item_id);
+                    spdlog::debug("Removing loot; ID {} from ({},{}) due to pickup by {}",
+                        loot.GetID(),
+                        loot.GetX(),
+                        loot.GetY(),
+                        GetName());
                     World::Remove(&loot);
                 });
 }
@@ -864,7 +865,7 @@ void Player::BanFromParty(id_t banned_player_id)
 void Player::Tick()
 {
     auto now = time::now();
-    if ((now - m_last_save).count() > 60'000)
+    if ((now - m_last_save).count() > SAVE_ALL_PROPERTY_INTERVAL)
     {
         auto lock = Lock();
         m_last_save = now;

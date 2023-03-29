@@ -9,6 +9,8 @@
 #include "Spawn.h"
 #include "Loot.h"
 
+#include "spdlog/spdlog.h"
+
 #include <bango/space/quadtree.h>
 #include <bango/utils/time.h>
 
@@ -220,6 +222,9 @@ public:
             auto lock = player->Lock();
             player->SaveAllProperty();
         }
+
+        // BUG: Players stay in world map after this call.
+        // This leads to monster/npc/loot Remove packet propagation in sight.
         Get().m_players.clear();
         Get().m_spawns.clear();
         Get().m_monsters.clear();
@@ -284,7 +289,10 @@ public:
             auto& loot = it->second;
             if(loot->IsExpired())
             {
-                spdlog::debug("Removing loot id {} due to expiration", loot->GetID());
+                spdlog::debug("Removing loot; ID {} from ({},{}) due to expiration",
+                        loot->GetID(),
+                        loot->GetX(),
+                        loot->GetY());
                 Map(loot->GetMap()).Remove(loot.get());
                 it = Get().m_loots.erase(it);
             }
@@ -298,13 +306,12 @@ public:
     static void Add(Player* entity)
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-        {
-            // FIXME: Don't we need to lock for the entire time of adding to the map as well?
-            //std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-            auto [_, inserted] = Get().m_players.insert(std::make_pair(entity->GetID(), entity));
-            if (!inserted)
-                throw std::logic_error("player already present in world"); 
-        }
+
+        // FIXME: Don't we need to lock for the entire time of adding to the map as well?
+        auto [_, inserted] = Get().m_players.insert(std::make_pair(entity->GetID(), entity));
+        if (!inserted)
+            throw std::logic_error("player already present in world");
+
         Map(entity->GetMap()).Add(entity);
     }
 
@@ -315,35 +322,32 @@ public:
             throw std::logic_error("player should be added to the world by reference");
 
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-        {
-            //std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
         
-            switch(entity->GetType())
-            {
-            case Character::MONSTER:
-            {
-                auto [_, inserted] = Get().m_monsters.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Monster>(entity)));
-                if (!inserted)
-                    throw std::logic_error("monster already present in world"); 
-                break;
-            }
-            case Character::NPC:
-            {
-                auto [_, inserted] = Get().m_npcs.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<NPC>(entity)));
-                if (!inserted)
-                    throw std::logic_error("npc already present in world"); 
-                break;
-            }
-            case Character::LOOT:
-            {
-                auto [_, inserted] = Get().m_loots.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Loot>(entity)));
-                if (!inserted)
-                    throw std::logic_error("loot already present in world"); 
-                break;
-            }
-            }
-
+        switch(entity->GetType())
+        {
+        case Character::MONSTER:
+        {
+            auto [_, inserted] = Get().m_monsters.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Monster>(entity)));
+            if (!inserted)
+                throw std::logic_error("monster already present in world"); 
+            break;
         }
+        case Character::NPC:
+        {
+            auto [_, inserted] = Get().m_npcs.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<NPC>(entity)));
+            if (!inserted)
+                throw std::logic_error("npc already present in world"); 
+            break;
+        }
+        case Character::LOOT:
+        {
+            auto [_, inserted] = Get().m_loots.insert(std::make_pair(entity->GetID(), std::dynamic_pointer_cast<Loot>(entity)));
+            if (!inserted)
+                throw std::logic_error("loot already present in world"); 
+            break;
+        }
+        }
+
         Map(entity->GetMap()).Add(entity.get());
     }
 
@@ -360,26 +364,27 @@ public:
     static void Remove(Player* entity)
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
         Map(entity->GetMap()).Remove(entity);
-        {
-            // std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-            Get().m_players.erase(entity->GetID());
-        }
+
+        if (!Get().m_players.erase(entity->GetID()))
+            throw std::logic_error("cannot remove player; does not exist in world");
     }
 
     static void Remove(Loot* entity)
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
         Map(entity->GetMap()).Remove(entity);
-        {
-            // std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
-            Get().m_loots.erase(entity->GetID());
-        }
+
+        if (!Get().m_loots.erase(entity->GetID()))
+            throw std::logic_error("cannot remove loot; does not exist in world");
     }
 
     static void Move(Character* entity, std::int8_t delta_x, std::int8_t delta_y, std::int8_t delta_z=0, bool stop=false)
     {
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
+
         Map(entity->GetMap()).Move(entity, delta_x, delta_y, delta_z, stop);
     }
 

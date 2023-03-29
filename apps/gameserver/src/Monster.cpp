@@ -169,7 +169,7 @@ void Monster::ReceiveDamage(id_t id, std::uint32_t damage)
 void Monster::DistributeExp()
 {
     std::map<id_t, std::uint64_t> party_container;
-    for (auto& [id, damage] : hostility_map)
+    for (const auto& [id, damage] : hostility_map)
     {
         World::ForPlayer(id, [&](Player& player){
             auto player_lock = player.Lock();
@@ -236,6 +236,10 @@ std::vector<LootInfo> Monster::RollLoot()
         int new_loot_y = GetY() + (random::between(0, Loot::MAX_RANDOM_DISTANCE_FROM_THROWER * 2)) - Loot::MAX_RANDOM_DISTANCE_FROM_THROWER;
         auto new_loot_ptr = std::make_shared<Loot>(loot, new_loot_x, new_loot_y, GetMap());
         World::Add(new_loot_ptr);
+        spdlog::debug("Creating new loot; ID: {} in ({},{})",
+            new_loot_ptr->GetID(),
+            new_loot_ptr->GetX(),
+            new_loot_ptr->GetY());
     }
 
     return loot_vec;

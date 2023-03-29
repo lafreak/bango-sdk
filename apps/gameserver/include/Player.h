@@ -22,7 +22,7 @@ class Player : public Character, public User
 
     Inventory m_inventory;
     std::shared_ptr<Party> m_party;
-    int m_party_inviter_id;
+    int m_party_inviter_id=0;
     id_t m_party_id=0;
 
     //! Teleportation coordinates waiting for Z coordinate from client.
@@ -32,6 +32,7 @@ class Player : public Character, public User
     bango::utils::time::point m_last_attack = bango::utils::time::now();
     bango::utils::time::point m_last_save = bango::utils::time::now();
 
+    static constexpr std::uint32_t SAVE_ALL_PROPERTY_INTERVAL = 60'000;
 public:
     Player(const bango::network::taco_client_t& client);
     ~Player();

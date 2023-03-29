@@ -194,7 +194,6 @@ int main(int argc, char** argv)
         spdlog::info("/around radius: {}; player {}:", radius, player.GetName());
 
         auto query = WorldMap::QK_PLAYER|WorldMap::QK_MONSTER|WorldMap::QK_NPC;
-        //World::Map(player.GetMap()).ForEachAround(player, radius, query, [&](Character& character) {
         World::ForEachAround(player, radius, query, [&](Character& character) {
             int distance = player.distance(&character);
             spdlog::info("Character ID: {}; type: {}; distance: {}; coords: ({},{},{})",

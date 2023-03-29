@@ -140,7 +140,6 @@ void Character::ReceiveDamage(id_t id, std::uint32_t damage)
 
 void Character::WriteInSight(const packet& p) const
 {
-    // World::Map(GetMap()).WriteInSight(*this, p);
     World::WriteInSight(*this, p);
 }
 

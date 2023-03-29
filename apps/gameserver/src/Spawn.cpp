@@ -47,10 +47,8 @@ void Spawn::Tick()
         return;
 
     //NOTE: We always have thread-safety by making sure we always call RemoveDeadMonsters and Spawn::Tick
-    //in the same thread and Spawn::Tick is always called after RemoveDeadMonsters.
-
-    // CGS_KO is a contract for us that the monsters is up for respawn.
-    // Since Remove
+    // in the same thread and Spawn::Tick is always called after RemoveDeadMonsters.
+    // This way we ensure that monsters are removed from the world before they are respawned.
     for(auto& monster : m_area_monsters)
     {
         if(monster->IsRemoved())
