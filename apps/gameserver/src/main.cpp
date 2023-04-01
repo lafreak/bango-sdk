@@ -130,7 +130,10 @@ int main(int argc, char** argv)
     CommandDispatcher::Register("/moveto",          std::bind(&Player::OnMoveTo,            _1, _2));
 
     CommandDispatcher::Register("/online", [&](Player& player, CommandDispatcher::Token& token) {
-        std::string message = std::string{"Current Online: "} + std::to_string(Socket::GameServer().get_online());
+        std::stringstream ss;
+        ss  << "Players in world: "     << World::GetTotalPlayerCount() << " / "
+            << "Current connections: "  << Socket::GameServer().get_online();
+        auto message = ss.str();
         player.write(packet(S2C_NOTICE, "s", message.c_str()));
     });
 

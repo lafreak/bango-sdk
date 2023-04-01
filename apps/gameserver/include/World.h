@@ -500,6 +500,11 @@ public:
         std::lock_guard<std::recursive_mutex> lock(Get().m_entities_rmtx);
         Map(map_id).For(kind, id, callback);
     }
+
+    static size_t GetTotalPlayerCount()
+    {
+        return Get().m_players.size();
+    }
 };
 
 inline WorldMap::QUERY_KIND operator|(WorldMap::QUERY_KIND a, WorldMap::QUERY_KIND b)

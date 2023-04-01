@@ -1,5 +1,7 @@
 #include <bango/network/client.h>
 
+#include <cassert>
+
 using namespace bango::network;
 
 void client::connect(const std::string& host, std::int32_t port)
@@ -18,17 +20,32 @@ void client::on_new_message(const taco_read_result_t& res)
             on_new_message(res);
         }});
 
-        auto buffer = res.buffer;
+        remaining_buffer.insert(remaining_buffer.end(), res.buffer.begin(), res.buffer.end());
 
-        while (((unsigned short*)buffer.data())[0] <= buffer.size())
+        while (true)
         {
-            auto size = ((unsigned short*)buffer.data())[0];
-            execute(packet(std::vector<char>(buffer.begin(), buffer.begin() + size)));
-            buffer.erase(buffer.begin(), buffer.begin() + size);
-        }
+            // not enough packet data to process yet
+            if (remaining_buffer.size() < 3)
+                break;
 
-        if (buffer.size() > 0)
-            std::cerr << "packet leftover\n";
+            // not enough packet buffer data than declared in the packet yet
+            if (((unsigned short*)remaining_buffer.data())[0] > remaining_buffer.size())
+                break;
+
+            if (((unsigned short*)remaining_buffer.data())[0] < 3)
+            {
+                std::cerr << "wrong packet size: " << ((unsigned short*)remaining_buffer.data())[0] << "\n";
+                // TODO: Kick?
+                remaining_buffer.clear();
+                return;
+            }
+
+            execute(packet(std::vector<char>(remaining_buffer.begin(), remaining_buffer.begin() + ((unsigned short*)remaining_buffer.data())[0])));
+            remaining_buffer.erase(remaining_buffer.begin(), remaining_buffer.begin() + ((unsigned short*)remaining_buffer.data())[0]);
+
+            if (remaining_buffer.size() == 0)
+                break;
+        }
     }
     else
     {
