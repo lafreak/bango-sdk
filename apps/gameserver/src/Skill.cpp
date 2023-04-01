@@ -9,32 +9,43 @@ unsigned int InitSkill::index() const
     return Index;
 }
 
-InitSkill* InitSkill::Find(std::int8_t entity_class, std::uint8_t skill_id)
+InitSkill* InitSkill::FindPlayerSkill(PLAYER_CLASS player_class, std::uint8_t skill_index)
 {
-    if(entity_class >= MAX_CHARACTER)
+    if (player_class < 0 || player_class >= MAX_CHARACTER)
     {
-        spdlog::warn("Invalid player class: {}", entity_class);
-        return 0;
+        spdlog::warn("Cannot find player skill for unknown class: {}", player_class);
+        return nullptr;
     }
-    std::uint32_t index = 0;
-    if(entity_class >= 0)
-        index = (entity_class * 100) + skill_id;
-    else
-        index = ((std::abs(entity_class) + MAX_CHARACTER) * 100) + skill_id;
 
-    const auto it = DB().find(index);
-    if (it != DB().end())
-        return it->second.get();
-    
-    return nullptr;
+    if (skill_index > 99)
+        return nullptr;
+
+    unsigned int index = player_class * 100 + skill_index;
+    const auto& it = DB().find(index);
+
+    return it == DB().end() ? nullptr : it->second.get();
 }
-InitSkill* InitSkill::FindAnimal(std::uint8_t skill_id)
+
+InitSkill* InitSkill::FindAnimalSkill(std::uint8_t skill_index)
 {
-    return Find(CLASS_ANIMAL, skill_id);
+    if (skill_index > 99)
+        return nullptr;
+
+    unsigned int index = (MAX_CHARACTER + Kind::ANIMAL) * 100 + skill_index;
+    const auto& it = DB().find(index);
+
+    return it == DB().end() ? nullptr : it->second.get();
 }
-InitSkill* InitSkill::FindMonster(std::uint8_t skill_id)
+
+InitSkill* InitSkill::FindMonsterSkill(std::uint8_t skill_index)
 {
-    return Find(CLASS_MONSTER, skill_id);
+    if (skill_index > 99)
+        return nullptr;
+
+    unsigned int index = (MAX_CHARACTER + Kind::MONSTER) * 100 + skill_index;
+    const auto& it = DB().find(index);
+
+    return it == DB().end() ? nullptr : it->second.get();
 }
 
 void InitSkill::set(bango::processor::lisp::var param)
@@ -46,9 +57,9 @@ void InitSkill::set(bango::processor::lisp::var param)
         {
             Index = param.pop();
             if(Class >= 0) //Player skills
-                Index = (Class * 100) + Index;
+                Index = Class * 100 + Index;
             else           //Animal or Monster skills
-                Index = ((std::abs(Class) + MAX_CHARACTER) * 100) + Index;
+                Index = (std::abs(Class) + MAX_CHARACTER) * 100 + Index;
             break;
         }
         case A_REDISTRIBUTE: Redistribute = param.pop(); break;
