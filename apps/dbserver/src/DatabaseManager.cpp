@@ -1,5 +1,4 @@
 #include "DatabaseManager.h"
-#include <iostream>
 
 void DatabaseManager::Initialize()
 {
@@ -581,7 +580,7 @@ void DatabaseManager::LoadSkills(const std::shared_ptr<GameServer>& s, unsigned 
     }
 
     packet p(D2S_SKILLINFO);
-    p <<id << skill_count << skills;
+    p << id << skill_count << skills;
 
     s->write(p);
 }
@@ -722,8 +721,8 @@ void DatabaseManager::InsertNewSkill(const std::shared_ptr<GameServer>& s, packe
 {
     auto id_player = p.pop<id_t>();
     auto id_skill = p.pop<std::uint8_t>();
-    std::uint8_t skill_level = 1;
     auto skill_points = p.pop<std::uint16_t>();
+    std::uint8_t skill_level = 1;
 
     auto conn = m_pool.get();
     auto query = conn.create_query("INSERT INTO skill (idplayer, idskill, level) VALUES (?,?,?)");
@@ -740,7 +739,6 @@ void DatabaseManager::InsertNewSkill(const std::shared_ptr<GameServer>& s, packe
 
 void DatabaseManager::UpgradeSkill(const std::shared_ptr<GameServer>& s, packet& p)
 {
-    std::cout<<"HELLO UPGRADE SKILL"<<std::endl;
     auto id_player = p.pop<id_t>();
     auto id_skill = p.pop<std::uint8_t>();
     auto skill_level = p.pop<std::uint8_t>();
@@ -756,5 +754,4 @@ void DatabaseManager::UpgradeSkill(const std::shared_ptr<GameServer>& s, packet&
 
     query2 << skill_points << id_player;
     query2.execute();
-    std::cout<<"HELLO UPGRADE SKILL"<<std::endl;
 }

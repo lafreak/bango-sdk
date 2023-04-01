@@ -98,7 +98,7 @@ public:
     std::uint64_t   GetGStateEx()   const { return m_gstate_ex; }
     std::uint64_t   GetMStateEx()   const { return m_mstate_ex; }
 
-    void ResetStates();
+    virtual void ResetStates();
 
     void AddGState(std::uint64_t gstate)       { m_gstate |= gstate; }
     void AddMState(std::uint64_t mstate)       { m_mstate |= mstate; }

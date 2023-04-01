@@ -8,6 +8,7 @@
 
 class InitSkill : public bango::processor::db_object<InitSkill>
 {
+    static constexpr std::uint8_t MAX_SKILL_INDEX = 84;
     enum Kind : int64_t { ANIMAL=1, MONSTER=2 };
 
 public:
@@ -39,14 +40,14 @@ public:
 
 class Skill
 {
-    const std::unique_ptr<InitSkill>& m_init;
+    const InitSkill* m_init;
     std::uint32_t m_last_use;
     std::uint8_t m_level;
 
     public:
-    Skill(const std::unique_ptr<InitSkill>& init, std::uint8_t skill_level);
+    Skill(const InitSkill* init,const std::uint8_t skill_level);
 
-    std::uint8_t GetLevel() const { return m_level; }
-    std::uint8_t GetIndex() const { return m_init->Index; }
+    const std::uint8_t GetLevel() const { return m_level; }
+    const std::uint8_t GetIndex() const { return m_init->Index; }
     void LevelUp() { ++m_level; }
 };

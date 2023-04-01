@@ -19,7 +19,7 @@ InitSkill* InitSkill::FindPlayerSkill(PLAYER_CLASS player_class, std::uint8_t sk
         return nullptr;
     }
 
-    if (skill_index > 99)
+    if (skill_index > MAX_SKILL_INDEX)
         return nullptr;
 
     unsigned int index = player_class * 100 + skill_index;
@@ -30,7 +30,7 @@ InitSkill* InitSkill::FindPlayerSkill(PLAYER_CLASS player_class, std::uint8_t sk
 
 InitSkill* InitSkill::FindAnimalSkill(std::uint8_t skill_index)
 {
-    if (skill_index > 99)
+    if (skill_index > MAX_SKILL_INDEX)
         return nullptr;
 
     unsigned int index = (MAX_CHARACTER + Kind::ANIMAL) * 100 + skill_index;
@@ -41,7 +41,7 @@ InitSkill* InitSkill::FindAnimalSkill(std::uint8_t skill_index)
 
 InitSkill* InitSkill::FindMonsterSkill(std::uint8_t skill_index)
 {
-    if (skill_index > 99)
+    if (skill_index > MAX_SKILL_INDEX)
         return nullptr;
 
     unsigned int index = (MAX_CHARACTER + Kind::MONSTER) * 100 + skill_index;
@@ -90,7 +90,7 @@ void InitSkill::set(bango::processor::lisp::var param)
     }
 }
 
-Skill::Skill(const std::unique_ptr<InitSkill>& init, std::uint8_t skill_level)
+Skill::Skill(const InitSkill* init,const std::uint8_t skill_level)
     : m_init(init),
     m_last_use(0), 
     m_level(skill_level)
