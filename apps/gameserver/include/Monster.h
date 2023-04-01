@@ -54,6 +54,8 @@ class Monster : public Character
     // It does not need to be the case since some systems may prepare monsters beforehand.
     bool is_removed = false;
 
+    static constexpr std::int32_t MAX_LOOT_THROW_DISTANCE = 16;
+
 public:
     Monster(const std::unique_ptr<InitMonster>& init, int x, int y, int map=0);
     ~Monster();
