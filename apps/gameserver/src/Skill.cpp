@@ -1,5 +1,6 @@
 #include "Skill.h"
 
+#include "spdlog/spdlog.h"
 
 #include <inix.h>
 
@@ -8,12 +9,59 @@ unsigned int InitSkill::index() const
     return Index;
 }
 
+InitSkill* InitSkill::FindPlayerSkill(PLAYER_CLASS player_class, std::uint8_t skill_index)
+{
+    if (player_class < 0 || player_class >= MAX_CHARACTER)
+    {
+        spdlog::warn("Cannot find player skill for unknown class: {}", player_class);
+        return nullptr;
+    }
+
+    if (skill_index > 99)
+        return nullptr;
+
+    unsigned int index = player_class * 100 + skill_index;
+    const auto& it = DB().find(index);
+
+    return it == DB().end() ? nullptr : it->second.get();
+}
+
+InitSkill* InitSkill::FindAnimalSkill(std::uint8_t skill_index)
+{
+    if (skill_index > 99)
+        return nullptr;
+
+    unsigned int index = (MAX_CHARACTER + Kind::ANIMAL) * 100 + skill_index;
+    const auto& it = DB().find(index);
+
+    return it == DB().end() ? nullptr : it->second.get();
+}
+
+InitSkill* InitSkill::FindMonsterSkill(std::uint8_t skill_index)
+{
+    if (skill_index > 99)
+        return nullptr;
+
+    unsigned int index = (MAX_CHARACTER + Kind::MONSTER) * 100 + skill_index;
+    const auto& it = DB().find(index);
+
+    return it == DB().end() ? nullptr : it->second.get();
+}
+
 void InitSkill::set(bango::processor::lisp::var param)
 {
     switch (FindAttribute(param.pop()))
     {
         case A_CLASS:        Class        = param.pop(); break;
-        case A_INDEX:        Index        = param.pop(); break;
+        case A_INDEX:
+        {
+            Index = param.pop();
+            if(Class >= 0) //Player skills
+                Index = Class * 100 + Index;
+            else           //Animal or Monster skills
+                Index = (std::abs(Class) + MAX_CHARACTER) * 100 + Index;
+            break;
+        }
         case A_REDISTRIBUTE: Redistribute = param.pop(); break;
         case A_LIMIT:
         {
@@ -35,6 +83,7 @@ void InitSkill::set(bango::processor::lisp::var param)
         }
         case A_VALUE1:       Value1       = param.pop(); break;
         case A_VALUE2:       Value2       = param.pop(); break;
+        case A_RAGE:         Rage         = param.pop(); break;
 
     }
 }

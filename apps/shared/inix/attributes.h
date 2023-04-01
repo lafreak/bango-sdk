@@ -242,7 +242,8 @@ namespace inix
         {"lasttime", A_LASTTIME},
         {"delay", A_DELAY},
         {"value1", A_VALUE1},
-        {"value2", A_VALUE2}
+        {"value2", A_VALUE2},
+        {"rage", A_RAGE}
 
     };
 
