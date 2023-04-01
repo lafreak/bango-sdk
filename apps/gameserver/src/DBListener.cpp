@@ -4,6 +4,7 @@
 
 #include "Socket.h"
 #include "Player.h"
+#include <iostream>
 
 #include <bango/network/packet.h>
 
@@ -114,6 +115,18 @@ void DBListener::OnLoadItems(packet& p)
         if (user->GetUID() == uid)
         {
             user->OnLoadItems(p);
+        }
+    });
+}
+
+void DBListener::OnLoadSkills(packet& p)
+{
+    auto uid = p.pop<unsigned int>();
+
+    Socket::GameServer().for_each([&](const std::shared_ptr<Player>& user) {
+        if (user->GetUID() == uid)
+        {
+            user->OnLoadSkills(p);
         }
     });
 }

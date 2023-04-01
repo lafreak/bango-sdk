@@ -53,6 +53,7 @@ public:
     void RestorePlayer  (const std::shared_ptr<GameServer>& s, packet& p);
     void LoadPlayer     (const std::shared_ptr<GameServer>& s, packet& p);
     void LoadItems      (const std::shared_ptr<GameServer>& s, unsigned int id, int idplayer);
+    void LoadSkills     (const std::shared_ptr<GameServer>& s, unsigned int id, int idplayer);
 
     void InsertItem     (const std::shared_ptr<GameServer>& s, packet& p);
     void UpdateItemNum  (const std::shared_ptr<GameServer>& s, packet& p);
@@ -61,4 +62,7 @@ public:
 
     void UpdateProperty (const std::shared_ptr<GameServer>& s, packet& p);
     void SaveAllProperty (const std::shared_ptr<GameServer>& s, packet& p);
+
+    void InsertNewSkill    (const std::shared_ptr<GameServer>& s, packet& p);
+    void UpgradeSkill    (const std::shared_ptr<GameServer>& s, packet& p);
 };

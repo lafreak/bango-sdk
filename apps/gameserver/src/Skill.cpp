@@ -4,6 +4,8 @@
 
 #include <inix.h>
 
+using namespace bango::network;
+
 unsigned int InitSkill::index() const
 {
     return Index;
@@ -86,4 +88,11 @@ void InitSkill::set(bango::processor::lisp::var param)
         case A_RAGE:         Rage         = param.pop(); break;
 
     }
+}
+
+Skill::Skill(const std::unique_ptr<InitSkill>& init, std::uint8_t skill_level)
+    : m_init(init),
+    m_last_use(0), 
+    m_level(skill_level)
+{
 }

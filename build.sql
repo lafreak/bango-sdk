@@ -55,6 +55,17 @@ CREATE TABLE shortcut (
 		REFERENCES player (idplayer)
 );
 
+
+CREATE table skill (
+	idplayer INT NOT NULL,
+	idskill SMALLINT NOT NULL,
+	level TINYINT NOT NULL,
+
+	FOREIGN KEY (idplayer)
+		REFERENCES player (idplayer)
+);
+
+
 DROP TRIGGER IF EXISTS player_after_insert;
 
 DELIMITER //

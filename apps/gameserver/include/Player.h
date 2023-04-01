@@ -2,11 +2,13 @@
 
 #include <cstdint>
 #include <memory>
+#include <unordered_map>
 
 #include "Character.h"
 #include "User.h"
 #include "Inventory.h"
 #include "Party.h"
+#include "Skill.h"
 
 #include "CommandDispatcher.h"
 
@@ -32,7 +34,10 @@ class Player : public Character, public User
     bango::utils::time::point m_last_attack = bango::utils::time::now();
     bango::utils::time::point m_last_save = bango::utils::time::now();
 
+    std::unordered_map<std::uint8_t, Skill> m_skills;
+
     static constexpr std::uint32_t SAVE_ALL_PROPERTY_INTERVAL = 60'000;
+    static constexpr std::uint8_t MAX_SKILL_INDEX = 84;
 public:
     Player(const bango::network::taco_client_t& client);
     ~Player();
@@ -46,6 +51,7 @@ public:
     void OnMove                 (bango::network::packet& p, bool end);
     void OnLoadPlayer           (bango::network::packet& p);
     void OnLoadItems            (bango::network::packet& p);
+    void OnLoadSkills           (bango::network::packet& p);
     void OnLoadFinish           ();
     void OnRest                 (bango::network::packet& p);
     void OnChatting             (bango::network::packet& p);
@@ -62,6 +68,8 @@ public:
     void OnExileParty           (bango::network::packet& p);
     void OnLeaveParty           (bango::network::packet& p);
     void OnItemPick             (bango::network::packet& p);
+    void OnSkillUpgrade         (bango::network::packet& p);
+    void OnSkillLearn           (bango::network::packet& p);
 
     // Command Endpoints
     void OnGetItem(CommandDispatcher::Token& token);
@@ -155,6 +163,10 @@ public:
     bool IsPartyLeader()                                const   { return HasParty() && GetParty()->IsLeader(this); }
     const std::shared_ptr<Party>& GetParty()            const   { return m_party; }
     id_t GetPartyID()                                   const   { return m_party_id; }
+
+    bool HasSkill(std::uint8_t skill_id) const;
+    bool CanLearnSkill(std::uint8_t skill_id) const;
+    void LearnOrUpgradeSkill(std::uint8_t skill_id, std::uint8_t skill_level);
 
     std::uint16_t   GetReqPU(std::uint8_t* stats);
 

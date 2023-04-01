@@ -18,6 +18,7 @@ using namespace bango::utils;
 
 Player::Player(const bango::network::taco_client_t& client) : User(client), Character(Character::PLAYER)
 {
+    //m_skills(AssignSkillsToPlayer)
     spdlog::trace("Player constructor id: {}", GetID());
 }
 
@@ -110,6 +111,36 @@ void Player::OnLoadItems(packet& p)
     }
 
     OnLoadFinish();
+}
+
+void Player::OnLoadSkills(packet& p)
+{
+    std::uint8_t count = p.pop<std::uint8_t>();
+    spdlog::info("count {} ", count);
+    packet skill_info_packet(S2C_SKILLINFO);
+    skill_info_packet << count;
+    for (std::uint8_t i = 0; i < count; i++)
+    {
+        auto skill_id = p.pop<std::uint8_t>();
+        auto skill_level = p.pop<std::uint8_t>();
+        const auto& skill_init = InitSkill::DB().at(skill_id);
+
+        if(!skill_init)
+        {
+            spdlog::warn("Player {} has an invalid skill id {} in database", GetName(), skill_id);
+            continue;
+        }
+
+        spdlog::info("Player {} loaded skill {} at grade {}", GetName(), skill_id, skill_level);
+        auto new_skill = Skill(skill_init, skill_level);
+        m_skills.insert({skill_id, new_skill});
+
+        std::uint32_t cooldown_remaining = 0;
+
+        skill_info_packet << skill_id << skill_level << cooldown_remaining;
+    }
+    write(skill_info_packet);
+
 }
 
 void Player::OnLoadFinish()
@@ -809,6 +840,107 @@ void Player::OnItemPick(packet& p)
                         GetName());
                     World::Remove(&loot);
                 });
+}
+
+
+void Player::OnSkillUpgrade(bango::network::packet& p)
+{
+    auto skill_id = p.pop<std::uint8_t>();
+
+    if(!HasSkill(skill_id))
+    {
+        spdlog::warn("Player {} tried to upgrade skill {} without learning it first", GetName(), skill_id);
+        return;
+    }
+    LearnOrUpgradeSkill(skill_id, m_skills.at(skill_id).GetLevel() + 1);
+}
+void Player::OnSkillLearn(bango::network::packet& p)
+{
+    auto skill_id = p.pop<std::uint8_t>();
+    auto skill_level = 1;
+    LearnOrUpgradeSkill(skill_id, skill_level);
+}
+
+bool Player::HasSkill(std::uint8_t skill_id) const
+{
+    return m_skills.find(skill_id) != m_skills.end();
+}
+
+void Player::LearnOrUpgradeSkill(std::uint8_t skill_id, std::uint8_t skill_level)
+{
+    if(!CanLearnSkill(skill_id))
+        return;
+
+    const auto& skill_init = InitSkill::DB().at(skill_id);
+    auto new_skill = Skill(skill_init, skill_level);
+
+
+    if(skill_level == 1) // Learn New Skill
+    {
+        m_skills.insert({skill_id, new_skill});
+        Socket::DBClient().write(S2D_INSERTSKILL, "dbw", GetPID(), skill_id, --m_data.SUPoint);
+        spdlog::info("Player {} learned skill id {}", GetName(), skill_id);
+    }
+    else  // Upgrade Skill
+    {
+        m_skills.at(skill_id).LevelUp();
+        Socket::DBClient().write(S2D_SKILLUP, "dbbw", GetPID(), skill_id, skill_level, --m_data.SUPoint);
+        spdlog::info("Player {} upgraded skill id {} to level {}", GetName(), skill_id, skill_level);
+
+    }
+    write(S2C_SKILLUP, "bb", skill_id, new_skill.GetLevel());
+    SendProperty(P_SUPOINT);
+}
+
+bool Player::CanLearnSkill(std::uint8_t skill_id) const
+{
+    const auto& skill_init = InitSkill::DB().at(skill_id);
+
+    if(!skill_init)
+    {
+        spdlog::warn("Player {} tried to learn an invalid skill id {}", GetName(), skill_id);
+        return false;
+    }
+
+    if(skill_init->LevelLimit > GetLevel())
+    {
+        spdlog::warn("Player {} tried to learn a skill id {} but is not high enough level", GetName(), skill_id);
+        return false;
+    }
+    if(skill_init->Job > GetJob())
+    {
+        spdlog::warn("Player {} tried to learn a skill id {} but his job is not high enough", GetName(), skill_id);
+        return false;
+    }
+    if(GetSUPoint() <= 0)
+    {
+        spdlog::warn("Player {} tried to learn a skill id {} but has no skill points", GetName(), skill_id);
+        return false;
+    }
+
+    if(HasSkill(skill_id) && m_skills.at(skill_id).GetLevel() >= skill_init->MaxLevel)
+    {
+        spdlog::warn("Player {} tried to learn a skill id {} but it is already max level", GetName(), skill_id);
+        return false;
+    }
+
+    auto required_skill_id = skill_init->RequiredSkillId;
+    if(required_skill_id != 0)
+    {
+        auto required_skill_grade = skill_init->RequiredSkillGrade;
+        if(!HasSkill(required_skill_id))
+        {
+            spdlog::warn("Player {} tried to learn a skill id {} but does not have the required skill", GetName(), skill_id);
+            return false;
+        }
+        else if(m_skills.at(required_skill_id).GetLevel() < required_skill_grade)
+        {
+            spdlog::warn("Player {} tried to learn a skill id {} but does not have the required skill grade", GetName(), skill_id);
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void Player::LeaveParty(bool is_kicked)
