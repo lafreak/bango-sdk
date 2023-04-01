@@ -1,7 +1,5 @@
 #include <bango/network/client.h>
 
-#include <cassert>
-
 using namespace bango::network;
 
 void client::connect(const std::string& host, std::int32_t port)
