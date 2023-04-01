@@ -28,20 +28,22 @@ void client::on_new_message(const taco_read_result_t& res)
             if (remaining_buffer.size() < 3)
                 break;
 
+            auto packet_size = ((unsigned short*)remaining_buffer.data())[0];
+
             // not enough packet buffer data than declared in the packet yet
-            if (((unsigned short*)remaining_buffer.data())[0] > remaining_buffer.size())
+            if (packet_size > remaining_buffer.size())
                 break;
 
-            if (((unsigned short*)remaining_buffer.data())[0] < 3)
+            if (packet_size < 3)
             {
-                std::cerr << "wrong packet size: " << ((unsigned short*)remaining_buffer.data())[0] << "\n";
+                std::cerr << "wrong packet size: " << packet_size << "\n";
                 // TODO: Kick?
                 remaining_buffer.clear();
                 return;
             }
 
-            execute(packet(std::vector<char>(remaining_buffer.begin(), remaining_buffer.begin() + ((unsigned short*)remaining_buffer.data())[0])));
-            remaining_buffer.erase(remaining_buffer.begin(), remaining_buffer.begin() + ((unsigned short*)remaining_buffer.data())[0]);
+            execute(packet(std::vector<char>(remaining_buffer.begin(), remaining_buffer.begin() + packet_size)));
+            remaining_buffer.erase(remaining_buffer.begin(), remaining_buffer.begin() + packet_size);
 
             if (remaining_buffer.size() == 0)
                 break;

@@ -39,7 +39,7 @@
                 "--db_port", "2999",
                 "--game_address", "0.0.0.0",
                 "--game_port", "3000",
-                "--processing_threads", "1",
+                "--processing_threads", "12",
                 "--config_path", "/config"
             ],
             "stopAtEntry": false,
