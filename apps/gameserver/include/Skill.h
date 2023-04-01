@@ -1,11 +1,15 @@
 #pragma once
 
 #include <bango/processor/db.h>
+#include <inix.h>
 
-struct InitSkill : public bango::processor::db_object<InitSkill>
+class InitSkill : public bango::processor::db_object<InitSkill>
 {
-    static constexpr std::int32_t CLASS_ANIMAL = -1;
-    static constexpr std::int32_t CLASS_MONSTER = -2;
+    enum Kind : int64_t { ANIMAL=1, MONSTER=2 };
+
+public:
+    unsigned int index() const;
+    virtual void set(bango::processor::lisp::var param) override;
 
     std::int32_t Class = 0;
     std::uint32_t Index = 0;
@@ -24,10 +28,7 @@ struct InitSkill : public bango::processor::db_object<InitSkill>
     std::int32_t Value2 = 0;
     std::int32_t Rage = 0;
 
-    static InitSkill* Find(std::int8_t entity_class, std::uint8_t skill_id);
-    static InitSkill* FindAnimal(std::uint8_t skill_id);
-    static InitSkill* FindMonster(std::uint8_t skill_id);
-    unsigned int index() const;
-    virtual void set(bango::processor::lisp::var param) override;
-
+    static InitSkill* FindPlayerSkill(PLAYER_CLASS player_class, std::uint8_t skill_index);
+    static InitSkill* FindAnimalSkill(std::uint8_t skill_index);
+    static InitSkill* FindMonsterSkill(std::uint8_t skill_index);
 };
