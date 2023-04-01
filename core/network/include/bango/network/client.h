@@ -17,6 +17,8 @@ namespace bango { namespace network {
 
         void execute(packet&& p) const;
 
+        // possibly reserve MAX_PACKET_LENGTH for better perf
+        std::vector<char> remaining_buffer;
 
     public:
 
