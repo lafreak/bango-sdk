@@ -232,8 +232,8 @@ std::vector<LootInfo> Monster::RollLoot()
 
     for(auto& loot : loot_vec)
     {
-        int new_loot_x = GetX() + (random::between(0, Loot::MAX_RANDOM_DISTANCE_FROM_THROWER * 2)) - Loot::MAX_RANDOM_DISTANCE_FROM_THROWER;
-        int new_loot_y = GetY() + (random::between(0, Loot::MAX_RANDOM_DISTANCE_FROM_THROWER * 2)) - Loot::MAX_RANDOM_DISTANCE_FROM_THROWER;
+        int new_loot_x = GetX() + (random::between(0, MAX_LOOT_THROW_DISTANCE * 2)) - MAX_LOOT_THROW_DISTANCE;
+        int new_loot_y = GetY() + (random::between(0, MAX_LOOT_THROW_DISTANCE * 2)) - MAX_LOOT_THROW_DISTANCE;
         auto new_loot_ptr = std::make_shared<Loot>(loot, new_loot_x, new_loot_y, GetMap());
         World::Add(new_loot_ptr);
         spdlog::debug("Creating new loot; ID: {} in ({},{})",
