@@ -87,7 +87,7 @@ class Loot : public Character
     static constexpr std::uint32_t DISAPPEAR_TIME = 180000;
 public:
     static constexpr std::uint32_t PRIORITY_TIME = 120000;
-    static constexpr std::int32_t MAX_RANDOM_DISTANCE_FROM_THROWER = 20;
+    static constexpr std::int32_t MAX_RANDOM_DISTANCE_FROM_THROWER = 16;
 
     Loot(LootInfo loot_info, int x, int y, int map);
 
