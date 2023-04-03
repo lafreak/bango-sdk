@@ -80,6 +80,12 @@ BEGIN
 			(NEW.idplayer, 11), (NEW.idplayer, 12), (NEW.idplayer, 13), (NEW.idplayer, 14), (NEW.idplayer, 15),
 			(NEW.idplayer, 16), (NEW.idplayer, 17), (NEW.idplayer, 18), (NEW.idplayer, 19), (NEW.idplayer, 20);
 
+	INSERT INTO skill (idplayer, idskill, level)
+		VALUES
+			(NEW.idplayer, 0, 1),
+			(NEW.idplayer, 1, 1),
+			(NEW.idplayer, 11, 1);
+
 	IF (NEW.class = 0) THEN #Knight
 		INSERT INTO item (idplayer, `index`, curend) VALUES (NEW.idplayer, 1, 4);
 	ELSEIF (NEW.class = 1) THEN #Mage

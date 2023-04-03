@@ -125,7 +125,7 @@ int main(int argc, char** argv)
     Socket::DBClient().when(D2S_ANS_NEWPLAYER,      std::bind(&DBListener::OnNewPlayerAnswer,   _1));
     Socket::DBClient().when(D2S_LOADPLAYER,         std::bind(&DBListener::OnLoadPlayer,        _1));
     Socket::DBClient().when(D2S_LOADITEMS,          std::bind(&DBListener::OnLoadItems,         _1));
-    Socket::DBClient().when(D2S_SKILLINFO,          std::bind(&DBListener::OnLoadSkills,         _1));
+    Socket::DBClient().when(D2S_SKILLINFO,          std::bind(&DBListener::OnLoadSkills,        _1));
     Socket::DBClient().when(D2S_UPDATEITEMIID,      std::bind(&DBListener::OnUpdateItemIID,     _1));
 
     CommandDispatcher::Register("/get",             std::bind(&Player::OnGetItem,           _1, _2));

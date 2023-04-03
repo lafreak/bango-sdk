@@ -7,7 +7,6 @@
 
 #include <bango/processor/db.h>
 #include <inix.h>
-#include <bango/network/packet.h>
 
 class InitSkill : public bango::processor::db_object<InitSkill>
 {
