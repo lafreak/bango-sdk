@@ -131,7 +131,7 @@ void Player::OnLoadSkills(packet& p)
         skill_info_packet << skill_id << skill_level << cooldown_remaining;
     }
     write(skill_info_packet);
-    OnLoadFinish();
+    OnLoadFinish(); // Should be called on receiving last information from DB before game start.
 }
 
 void Player::OnLoadFinish()
