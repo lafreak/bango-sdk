@@ -8,7 +8,6 @@
 #include "Inventory.h"
 #include "Party.h"
 #include "Skill.h"
-#include "SkillManager.h"
 
 #include "CommandDispatcher.h"
 
@@ -17,12 +16,13 @@
 #include <bango/utils/time.h>
 #include <bango/network/server.h>
 
-class Player : public Character, public User, public SkillManager
+class Player : public Character, public User
 {
     PLAYERINFO m_data;
     std::string m_name;
 
     Inventory m_inventory;
+    SkillManager m_skills;
     std::shared_ptr<Party> m_party;
     int m_party_inviter_id=0;
     id_t m_party_id=0;

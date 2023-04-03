@@ -44,7 +44,6 @@ set(SOURCES
   src/Spawn.cpp
   src/Loot.cpp
   src/Skill.cpp
-  src/SkillManager.cpp
   )
 
 add_executable(gameserver ${SOURCES})

@@ -4,7 +4,6 @@
 
 #include "Socket.h"
 #include "Player.h"
-#include <iostream>
 
 #include <bango/network/packet.h>
 

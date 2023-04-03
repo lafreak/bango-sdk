@@ -63,6 +63,6 @@ public:
     void UpdateProperty (const std::shared_ptr<GameServer>& s, packet& p);
     void SaveAllProperty (const std::shared_ptr<GameServer>& s, packet& p);
 
-    void InsertNewSkill    (const std::shared_ptr<GameServer>& s, packet& p);
+    void LearnSkill    (const std::shared_ptr<GameServer>& s, packet& p);
     void UpgradeSkill    (const std::shared_ptr<GameServer>& s, packet& p);
 };

@@ -61,8 +61,8 @@ void DatabaseManager::Initialize()
         SendPlayerList(s, id, idaccount);
     });
 
-    m_dbserver.when(S2D_INSERTSKILL, [&](const std::shared_ptr<GameServer>& s, packet& p) {
-        InsertNewSkill(s, p);
+    m_dbserver.when(S2D_LEARNSKILL, [&](const std::shared_ptr<GameServer>& s, packet& p) {
+        LearnSkill(s, p);
     });
 
     m_dbserver.when(S2D_SKILLUP, [&](const std::shared_ptr<GameServer>& s, packet& p) {
@@ -717,9 +717,9 @@ void DatabaseManager::SaveAllProperty(const std::shared_ptr<GameServer>& s, pack
     query.execute();
 }
 
-void DatabaseManager::InsertNewSkill(const std::shared_ptr<GameServer>& s, packet& p)
+void DatabaseManager::LearnSkill(const std::shared_ptr<GameServer>& s, packet& p)
 {
-    auto id_player = p.pop<id_t>();
+    auto id_player = p.pop<unsigned int>();
     auto id_skill = p.pop<std::uint8_t>();
     auto skill_points = p.pop<std::uint16_t>();
     std::uint8_t skill_level = 1;
@@ -739,7 +739,7 @@ void DatabaseManager::InsertNewSkill(const std::shared_ptr<GameServer>& s, packe
 
 void DatabaseManager::UpgradeSkill(const std::shared_ptr<GameServer>& s, packet& p)
 {
-    auto id_player = p.pop<id_t>();
+    auto id_player = p.pop<unsigned int>();
     auto id_skill = p.pop<std::uint8_t>();
     auto skill_level = p.pop<std::uint8_t>();
     auto skill_points = p.pop<std::uint16_t>();

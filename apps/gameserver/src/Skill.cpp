@@ -4,7 +4,6 @@
 
 #include <inix.h>
 
-using namespace bango::network;
 
 unsigned int InitSkill::index() const
 {
@@ -69,7 +68,7 @@ void InitSkill::set(bango::processor::lisp::var param)
         {
             LevelLimit = param.pop();
             Job        = param.pop();
-            RequiredSkillId = param.pop();
+            RequiredSkillIndex = param.pop();
             RequiredSkillGrade = param.pop();
             break;
         }
@@ -89,6 +88,35 @@ void InitSkill::set(bango::processor::lisp::var param)
 
     }
 }
+
+bool SkillManager::HasSkill(const std::uint8_t skill_id) const
+{
+    return m_skills.find(skill_id) != m_skills.end();
+}
+
+
+Skill* SkillManager::GetSkill(const std::uint8_t skill_id) const
+{
+    return HasSkill(skill_id) ? m_skills.at(skill_id).get() : nullptr;
+}
+
+bool SkillManager::UpgradeSkill(const std::uint8_t skill_id, const std::uint8_t skill_level)
+{
+    if(!HasSkill(skill_id))
+        return false;
+
+    if(m_skills.at(skill_id)->GetLevel() >= skill_level)
+        return false;
+
+     m_skills.at(skill_id)->SetLevel(skill_level);
+     return true;
+}
+bool SkillManager::LearnSkill(const InitSkill* skill_init,const std::uint8_t skill_id, const std::uint8_t skill_level)
+{
+    auto [_, success] = m_skills.insert({skill_id, std::make_unique<Skill>(skill_init, skill_level)});
+    return success;
+}
+
 
 Skill::Skill(const InitSkill* init,const std::uint8_t skill_level)
     : m_init(init),

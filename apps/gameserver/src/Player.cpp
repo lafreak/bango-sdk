@@ -18,7 +18,6 @@ using namespace bango::utils;
 
 Player::Player(const bango::network::taco_client_t& client) : User(client), Character(Character::PLAYER)
 {
-    //m_skills(AssignSkillsToPlayer)
     spdlog::trace("Player constructor id: {}", GetID());
 }
 
@@ -127,9 +126,9 @@ void Player::OnLoadSkills(packet& p)
         }
 
         spdlog::info("Player {} loaded skill {} at grade {}", GetName(), skill_id, skill_level);
-        InsertSkill(skill_init, skill_id, skill_level);
+        m_skills.LearnSkill(skill_init, skill_id, skill_level);
 
-        std::uint32_t cooldown_remaining = 0;
+        std::uint32_t cooldown_remaining = 0; // TODO: cooldown protection.
 
         skill_info_packet << skill_id << skill_level << cooldown_remaining;
     }
@@ -841,7 +840,7 @@ void Player::OnSkillUpgrade(bango::network::packet& p)
 {
     auto skill_id = p.pop<std::uint8_t>();
 
-    if(!HasSkill(skill_id))
+    if(!m_skills.HasSkill(skill_id))
     {
         spdlog::warn("Player {} tried to upgrade skill {} without learning it first", GetName(), skill_id);
         return;
@@ -862,18 +861,30 @@ void Player::LearnOrUpgradeSkill(const std::uint8_t skill_id)
     const auto* skill_init = InitSkill::FindPlayerSkill((PLAYER_CLASS)GetClass(), skill_id);
 
 
-    auto* skill = GetSkill(skill_id);
+    auto* skill = m_skills.GetSkill(skill_id);
     const std::uint8_t skill_level = skill ? skill->GetLevel() + 1 : 1;
 
     if(skill_level == 1) // Learn New Skill
     {
-        InsertSkill(skill_init, skill_id);
-        Socket::DBClient().write(S2D_INSERTSKILL, "dbw", GetPID(), skill_id, --m_data.SUPoint);
+        auto success = m_skills.LearnSkill(skill_init, skill_id);
+
+        if(!success)
+        {
+            spdlog::warn("Something went wrong when Player {} tried to learn skill of id {}", GetName(), skill_id);
+            return;
+        }
+        Socket::DBClient().write(S2D_LEARNSKILL, "dbw", GetPID(), skill_id, --m_data.SUPoint);
         spdlog::info("Player {} learned skill id {}", GetName(), skill_id);
     }
     else                 // Upgrade Skill
     {
-        UpgradeSkill(skill_id);
+        bool success = m_skills.UpgradeSkill(skill_id, skill_level);
+
+        if(!success)
+        {
+            spdlog::warn("Something went wrong when Player {} tried to upgrade skill of id {} to grade {}", GetName(), skill_id, skill_level);
+            return;
+        }
         Socket::DBClient().write(S2D_SKILLUP, "dbbw", GetPID(), skill_id, skill_level, --m_data.SUPoint);
         spdlog::info("Player {} upgraded skill id {} to level {}", GetName(), skill_id, skill_level);
 
@@ -897,7 +908,7 @@ bool Player::CanLearnSkill(const std::uint8_t skill_id) const
         spdlog::warn("Player {} tried to learn a skill id {} but is not high enough level", GetName(), skill_id);
         return false;
     }
-    if(skill_init->Job > GetJob())
+    if(skill_init->Job & GetJob())
     {
         spdlog::warn("Player {} tried to learn a skill id {} but his job is not high enough", GetName(), skill_id);
         return false;
@@ -908,22 +919,22 @@ bool Player::CanLearnSkill(const std::uint8_t skill_id) const
         return false;
     }
 
-    if(HasSkill(skill_id) && GetSkill(skill_id)->GetLevel() >= skill_init->MaxLevel)
+    if(m_skills.HasSkill(skill_id) && m_skills.GetSkill(skill_id)->GetLevel() >= skill_init->MaxLevel)
     {
         spdlog::warn("Player {} tried to learn a skill id {} but it is already max level", GetName(), skill_id);
         return false;
     }
 
-    const auto required_skill_id = skill_init->RequiredSkillId;
-    if(required_skill_id != 0)
+    const auto required_skill_index = skill_init->RequiredSkillIndex;
+    if(required_skill_index != 0)
     {
         const auto required_skill_grade = skill_init->RequiredSkillGrade;
-        if(!HasSkill(required_skill_id))
+        if(!m_skills.HasSkill(required_skill_index))
         {
             spdlog::warn("Player {} tried to learn a skill id {} but does not have the required skill", GetName(), skill_id);
             return false;
         }
-        else if(GetSkill(required_skill_id)->GetLevel() < required_skill_grade)
+        else if(m_skills.GetSkill(required_skill_index)->GetLevel() < required_skill_grade)
         {
             spdlog::warn("Player {} tried to learn a skill id {} but does not have the required skill grade", GetName(), skill_id);
             return false;
@@ -1006,8 +1017,8 @@ void Player::ResetStates()
 {
     Character::ResetStates();
     m_inventory = Inventory();
+    m_skills = SkillManager();
     LeaveParty();
-    m_skills.clear();
 }
 
 void Player::UpdateExp(std::int64_t amount)
