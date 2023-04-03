@@ -46,7 +46,7 @@ class Skill
     std::uint8_t m_level;
 
 public:
-    Skill(const InitSkill* init,const std::uint8_t skill_level);
+    Skill(const InitSkill* init,const std::uint8_t level);
 
     const std::uint8_t GetLevel() const { return m_level; }
     const std::uint8_t GetIndex() const { return m_init->Index; }
@@ -58,8 +58,8 @@ class SkillManager
 public:
     std::unordered_map<std::uint8_t, std::unique_ptr<Skill>> m_skills;
 
-    bool UpgradeSkill(const std::uint8_t skill_id, const std::uint8_t skill_level);
-    bool LearnSkill(const InitSkill* skill_init,const std::uint8_t skill_id, const std::uint8_t skill_level = 1);
-    bool HasSkill(const std::uint8_t skill_id) const;
-    Skill* GetSkill(const std::uint8_t skill_id) const;  //pointers
+    bool Upgrade(const std::uint8_t index, const std::uint8_t level);
+    bool Learn(const InitSkill* init,const std::uint8_t index, const std::uint8_t level = 1);
+    bool Exists(const std::uint8_t index) const;
+    Skill* GetByIndex(const std::uint8_t index) const;  //pointers
 };

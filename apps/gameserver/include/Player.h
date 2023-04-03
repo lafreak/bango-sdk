@@ -161,8 +161,8 @@ public:
     const std::shared_ptr<Party>& GetParty()            const   { return m_party; }
     id_t GetPartyID()                                   const   { return m_party_id; }
 
-    bool CanLearnSkill(std::uint8_t skill_id) const;
-    void LearnOrUpgradeSkill(std::uint8_t skill_id);
+    bool CanLearnSkill(std::uint8_t index) const;
+    void LearnOrUpgradeSkill(std::uint8_t index);
 
     std::uint16_t   GetReqPU(std::uint8_t* stats);
 

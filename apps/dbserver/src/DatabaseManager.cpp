@@ -573,10 +573,10 @@ void DatabaseManager::LoadSkills(const std::shared_ptr<GameServer>& s, unsigned 
     while (query.next())
     {
         skill_count++;
-        std::uint8_t skill_id = query.get_int("idskill");
-        std::uint8_t skill_level = query.get_int("level");
+        std::uint8_t index = query.get_int("idskill");
+        std::uint8_t level = query.get_int("level");
 
-        skills << skill_id << skill_level;
+        skills << index << level;
     }
 
     packet p(D2S_SKILLINFO);
@@ -720,14 +720,14 @@ void DatabaseManager::SaveAllProperty(const std::shared_ptr<GameServer>& s, pack
 void DatabaseManager::LearnSkill(const std::shared_ptr<GameServer>& s, packet& p)
 {
     auto id_player = p.pop<unsigned int>();
-    auto id_skill = p.pop<std::uint8_t>();
+    auto index = p.pop<std::uint8_t>();
     auto skill_points = p.pop<std::uint16_t>();
-    std::uint8_t skill_level = 1;
+    std::uint8_t level = 1;
 
     auto conn = m_pool.get();
     auto query = conn.create_query("INSERT INTO skill (idplayer, idskill, level) VALUES (?,?,?)");
 
-    query << id_player << id_skill << skill_level;
+    query << id_player << index << level;
     query.execute();
 
     auto query2 = conn.create_query("UPDATE player SET supoint=? WHERE idplayer=?");
@@ -740,14 +740,14 @@ void DatabaseManager::LearnSkill(const std::shared_ptr<GameServer>& s, packet& p
 void DatabaseManager::UpgradeSkill(const std::shared_ptr<GameServer>& s, packet& p)
 {
     auto id_player = p.pop<unsigned int>();
-    auto id_skill = p.pop<std::uint8_t>();
-    auto skill_level = p.pop<std::uint8_t>();
+    auto index = p.pop<std::uint8_t>();
+    auto level = p.pop<std::uint8_t>();
     auto skill_points = p.pop<std::uint16_t>();
 
     auto conn = m_pool.get();
     auto query = conn.create_query("UPDATE skill SET level=? WHERE idplayer=? AND idskill=?");
 
-    query << skill_level << id_player << id_skill;
+    query << level << id_player << index;
     query.execute();
 
     auto query2 = conn.create_query("UPDATE player SET supoint=? WHERE idplayer=?");
