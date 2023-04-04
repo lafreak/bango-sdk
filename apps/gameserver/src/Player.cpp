@@ -851,43 +851,43 @@ void Player::OnSkillLearn(bango::network::packet& p)
     LearnOrUpgradeSkill(index);
 }
 
-void Player::LearnOrUpgradeSkill(const std::uint8_t index)
+void Player::LearnOrUpgradeSkill(const std::uint8_t skill_index)
 {
-    if(!CanLearnSkill(index))
+    if(!CanLearnSkill(skill_index))
         return;
 
-    const auto* init = InitSkill::FindPlayerSkill((PLAYER_CLASS)GetClass(), index);
+    const auto* init = InitSkill::FindPlayerSkill((PLAYER_CLASS)GetClass(), skill_index);
 
 
-    auto* skill = m_skills.GetByIndex(index);
+    auto* skill = m_skills.GetByIndex(skill_index);
     const std::uint8_t level = skill ? skill->GetLevel() + 1 : 1;
 
     if(level == 1) // Learn New Skill
     {
-        auto success = m_skills.Learn(init, index);
+        auto success = m_skills.Learn(init, skill_index);
 
         if(!success)
         {
-            spdlog::warn("Something went wrong when Player {} tried to learn skill of id {}", GetName(), index);
+            spdlog::warn("Something went wrong when Player {} tried to learn skill of id {}", GetName(), skill_index);
             return;
         }
-        Socket::DBClient().write(S2D_LEARNSKILL, "dbw", GetPID(), index, --m_data.SUPoint);
-        spdlog::info("Player {} learned skill id {}", GetName(), index);
+        Socket::DBClient().write(S2D_LEARNSKILL, "dbw", GetPID(), skill_index, --m_data.SUPoint);
+        spdlog::info("Player {} learned skill id {}", GetName(), skill_index);
     }
     else                 // Upgrade Skill
     {
-        bool success = m_skills.Upgrade(index, level);
+        bool success = m_skills.Upgrade(skill_index, level);
 
         if(!success)
         {
-            spdlog::warn("Something went wrong when Player {} tried to upgrade skill of id {} to grade {}", GetName(), index, level);
+            spdlog::warn("Something went wrong when Player {} tried to upgrade skill of id {} to grade {}", GetName(), skill_index, level);
             return;
         }
-        Socket::DBClient().write(S2D_SKILLUP, "dbbw", GetPID(), index, level, --m_data.SUPoint);
-        spdlog::info("Player {} upgraded skill id {} to level {}", GetName(), index, level);
+        Socket::DBClient().write(S2D_SKILLUP, "dbbw", GetPID(), skill_index, level, --m_data.SUPoint);
+        spdlog::info("Player {} upgraded skill id {} to level {}", GetName(), skill_index, level);
 
     }
-    write(S2C_SKILLUP, "bb", index, level);
+    write(S2C_SKILLUP, "bb", skill_index, level);
     SendProperty(P_SUPOINT);
 }
 
