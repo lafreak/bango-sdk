@@ -89,18 +89,18 @@ void InitSkill::set(bango::processor::lisp::var param)
     }
 }
 
-bool SkillManager::Exists(const std::uint8_t index) const
+bool SkillManager::Exists(std::uint8_t index) const
 {
     return m_skills.find(index) != m_skills.end();
 }
 
 
-Skill* SkillManager::GetByIndex(const std::uint8_t index) const
+Skill* SkillManager::GetByIndex(std::uint8_t index) const
 {
     return Exists(index) ? m_skills.at(index).get() : nullptr;
 }
 
-bool SkillManager::Upgrade(const std::uint8_t index, const std::uint8_t level)
+bool SkillManager::Upgrade(std::uint8_t index, std::uint8_t level)
 {
     if(!Exists(index))
         return false;
@@ -111,14 +111,14 @@ bool SkillManager::Upgrade(const std::uint8_t index, const std::uint8_t level)
      m_skills.at(index)->SetLevel(level);
      return true;
 }
-bool SkillManager::Learn(const InitSkill* init,const std::uint8_t index, const std::uint8_t level)
+bool SkillManager::Learn(const InitSkill* init,std::uint8_t index, std::uint8_t level)
 {
     auto [_, success] = m_skills.insert({index, std::make_unique<Skill>(init, level)});
     return success;
 }
 
 
-Skill::Skill(const InitSkill* init,const std::uint8_t level)
+Skill::Skill(const InitSkill* init,std::uint8_t level)
     : m_init(init),
     m_last_use(0), 
     m_level(level)
