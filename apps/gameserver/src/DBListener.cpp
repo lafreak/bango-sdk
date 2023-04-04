@@ -118,6 +118,18 @@ void DBListener::OnLoadItems(packet& p)
     });
 }
 
+void DBListener::OnLoadSkills(packet& p)
+{
+    auto uid = p.pop<unsigned int>();
+
+    Socket::GameServer().for_each([&](const std::shared_ptr<Player>& user) {
+        if (user->GetUID() == uid)
+        {
+            user->OnLoadSkills(p);
+        }
+    });
+}
+
 void DBListener::OnUpdateItemIID(packet& p)
 {
     auto uid = p.pop<unsigned int>();

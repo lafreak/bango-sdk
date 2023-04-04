@@ -13,5 +13,6 @@ public:
     static void OnNewPlayerAnswer(bango::network::packet&);
     static void OnLoadPlayer(bango::network::packet&);
     static void OnLoadItems(bango::network::packet&);
+    static void OnLoadSkills(bango::network::packet&);
     static void OnUpdateItemIID(bango::network::packet&);
 };

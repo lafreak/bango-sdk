@@ -4,6 +4,7 @@
 
 #include <inix.h>
 
+
 unsigned int InitSkill::index() const
 {
     return Index;
@@ -17,7 +18,7 @@ InitSkill* InitSkill::FindPlayerSkill(PLAYER_CLASS player_class, std::uint8_t sk
         return nullptr;
     }
 
-    if (skill_index > 99)
+    if (skill_index > MAX_SKILL_INDEX)
         return nullptr;
 
     unsigned int index = player_class * 100 + skill_index;
@@ -28,7 +29,7 @@ InitSkill* InitSkill::FindPlayerSkill(PLAYER_CLASS player_class, std::uint8_t sk
 
 InitSkill* InitSkill::FindAnimalSkill(std::uint8_t skill_index)
 {
-    if (skill_index > 99)
+    if (skill_index > MAX_SKILL_INDEX)
         return nullptr;
 
     unsigned int index = (MAX_CHARACTER + Kind::ANIMAL) * 100 + skill_index;
@@ -39,7 +40,7 @@ InitSkill* InitSkill::FindAnimalSkill(std::uint8_t skill_index)
 
 InitSkill* InitSkill::FindMonsterSkill(std::uint8_t skill_index)
 {
-    if (skill_index > 99)
+    if (skill_index > MAX_SKILL_INDEX)
         return nullptr;
 
     unsigned int index = (MAX_CHARACTER + Kind::MONSTER) * 100 + skill_index;
@@ -67,7 +68,7 @@ void InitSkill::set(bango::processor::lisp::var param)
         {
             LevelLimit = param.pop();
             Job        = param.pop();
-            RequiredSkillId = param.pop();
+            RequiredSkillIndex = param.pop();
             RequiredSkillGrade = param.pop();
             break;
         }
@@ -86,4 +87,40 @@ void InitSkill::set(bango::processor::lisp::var param)
         case A_RAGE:         Rage         = param.pop(); break;
 
     }
+}
+
+bool SkillManager::Exists(std::uint8_t index) const
+{
+    return m_skills.find(index) != m_skills.end();
+}
+
+
+Skill* SkillManager::GetByIndex(std::uint8_t index) const
+{
+    return Exists(index) ? m_skills.at(index).get() : nullptr;
+}
+
+bool SkillManager::Upgrade(std::uint8_t index, std::uint8_t level)
+{
+    if(!Exists(index))
+        return false;
+
+    if(m_skills.at(index)->GetLevel() >= level)
+        return false;
+
+     m_skills.at(index)->SetLevel(level);
+     return true;
+}
+bool SkillManager::Learn(const InitSkill* init,std::uint8_t index, std::uint8_t level)
+{
+    auto [_, success] = m_skills.insert({index, std::make_unique<Skill>(init, level)});
+    return success;
+}
+
+
+Skill::Skill(const InitSkill* init,std::uint8_t level)
+    : m_init(init),
+    m_last_use(0), 
+    m_level(level)
+{
 }

@@ -61,6 +61,14 @@ void DatabaseManager::Initialize()
         SendPlayerList(s, id, idaccount);
     });
 
+    m_dbserver.when(S2D_LEARNSKILL, [&](const std::shared_ptr<GameServer>& s, packet& p) {
+        LearnSkill(s, p);
+    });
+
+    m_dbserver.when(S2D_SKILLUP, [&](const std::shared_ptr<GameServer>& s, packet& p) {
+        UpgradeSkill(s, p);
+    });
+
     m_dbserver.when(S2D_SAVEALLPROPERTY, [&](const std::shared_ptr<GameServer>& s, packet& p) {
         SaveAllProperty(s, p);
     });
@@ -490,6 +498,7 @@ void DatabaseManager::LoadPlayer(const std::shared_ptr<GameServer>& s, packet& p
     s->write(out);
 
     LoadItems(s, id, idplayer);
+    LoadSkills(s, id, idplayer);
 }
 
 void DatabaseManager::LoadItems(const std::shared_ptr<GameServer>& s, unsigned int id, int idplayer)
@@ -547,6 +556,31 @@ void DatabaseManager::LoadItems(const std::shared_ptr<GameServer>& s, unsigned i
     p.push<unsigned int>(id);
     p.push<unsigned short>(item_count);
     p << items;
+
+    s->write(p);
+}
+
+void DatabaseManager::LoadSkills(const std::shared_ptr<GameServer>& s, unsigned int id, int idplayer)
+{
+    auto conn = m_pool.get();
+    auto query = conn.create_query("SELECT * FROM skill WHERE idplayer=?");
+
+    query << idplayer;
+    query.execute_query();
+
+    packet skills;
+    std::uint8_t skill_count=0;
+    while (query.next())
+    {
+        skill_count++;
+        std::uint8_t index = query.get_int("idskill");
+        std::uint8_t level = query.get_int("level");
+
+        skills << index << level;
+    }
+
+    packet p(D2S_SKILLINFO);
+    p << id << skill_count << skills;
 
     s->write(p);
 }
@@ -681,4 +715,43 @@ void DatabaseManager::SaveAllProperty(const std::shared_ptr<GameServer>& s, pack
 
     query << level << x << y << z << contribute << cur_hp << cur_mp << exp << pupoint << supoint << rage << pid;
     query.execute();
+}
+
+void DatabaseManager::LearnSkill(const std::shared_ptr<GameServer>& s, packet& p)
+{
+    auto id_player = p.pop<unsigned int>();
+    auto index = p.pop<std::uint8_t>();
+    auto skill_points = p.pop<std::uint16_t>();
+    std::uint8_t level = 1;
+
+    auto conn = m_pool.get();
+    auto query = conn.create_query("INSERT INTO skill (idplayer, idskill, level) VALUES (?,?,?)");
+
+    query << id_player << index << level;
+    query.execute();
+
+    auto query2 = conn.create_query("UPDATE player SET supoint=? WHERE idplayer=?");
+
+    query2 << skill_points << id_player;
+    query2.execute();
+}
+
+
+void DatabaseManager::UpgradeSkill(const std::shared_ptr<GameServer>& s, packet& p)
+{
+    auto id_player = p.pop<unsigned int>();
+    auto index = p.pop<std::uint8_t>();
+    auto level = p.pop<std::uint8_t>();
+    auto skill_points = p.pop<std::uint16_t>();
+
+    auto conn = m_pool.get();
+    auto query = conn.create_query("UPDATE skill SET level=? WHERE idplayer=? AND idskill=?");
+
+    query << level << id_player << index;
+    query.execute();
+
+    auto query2 = conn.create_query("UPDATE player SET supoint=? WHERE idplayer=?");
+
+    query2 << skill_points << id_player;
+    query2.execute();
 }

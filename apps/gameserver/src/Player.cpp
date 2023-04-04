@@ -67,11 +67,7 @@ void Player::OnRestart(packet& p)
     {
         auto lock = Lock();
         SaveAllProperty();
-        //m_inventory.Reset();
-        m_inventory = Inventory();
         ResetStates();
-        LeaveParty();
-        //World::Map(GetMap()).Remove(this);
         World::Remove(this);
         deny(User::INGAME);
         Socket::DBClient().write(S2D_RESTART, "dd", GetUID(), GetAID());
@@ -108,8 +104,34 @@ void Player::OnLoadItems(packet& p)
         auto info = p.pop<ITEMINFO>();
         m_inventory.Insert(info);
     }
+}
 
-    OnLoadFinish();
+void Player::OnLoadSkills(packet& p)
+{
+    std::uint8_t count = p.pop<std::uint8_t>();
+    packet skill_info_packet(S2C_SKILLINFO);
+    skill_info_packet << count;
+    for (std::uint8_t i = 0; i < count; i++)
+    {
+        auto index = p.pop<std::uint8_t>();
+        auto level = p.pop<std::uint8_t>();
+        const auto* init = InitSkill::FindPlayerSkill((PLAYER_CLASS)GetClass(), index);
+
+        if(!init)
+        {
+            spdlog::warn("Player {} has an invalid skill of index {} in database", GetName(), index);
+            continue;
+        }
+
+        spdlog::info("Player {} loaded skill of index {} at grade {}", GetName(), index, level);
+        m_skills.Learn(init, index, level);
+
+        std::uint32_t cooldown_remaining = 0; // TODO: cooldown protection.
+
+        skill_info_packet << index << level << cooldown_remaining;
+    }
+    write(skill_info_packet);
+    OnLoadFinish(); // Should be called on receiving last information from DB before game start.
 }
 
 void Player::OnLoadFinish()
@@ -811,6 +833,114 @@ void Player::OnItemPick(packet& p)
                 });
 }
 
+
+void Player::OnSkillUpgrade(bango::network::packet& p)
+{
+    auto index = p.pop<std::uint8_t>();
+
+    if(!m_skills.Exists(index))
+    {
+        spdlog::warn("Player {} tried to upgrade skill of index {} without learning it first", GetName(), index);
+        return;
+    }
+    LearnOrUpgradeSkill(index);
+}
+void Player::OnSkillLearn(bango::network::packet& p)
+{
+    auto index = p.pop<std::uint8_t>();
+    LearnOrUpgradeSkill(index);
+}
+
+void Player::LearnOrUpgradeSkill(const std::uint8_t skill_index)
+{
+    if(!CanLearnSkill(skill_index))
+        return;
+
+    const auto* init = InitSkill::FindPlayerSkill((PLAYER_CLASS)GetClass(), skill_index);
+
+
+    auto* skill = m_skills.GetByIndex(skill_index);
+    std::uint8_t level = skill ? skill->GetLevel() + 1 : 1;
+
+    if(level == 1) // Learn New Skill
+    {
+        auto success = m_skills.Learn(init, skill_index);
+
+        if(!success)
+        {
+            spdlog::warn("Something went wrong when Player {} tried to learn skill of index {}", GetName(), skill_index);
+            return;
+        }
+        Socket::DBClient().write(S2D_LEARNSKILL, "dbw", GetPID(), skill_index, --m_data.SUPoint);
+        spdlog::info("Player {} learned skill of index {}", GetName(), skill_index);
+    }
+    else                 // Upgrade Skill
+    {
+        bool success = m_skills.Upgrade(skill_index, level);
+
+        if(!success)
+        {
+            spdlog::warn("Something went wrong when Player {} tried to upgrade skill of index {} to grade {}", GetName(), skill_index, level);
+            return;
+        }
+        Socket::DBClient().write(S2D_SKILLUP, "dbbw", GetPID(), skill_index, level, --m_data.SUPoint);
+        spdlog::info("Player {} upgraded skill of index {} to level {}", GetName(), skill_index, level);
+
+    }
+    write(S2C_SKILLUP, "bb", skill_index, level);
+    SendProperty(P_SUPOINT);
+}
+
+bool Player::CanLearnSkill(const std::uint8_t index) const
+{
+    const auto* init = InitSkill::FindPlayerSkill((PLAYER_CLASS)GetClass(), index);
+
+    if(!init)
+    {
+        spdlog::warn("Player {} tried to learn an invalid skill of index {}", GetName(), index);
+        return false;
+    }
+
+    if(init->LevelLimit > GetLevel())
+    {
+        spdlog::warn("Player {} tried to learn a skill of index {} but is not high enough level", GetName(), index);
+        return false;
+    }
+    if(GetJob() & init->Job == init->Job)
+    {
+        spdlog::warn("Player {} tried to learn a skill of index {} but his job is not high enough", GetName(), index);
+        return false;
+    }
+    if(GetSUPoint() <= 0)
+    {
+        spdlog::warn("Player {} tried to learn a skill of index {} but has no skill points", GetName(), index);
+        return false;
+    }
+
+    if(m_skills.Exists(index) && m_skills.GetByIndex(index)->GetLevel() >= init->MaxLevel)
+    {
+        spdlog::warn("Player {} tried to learn a skill of index {} but it is already max level", GetName(), index);
+        return false;
+    }
+
+    if(init->RequiredSkillIndex != 0)
+    {
+        const auto required_skill_grade = init->RequiredSkillGrade;
+        if(!m_skills.Exists(init->RequiredSkillIndex))
+        {
+            spdlog::warn("Player {} tried to learn a skill of index {} but does not have the required skill", GetName(), index);
+            return false;
+        }
+        else if(m_skills.GetByIndex(init->RequiredSkillIndex)->GetLevel() < required_skill_grade)
+        {
+            spdlog::warn("Player {} tried to learn a skill of index {} but does not have the required skill grade", GetName(), index);
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void Player::LeaveParty(bool is_kicked)
 {
     if (HasParty())
@@ -878,6 +1008,14 @@ void Player::Die()
 {
     AddGState(CGS_KO);
     WriteInSight(bango::network::packet(S2C_ACTION, "db", GetID(), AT_DIE));
+}
+
+void Player::ResetStates()
+{
+    Character::ResetStates();
+    m_inventory = Inventory();
+    m_skills = SkillManager();
+    LeaveParty();
 }
 
 void Player::UpdateExp(std::int64_t amount)

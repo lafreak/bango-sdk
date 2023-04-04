@@ -7,6 +7,7 @@
 #include "User.h"
 #include "Inventory.h"
 #include "Party.h"
+#include "Skill.h"
 
 #include "CommandDispatcher.h"
 
@@ -21,6 +22,7 @@ class Player : public Character, public User
     std::string m_name;
 
     Inventory m_inventory;
+    SkillManager m_skills;
     std::shared_ptr<Party> m_party;
     int m_party_inviter_id=0;
     id_t m_party_id=0;
@@ -46,6 +48,7 @@ public:
     void OnMove                 (bango::network::packet& p, bool end);
     void OnLoadPlayer           (bango::network::packet& p);
     void OnLoadItems            (bango::network::packet& p);
+    void OnLoadSkills           (bango::network::packet& p);
     void OnLoadFinish           ();
     void OnRest                 (bango::network::packet& p);
     void OnChatting             (bango::network::packet& p);
@@ -62,6 +65,8 @@ public:
     void OnExileParty           (bango::network::packet& p);
     void OnLeaveParty           (bango::network::packet& p);
     void OnItemPick             (bango::network::packet& p);
+    void OnSkillUpgrade         (bango::network::packet& p);
+    void OnSkillLearn           (bango::network::packet& p);
 
     // Command Endpoints
     void OnGetItem(CommandDispatcher::Token& token);
@@ -156,10 +161,14 @@ public:
     const std::shared_ptr<Party>& GetParty()            const   { return m_party; }
     id_t GetPartyID()                                   const   { return m_party_id; }
 
+    bool CanLearnSkill(std::uint8_t index) const;
+    void LearnOrUpgradeSkill(std::uint8_t skill_index);
+
     std::uint16_t   GetReqPU(std::uint8_t* stats);
 
     void Tick() override;
     void Die() override;
+    void ResetStates() override;
 
     void UpdateExp(std::int64_t amount);
     bool CanReceiveExp();  // TODO: Make use of it
