@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <algorithm>
+#include <atomic>
 
 #include <bango/processor/db.h>
 #include <bango/network/packet.h>
@@ -73,7 +74,7 @@ void InitItem::set(lisp::var param)
 Item::Item(const InitItem* init, const ITEMINFO& info)
     : m_init(init), m_info(info)
 {
-    static unsigned int g_max_local_id=0;
+    static std::atomic<local_id_t> g_max_local_id=0;
     m_local_id = ++g_max_local_id;
 }
 
@@ -202,7 +203,7 @@ const Item::Ptr Inventory::FindByIndex(unsigned short index) const
     return nullptr;
 }
 
-const Item::Ptr Inventory::FindByLocalID(const std::uint32_t local) const
+const Item::Ptr Inventory::FindByLocalID(const Item::local_id_t local) const
 {
     try {
         return m_items.at(local);
@@ -211,7 +212,7 @@ const Item::Ptr Inventory::FindByLocalID(const std::uint32_t local) const
     }
 }
 
-bool Inventory::Trash(const std::uint32_t local)
+bool Inventory::Trash(const Item::local_id_t local)
 {
     auto item = FindByLocalID(local);
     if (!item)
@@ -224,7 +225,7 @@ bool Inventory::Trash(const std::uint32_t local)
     return true;
 }
 
-const Item::Ptr Inventory::PutOn(const std::uint32_t local)
+const Item::Ptr Inventory::PutOn(const Item::local_id_t local)
 {
     auto item = FindByLocalID(local);
     if (!item)
@@ -271,7 +272,7 @@ const Item::Ptr Inventory::PutOn(const std::uint32_t local)
     return item;
 }
 
-const Item::Ptr Inventory::PutOff(const std::uint32_t local)
+const Item::Ptr Inventory::PutOff(const Item::local_id_t local)
 {
     auto item = FindByLocalID(local);
     if (!item)
@@ -315,14 +316,14 @@ Inventory::operator packet() const
     return p;
 }
 
-void Inventory::UpdateItemIID(const std::uint32_t local, int iid)
+void Inventory::UpdateItemIID(const Item::local_id_t local, int iid)
 {
     try {
         m_items.at(local)->UpdateIID(iid);
     } catch (const std::exception&) {}
 }
 
-int Inventory::GetIID(const std::uint32_t local) const
+int Inventory::GetIID(const Item::local_id_t local) const
 {
     try {
         return m_items.at(local)->GetInfo().IID;

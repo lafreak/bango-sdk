@@ -51,14 +51,13 @@ class Item
     const InitItem*     m_init;
     ITEMINFO            m_info;
 
-    std::uint32_t m_local_id;
-
 public:
     typedef std::shared_ptr<Item> Ptr;
+    typedef uint32_t local_id_t;
 
     Item(const InitItem* init, const ITEMINFO& info);
 
-    std::uint32_t GetLocalID()    const { return m_local_id; }
+    local_id_t GetLocalID()   const { return m_local_id; }
 
     const InitItem& GetInit() const { return *m_init; }
     const ITEMINFO& GetInfo() const { return  m_info; }
@@ -70,6 +69,9 @@ public:
     void SubInfo(unsigned int info) { m_info.Info &= ~info; }
 
     operator bango::network::packet() const;
+
+private:
+    local_id_t          m_local_id;
 };
 
 class Inventory
@@ -78,7 +80,7 @@ public:
     Inventory() { Reset(); }
 
 private:
-    std::unordered_map<unsigned int, const Item::Ptr> m_items;
+    std::unordered_map<Item::local_id_t, const Item::Ptr> m_items;
 
     EQUIPMENT m_equipment;
 
@@ -133,19 +135,19 @@ public:
 
     //! Search interface.
     const Item::Ptr FindByIndex(unsigned short index) const;
-    const Item::Ptr FindByLocalID(const std::uint32_t local) const;
+    const Item::Ptr FindByLocalID(const Item::local_id_t local) const;
 
     //! Removes item with specific Local ID if possible.
     //! Returns false if operation was impossible or true otherwise.
-    bool Trash(const std::uint32_t local);
+    bool Trash(const Item::local_id_t local);
 
     //! Equips item with specific Local ID if possible.
     //! Returns the item or nullptr if an error occured.
-    const Item::Ptr PutOn(const std::uint32_t local);
+    const Item::Ptr PutOn(const Item::local_id_t local);
 
     //! Puts off itemw ith specific LocalID if possible.
     //! Returns the item or nullptr if an error occured.
-    const Item::Ptr PutOff(const std::uint32_t local);
+    const Item::Ptr PutOff(const Item::local_id_t local);
 
     //! Returns visible equipped items (indexes).
     const EQUIPMENT& GetEquipment() const { return m_equipment; }
@@ -154,8 +156,8 @@ public:
     operator bango::network::packet() const;
 
     //! Finds and updates item IID based on given Local ID.
-    void UpdateItemIID(const std::uint32_t local, int iid);
+    void UpdateItemIID(const Item::local_id_t local, int iid);
 
     //! Finds item IID based on given Local ID.
-    int GetIID(const std::uint32_t local) const;
+    int GetIID(const Item::local_id_t local) const;
 };
