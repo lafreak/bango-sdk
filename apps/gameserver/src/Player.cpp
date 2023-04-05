@@ -176,7 +176,7 @@ void Player::OnLoadFinish()
 
     // Send Inventory property
     SendInventoryProperty();
-    
+
     spdlog::info("Player ID: {}; PID: {}; has loaded", GetID(), GetPID());
 }
 
@@ -365,6 +365,9 @@ void Player::InsertItem(unsigned short index, unsigned int num)
         packet out(S2D_INSERTITEM);
         out << item->GetInfo() << GetPID() << GetUID() << item->GetLocalID();
         Socket::DBClient().write(out);
+
+        spdlog::debug("Player {} inserted item index {} with local id {}",
+            GetName(), info.Index, item->GetLocalID());
     }
 }
 
