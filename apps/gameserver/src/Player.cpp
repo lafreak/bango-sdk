@@ -909,7 +909,7 @@ bool Player::CanLearnSkill(const std::uint8_t index) const
         spdlog::warn("Player {} tried to learn a skill of index {} but is not high enough level", GetName(), index);
         return false;
     }
-    if(GetJob() & init->Job == init->Job)
+    if((GetJob() & init->Job) != init->Job)
     {
         spdlog::warn("Player {} tried to learn a skill of index {} but his job is not high enough", GetName(), index);
         return false;
