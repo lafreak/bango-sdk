@@ -1,9 +1,12 @@
 #include "Skill.h"
 
+#include "Player.h"
+
 #include "spdlog/spdlog.h"
 
 #include <inix.h>
 
+using namespace bango::network;
 
 unsigned int InitSkill::index() const
 {
@@ -111,16 +114,117 @@ bool SkillManager::Upgrade(std::uint8_t index, std::uint8_t level)
      m_skills.at(index)->SetLevel(level);
      return true;
 }
+
+
+std::unique_ptr<Skill> SkillManager::CreateSkill(const InitSkill* init, std::uint8_t index, std::uint8_t level)
+{
+    switch(init->Class)
+    {
+        case PLAYER_CLASS::PC_KNIGHT:
+        {
+            switch(index)
+            {
+                case(SKILL_BEHEAD):
+                {
+                    return std::make_unique<Behead>(init, level);
+                    break;
+                }
+                default:
+                {
+                    return std::make_unique<PhysicalSkill>(init, level, (ATTACK_TYPE)ATT_MEELE);
+                    break;
+                }
+            }
+        }
+        case PLAYER_CLASS::PC_MAGE:
+        {
+            switch(index)
+            {
+                case(SKILL_BEHEAD):
+                {
+                    return std::make_unique<Behead>(init, level);
+                    break;
+                }
+                default:
+                {
+                    return std::make_unique<MagicSkill>(init, level);
+                    break;
+                }
+            }
+        }
+        case PLAYER_CLASS::PC_ARCHER:
+        {
+            switch(index)
+            {
+                case(SKILL_BEHEAD):
+                {
+                    return std::make_unique<Behead>(init, level);
+                    break;
+                }
+                default:
+                {
+                    return std::make_unique<PhysicalSkill>(init, level, (ATTACK_TYPE)ATT_RANGE);
+                    break;
+                }
+            }
+        }
+        default:
+        {
+            std::runtime_error("Unknown player class while creating skill!");
+            break;
+        }
+    }
+}
+
 bool SkillManager::Learn(const InitSkill* init,std::uint8_t index, std::uint8_t level)
 {
-    auto [_, success] = m_skills.insert({index, std::make_unique<Skill>(init, level)});
-    return success;
+    try
+    {
+        auto [_, success] = m_skills.insert({index, CreateSkill(init, index, level)});
+        return success;
+    }
+    catch(const std::exception& e)
+    {
+        spdlog::error("Failed to learn skill: {}", e.what());
+        return false;
+    }
+
 }
 
 
 Skill::Skill(const InitSkill* init,std::uint8_t level)
     : m_init(init),
-    m_last_use(0), 
+    m_last_use_time{}, // TODO: change when cooldown protection is added
     m_level(level)
 {
+
+}
+
+bool Skill::CanExecute(const Player& player, const Player& target) const
+{
+    return player.IsNormal()
+        && target.IsNormal()
+        && player.GetMap() == target.GetMap()
+        && !player.IsGState(CGS_ONTRANSFORM)
+        //&& player.IsWState(WS_WEAPON) // TODO: add this check when WearState is added.
+        && player.GetCurMP() >= m_init->MP
+        && player.CanAttack(target);
+}
+
+packet Skill::BuildCastPacket(const Player& player, id_t target_id) const
+{
+    return packet(S2C_SKILL, "bddbb", GetIndex(), player.GetID(), target_id, std::uint8_t(0 /* b - unused for now */), GetLevel());
+}
+
+bool Behead::CanExecute(const Player& player,  const Player& target) const
+{
+    return Skill::CanExecute(player, target)
+        && target.IsGState(CGS_KNEE)
+        && !target.IsGState(CGS_KO)
+        && target.GetType() == Character::MONSTER;
+}
+
+void Behead::Execute(const Player& player, bango::network::packet& packet)
+{
+
 }

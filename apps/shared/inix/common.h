@@ -585,6 +585,8 @@ static BASEPROPERTY g_baseproperty[] = {
 #define SVMAP_TILE_COUNT			256
 #define SVMAP_TILE_SIZE				32
 
+#define SKILL_BEHEAD 1
+
 enum eSeverMapAttr
 {
 	SMA_NOTMOVEABLE = 0,	// ¸ř°ˇ´Â°÷
@@ -2045,7 +2047,7 @@ enum ATTRIBUTE
 	A_RAGE
 };
 
-enum ATT
+enum ATTACK_TYPE
 {
 	ATT_MEELE,
 	ATT_RANGE,
