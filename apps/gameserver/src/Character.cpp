@@ -148,6 +148,14 @@ void Character::ApplyVisualEffect(std::uint8_t effect_id)
     WriteInSight(packet(S2C_EFFECT, "db", GetID(), effect_id));
 }
 
+bool Character::IsNormal() const
+{
+    return GetCurHP() > 0
+        //&& !CBase::IsDeleted(this) - TODO: check if this is needed
+        && !IsGState(CGS_KNEE | CGS_KO | CGS_FISH)
+        && IsMState(CMS_HIDE);
+}
+
 std::unique_lock<std::mutex> Character::Lock()
 {
     return std::unique_lock<std::mutex>(m_mtx);
