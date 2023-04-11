@@ -67,7 +67,7 @@ void InitSkill::set(bango::processor::lisp::var param)
         case A_LIMIT:
         {
             LevelLimit = param.pop();
-            Job        = param.pop();
+            Job        = 1 << (uint32_t)param.pop();
             RequiredSkillIndex = param.pop();
             RequiredSkillGrade = param.pop();
             break;
