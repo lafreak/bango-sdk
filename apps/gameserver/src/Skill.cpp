@@ -118,65 +118,69 @@ bool SkillManager::Upgrade(std::uint8_t index, std::uint8_t level)
 
 std::unique_ptr<Skill> SkillManager::CreateSkill(const InitSkill* init, std::uint8_t index, std::uint8_t level)
 {
+    if(index > InitSkill::MAX_SKILL_INDEX)
+        std::runtime_error("Skill index is out of range!");
+
     switch(init->Class)
     {
         case PLAYER_CLASS::PC_KNIGHT:
         {
             switch(index)
             {
-                case(SKILL_BEHEAD):
-                {
-                    return std::make_unique<Behead>(init, level);
-                    break;
-                }
+                case SK_BEHEAD:
+                    return std::make_unique<Behead>(init, m_player, level);
                 default:
-                {
-                    return std::make_unique<PhysicalSkill>(init, level, (ATTACK_TYPE)ATT_MEELE);
-                    break;
-                }
+                    return std::make_unique<PhysicalSkill>(init, m_player, level, (ATTACK_TYPE)ATT_MEELE);
             }
         }
         case PLAYER_CLASS::PC_MAGE:
         {
             switch(index)
             {
-                case(SKILL_BEHEAD):
-                {
-                    return std::make_unique<Behead>(init, level);
-                    break;
-                }
+                case SM_BEHEAD:
+                    return std::make_unique<Behead>(init, m_player, level);
                 default:
-                {
-                    return std::make_unique<MagicSkill>(init, level);
-                    break;
-                }
+                    return std::make_unique<MagicSkill>(init, m_player, level);
             }
         }
         case PLAYER_CLASS::PC_ARCHER:
         {
             switch(index)
             {
-                case(SKILL_BEHEAD):
-                {
-                    return std::make_unique<Behead>(init, level);
-                    break;
-                }
+                case SA_BEHEAD:
+                    return std::make_unique<Behead>(init, m_player, level);
                 default:
-                {
-                    return std::make_unique<PhysicalSkill>(init, level, (ATTACK_TYPE)ATT_RANGE);
-                    break;
-                }
+                    return std::make_unique<PhysicalSkill>(init, m_player, level, (ATTACK_TYPE)ATT_RANGE);
+            }
+        }
+        case PLAYER_CLASS::PC_THIEF:
+        {
+            switch(index)
+            {
+                case ST_BEHEAD:
+                    return std::make_unique<Behead>(init, m_player, level);
+                default:
+                    return std::make_unique<PhysicalSkill>(init, m_player, level, (ATTACK_TYPE)ATT_RANGE);
+            }
+        }
+        case PLAYER_CLASS::PC_SHAMAN:
+        {
+            switch(index)
+            {
+                case SS_BEHEAD:
+                    return std::make_unique<Behead>(init, m_player, level);
+                default:
+                    return std::make_unique<MagicSkill>(init, m_player, level);
             }
         }
         default:
         {
             std::runtime_error("Unknown player class while creating skill!");
-            break;
         }
     }
 }
 
-bool SkillManager::Learn(const InitSkill* init,std::uint8_t index, std::uint8_t level)
+bool SkillManager::Learn(const InitSkill* init, std::uint8_t index, std::uint8_t level)
 {
     try
     {
@@ -192,39 +196,40 @@ bool SkillManager::Learn(const InitSkill* init,std::uint8_t index, std::uint8_t 
 }
 
 
-Skill::Skill(const InitSkill* init,std::uint8_t level)
+Skill::Skill(const InitSkill* init, const Player& player,std::uint8_t level)
     : m_init(init),
+    m_player(player),
     m_last_use_time{}, // TODO: change when cooldown protection is added
     m_level(level)
 {
 
 }
 
-bool Skill::CanExecute(const Player& player, const Player& target) const
+bool Skill::CanExecute(const Character& target) const
 {
-    return player.IsNormal()
+    return m_player.IsNormal()
         && target.IsNormal()
-        && player.GetMap() == target.GetMap()
-        && !player.IsGState(CGS_ONTRANSFORM)
-        //&& player.IsWState(WS_WEAPON) // TODO: add this check when WearState is added.
-        && player.GetCurMP() >= m_init->MP
-        && player.CanAttack(target);
+        && m_player.GetMap() == target.GetMap()
+        && !m_player.IsGState(CGS_ONTRANSFORM)
+        //&& m_player.IsWState(WS_WEAPON) // TODO: add this check when WearState is added.
+        && m_player.GetCurMP() >= m_init->MP
+        && m_player.CanAttack(target);
 }
 
-packet Skill::BuildCastPacket(const Player& player, id_t target_id) const
+packet Skill::BuildCastPacket(id_t target_id) const
 {
-    return packet(S2C_SKILL, "bddbb", GetIndex(), player.GetID(), target_id, std::uint8_t(0 /* b - unused for now */), GetLevel());
+    return packet(S2C_SKILL, "bddbb", GetIndex(), m_player.GetID(), target_id, std::uint8_t(0 /* b - unused for now */), GetLevel());
 }
 
-bool Behead::CanExecute(const Player& player,  const Player& target) const
+bool Behead::CanExecute(const Character& target) const
 {
-    return Skill::CanExecute(player, target)
+    return Skill::CanExecute(target)
         && target.IsGState(CGS_KNEE)
         && !target.IsGState(CGS_KO)
         && target.GetType() == Character::MONSTER;
 }
 
-void Behead::Execute(const Player& player, bango::network::packet& packet)
+void Behead::Execute(bango::network::packet& packet)
 {
 
 }
