@@ -16,7 +16,10 @@
 using namespace bango::network;
 using namespace bango::utils;
 
-Player::Player(const bango::network::taco_client_t& client) : User(client), Character(Character::PLAYER)
+Player::Player(const bango::network::taco_client_t& client)
+    : User(client),
+    Character(Character::PLAYER),
+    m_skills(*this)
 {
     spdlog::trace("Player constructor id: {}", GetID());
 }
@@ -124,7 +127,7 @@ void Player::OnLoadSkills(packet& p)
         }
 
         spdlog::info("Player {} loaded skill of index {} at grade {}", GetName(), index, level);
-        m_skills.Learn(init, index, level);
+        m_skills.CreateSkill(init, index, level);
 
         std::uint32_t cooldown_remaining = 0; // TODO: cooldown protection.
 
@@ -867,7 +870,7 @@ void Player::LearnOrUpgradeSkill(const std::uint8_t skill_index)
 
     if(level == 1) // Learn New Skill
     {
-        auto success = m_skills.Learn(init, skill_index);
+        auto success = m_skills.CreateSkill(init, skill_index, level);
 
         if(!success)
         {
@@ -1017,7 +1020,7 @@ void Player::ResetStates()
 {
     Character::ResetStates();
     m_inventory = Inventory();
-    m_skills = SkillManager();
+    m_skills.Reset();
     LeaveParty();
 }
 
