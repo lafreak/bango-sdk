@@ -1,5 +1,7 @@
 #include "Skill.h"
 
+#include <utility>
+
 #include "Player.h"
 
 #include "spdlog/spdlog.h"
@@ -7,6 +9,7 @@
 #include <inix.h>
 
 using namespace bango::network;
+using namespace bango::utils;
 
 unsigned int InitSkill::index() const
 {
@@ -130,7 +133,7 @@ std::unique_ptr<Skill> SkillManager::CreateSkill(const InitSkill* init, std::uin
                 case SK_BEHEAD:
                     return std::make_unique<Behead>(init, m_player, level);
                 default:
-                    return std::make_unique<PhysicalSkill>(init, m_player, level, (ATTACK_TYPE)ATT_MEELE);
+                    return std::make_unique<PhysicalSkill>(init, m_player, level, ATT_MEELE);
             }
         }
         case PLAYER_CLASS::PC_MAGE:
@@ -150,7 +153,7 @@ std::unique_ptr<Skill> SkillManager::CreateSkill(const InitSkill* init, std::uin
                 case SA_BEHEAD:
                     return std::make_unique<Behead>(init, m_player, level);
                 default:
-                    return std::make_unique<PhysicalSkill>(init, m_player, level, (ATTACK_TYPE)ATT_RANGE);
+                    return std::make_unique<PhysicalSkill>(init, m_player, level, ATT_RANGE);
             }
         }
         case PLAYER_CLASS::PC_THIEF:
@@ -160,7 +163,7 @@ std::unique_ptr<Skill> SkillManager::CreateSkill(const InitSkill* init, std::uin
                 case ST_BEHEAD:
                     return std::make_unique<Behead>(init, m_player, level);
                 default:
-                    return std::make_unique<PhysicalSkill>(init, m_player, level, (ATTACK_TYPE)ATT_RANGE);
+                    return std::make_unique<PhysicalSkill>(init, m_player, level, ATT_MEELE);
             }
         }
         case PLAYER_CLASS::PC_SHAMAN:
@@ -174,9 +177,7 @@ std::unique_ptr<Skill> SkillManager::CreateSkill(const InitSkill* init, std::uin
             }
         }
         default:
-        {
-            std::runtime_error("Unknown player class while creating skill!");
-        }
+            throw std::runtime_error("Unknown player class while creating skill!");
     }
 }
 
@@ -196,13 +197,19 @@ bool SkillManager::Learn(const InitSkill* init, std::uint8_t index, std::uint8_t
 }
 
 
-Skill::Skill(const InitSkill* init, const Player& player,std::uint8_t level)
+Skill::Skill(const InitSkill* init, Character& player,std::uint8_t level)
     : m_init(init),
     m_player(player),
     m_last_use_time{}, // TODO: change when cooldown protection is added
     m_level(level)
 {
 
+}
+
+time::duration Skill::GetRemainingCooldown() const
+{
+    auto remaining = m_last_use_time + std::chrono::milliseconds(m_init->CoolDown);
+    return remaining < time::now() ? time::duration::zero() : remaining - time::now();
 }
 
 bool Skill::CanExecute(const Character& target) const
