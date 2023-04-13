@@ -51,16 +51,16 @@ class Skill
     std::uint8_t m_level;
     RESIST_TYPE resist_type;
 protected:
-    const Player& m_player;
+    Character& m_player;
 
 public:
-    Skill(const InitSkill* init, const Player& player, std::uint8_t level);
+    Skill(const InitSkill* init, Character& player, std::uint8_t level);
 
     std::uint8_t GetLevel() const { return m_level; }
     std::uint8_t GetIndex() const { return m_init->Index; }
     void SetLevel(std::uint8_t level) { m_level = level; }
 
-    bango::utils::time::point GetRemainingCooldown() const { return m_last_use_time + std::chrono::milliseconds(m_init->CoolDown); }
+    bango::utils::time::duration GetRemainingCooldown() const;
     void UpdateCooldownTime() { m_last_use_time = bango::utils::time::now();}
     virtual void Execute(bango::network::packet& packet) {}
     virtual bool CanExecute(const Character& target) const;
@@ -73,7 +73,7 @@ class PhysicalSkill : public Skill
 {
     ATTACK_TYPE m_attack_type;
 public:
-    PhysicalSkill(const InitSkill* init, const Player& player, std::uint8_t level, ATTACK_TYPE attack_type)
+    PhysicalSkill(const InitSkill* init, Character& player, std::uint8_t level, ATTACK_TYPE attack_type)
         : Skill(init, player, level),
         m_attack_type(attack_type)
         {}
@@ -84,7 +84,7 @@ public:
 class MagicSkill : public Skill
 {
 public:
-    MagicSkill(const InitSkill* init, const Player& player, std::uint8_t level)
+    MagicSkill(const InitSkill* init, Character& player, std::uint8_t level)
         : Skill(init, player, level)
         {}
 };
@@ -92,7 +92,7 @@ public:
 class Behead : public Skill
 {
 public:
-    Behead(const InitSkill* init, const Player& player, std::uint8_t level)
+    Behead(const InitSkill* init, Character& player, std::uint8_t level)
         : Skill(init, player, level)
         {}
     virtual bool CanExecute(const Character& target) const override;
@@ -101,10 +101,10 @@ public:
 
 class SkillManager
 {
-    const Player& m_player;
+    Character& m_player;
     std::unordered_map<std::uint8_t, std::unique_ptr<Skill>> m_skills;
 public:
-    SkillManager(const Player& player)
+    SkillManager(Character& player)
         : m_player(player)
         {}
 

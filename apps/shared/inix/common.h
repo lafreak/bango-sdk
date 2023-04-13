@@ -2208,7 +2208,7 @@ enum ATTRIBUTE
 	A_RAGE
 };
 
-enum ATTACK_TYPE
+enum ATTACK_TYPE : std::uint8_t
 {
 	ATT_MEELE,
 	ATT_RANGE,
