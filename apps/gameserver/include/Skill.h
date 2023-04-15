@@ -86,11 +86,13 @@ class SkillManager
 {
     Player& m_player;
     std::unordered_map<std::uint8_t, std::unique_ptr<Skill>> m_skills;
+
+    std::unique_ptr<Skill> CreateSkill(const InitSkill* init, std::uint8_t index, std::uint8_t level);
 public:
     SkillManager(Player& player) : m_player(player) {}
 
+    bool Add(const InitSkill* init, std::uint8_t index, std::uint8_t level);
     void Reset() { m_skills.clear(); }
-    std::unique_ptr<Skill> CreateSkill(const InitSkill* init, std::uint8_t index, std::uint8_t level);
     bool Upgrade(std::uint8_t index, std::uint8_t level);
     bool Learn(const InitSkill* init, std::uint8_t index, std::uint8_t level = 1);
     bool Exists(std::uint8_t index) const;

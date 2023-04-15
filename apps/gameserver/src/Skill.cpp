@@ -3,10 +3,11 @@
 #include <utility>
 
 #include "Player.h"
-
-#include "spdlog/spdlog.h"
+#include "World.h"
 
 #include <inix.h>
+
+#include "spdlog/spdlog.h"
 
 using namespace bango::network;
 using namespace bango::utils;
@@ -118,18 +119,53 @@ bool SkillManager::Upgrade(std::uint8_t index, std::uint8_t level)
      return true;
 }
 
+#define MAKE_SKILL_TYPE(type) std::make_unique<type>(init, m_player, level); 
+
 std::unique_ptr<Skill> SkillManager::CreateSkill(const InitSkill* init, std::uint8_t index, std::uint8_t level)
 {
-    if(index > InitSkill::MAX_SKILL_INDEX)
+    if (index > InitSkill::MAX_SKILL_INDEX)
         std::runtime_error("Skill index is out of range!");
 
     if (index == 1)
-        return std::make_unique<Behead>(init, m_player, level);
-    
+        return MAKE_SKILL_TYPE(Behead);
+
+    switch (m_player.GetClass())
+    {
+    case PC_KNIGHT:
+        switch (index)
+        {
+        case SK_LIGHTNING_SLASH: return MAKE_SKILL_TYPE(PhysicalSkill);
+        default:
+            break;
+        }
+        break;
+    case PC_ARCHER:
+        switch (index)
+        {
+        case SA_STAGGERING_BLOW: return MAKE_SKILL_TYPE(PhysicalSkill);
+        default:
+            break;
+        }
+        break;
+    case PC_MAGE:
+        break;
+    case PC_THIEF:
+        break;
+    case PC_SHAMAN:
+        break;
+    }
+
     // default
-    return std::make_unique<Skill>(init, m_player, level);
+    return MAKE_SKILL_TYPE(Skill);
 }
 
+bool SkillManager::Add(const InitSkill* init, std::uint8_t index, std::uint8_t level)
+{
+    auto [_, success] = m_skills.insert({index, CreateSkill(init, index, level)});
+    return success;
+}
+
+// TODO: Why do we need initskill here? It should be automatic.
 bool SkillManager::Learn(const InitSkill* init, std::uint8_t index, std::uint8_t level)
 {
     try
@@ -157,31 +193,91 @@ bool Skill::CanExecute(const Character& target) const
         m_caster.GetMap() == target.GetMap();
 }
 
-void Skill::Execute(bango::network::packet& packet)
+void Skill::Execute(bango::network::packet& p)
 {
     spdlog::info("This skill is not usable.");
 }
 
 bool Behead::CanExecute(const Character& target) const
 {
-    return Skill::CanExecute(target)
-        && target.IsGState(CGS_KNEE)
+    return target.IsGState(CGS_KNEE)
         && !target.IsGState(CGS_KO)
         && target.GetType() == Character::MONSTER;
 }
 
-void Behead::Execute(bango::network::packet& packet)
+void Behead::Execute(bango::network::packet& p)
 {
     spdlog::info("Want to behead!");
+
+    auto kind = p.pop<std::uint8_t>();
+    auto id = p.pop<Character::id_t>();
+
+    if (kind != CK_MONSTER)
+        return;
+
+    World::ForCharacterInMap(GetCaster().GetMap(), WorldMap::QK_MONSTER, id, [&](Character& target)
+    {
+        auto lock = target.Lock();
+
+        if (!CanExecute(target))
+            return;
+
+        target.AddGState(CGS_KO);
+        target.SubGState(CGS_KNEE);
+        target.WriteInSight(packet(S2C_ACTION, "db", target.GetID(), AT_DIE));
+
+        std::uint8_t is_damage = 0;
+        GetCaster().WriteInSight(packet(S2C_SKILL, "bddbb",
+            GetIndex(),
+            GetCaster().GetID(),
+            target.GetID(),
+            is_damage,
+            GetLevel()));
+    });
 }
 
 bool PhysicalSkill::CanExecute(const Character& target) const
 {
-    return Skill::CanExecute(target)
-        && GetCaster().GetID() != target.GetID();
+    return Skill::CanExecute(target) && GetCaster().GetID() != target.GetID();
 }
 
-void PhysicalSkill::Execute(bango::network::packet& packet)
+void PhysicalSkill::Execute(bango::network::packet& p)
 {
-    spdlog::info("Want to use physical!");
+    spdlog::info("Want to use physical spell!");
+
+    auto kind = p.pop<std::uint8_t>();
+    auto id = p.pop<Character::id_t>();
+
+    auto query_kind = kind == CK_PLAYER ? WorldMap::QK_PLAYER : WorldMap::QK_MONSTER;
+
+    World::ForCharacterInMap(GetCaster().GetMap(), query_kind, id, [&](Character& target)
+    {
+        auto lock = target.Lock();
+
+        if (!CanExecute(target))
+            return;
+
+        // TODO: Implement skill specific behaviors
+
+        std::int16_t damage = 1200;
+        if ((uint64_t)damage > target.GetCurHP())
+            damage = target.GetCurHP();
+
+        target.ReceiveDamage(GetCaster().GetID(), damage);
+
+        if (target.GetCurHP() <= 0)
+            target.Die();
+
+        std::uint8_t is_damage = 1;
+        std::int64_t explosive_blow = 0;
+        GetCaster().WriteInSight(packet(S2C_SKILL, "bddbbwwb",
+            GetIndex(),
+            GetCaster().GetID(),
+            target.GetID(),
+            is_damage,
+            GetLevel(), 
+            damage,
+            explosive_blow,
+            kind));
+    });
 }

@@ -152,8 +152,9 @@ bool Character::IsNormal() const
 {
     return GetCurHP() > 0
         //&& !CBase::IsDeleted(this) - TODO: check if this is needed
-        && !IsGState(CGS_KNEE | CGS_KO | CGS_FISH)
-        && IsMState(CMS_HIDE);
+        //&& !IsGState(CGS_KNEE | CGS_KO | CGS_FISH)
+        //&& IsMState(CMS_HIDE);
+        ;
 }
 
 std::unique_lock<std::mutex> Character::Lock()

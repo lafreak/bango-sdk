@@ -75,7 +75,7 @@ public:
         m_entities[Character::LOOT]={};
     }
 
-    enum QUERY_KIND
+    enum QUERY_KIND : std::int64_t
     {
         QK_PLAYER   = 1 << Character::PLAYER,
         QK_MONSTER  = 1 << Character::MONSTER,

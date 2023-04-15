@@ -127,7 +127,7 @@ void Player::OnLoadSkills(packet& p)
         }
 
         spdlog::info("Player {} loaded skill of index {} at grade {}", GetName(), index, level);
-        m_skills.CreateSkill(init, index, level);
+        m_skills.Add(init, index, level);
 
         std::uint32_t cooldown_remaining = 0; // TODO: cooldown protection.
 
@@ -667,7 +667,7 @@ void Player::OnPlayerAnimation(packet& p)
 
 void Player::OnAttack(packet& p)
 {
-    auto kind = p.pop<char>();
+    auto kind = p.pop<char>();  // FIXME: Use this param to speed up World call (refer to Behead Execute)
     auto id = p.pop<Character::id_t>();
     auto z = p.pop<unsigned int>();
 
@@ -683,7 +683,7 @@ void Player::OnAttack(packet& p)
 
         if (!m_inventory.HasWeapon())
             return;
-        
+
         auto now = time::now();
 
         auto duration = (now-m_last_attack).count();
@@ -861,8 +861,6 @@ void Player::OnLearnSkill(bango::network::packet& p)
 void Player::OnSkill(bango::network::packet& p)
 {
     auto index = p.pop<std::uint8_t>();
-    auto kind = p.pop<std::uint8_t>();  // reading this and handling should be moved to execute?
-    auto id = p.pop<Character::id_t>();  // reading this and handling should be moved to execute?
     spdlog::info("OnSkill");
     auto* skill = m_skills.GetByIndex(index);
     if (!skill)
@@ -871,30 +869,15 @@ void Player::OnSkill(bango::network::packet& p)
             GetName(), index, GetClass());  // TODO: Consider adding log level "cheat"
         return;
     }
-
-    // This should be moved to specific Execute
-    switch (kind)
-    {
-    case CK_PLAYER:
-        // TODO
-        break;
-    case CK_MONSTER:
-        if (!World::ForMonster(id, [&](Monster& monster){
-            if (skill->CanExecute(monster))
-                skill->Execute(p);  // FIXME: Bad design, packet is already stripped out of index/kind/id what is needed in Execute
-            else
-                spdlog::warn("Player {} could not execute skill index {}", GetName(), index);
-        }))
-            spdlog::warn("Player {} wanted to use skill on non existing monster id: {}", GetName(), id);
-        break;
-    default:
-        spdlog::warn("Player {} wanted to use skill on unknown character kind: {}", GetName(), kind);
-        break;
-    }
+    skill->Execute(p);
 }
 
 void Player::OnPreSkill(bango::network::packet& p)
 {
+    auto index = p.pop<std::uint8_t>();
+    auto id = p.pop<Character::id_t>();
+    // TODO: Check if pre-skill refers to correct player skill (Implement CanPreExecute)
+    WriteInSight(packet(S2C_ACTION, "dbbd", GetID(), AT_SKILL, index, id));
     spdlog::info("OnPreSkill");  // TODO
 }
 
@@ -905,13 +888,12 @@ void Player::LearnOrUpgradeSkill(const std::uint8_t skill_index)
 
     const auto* init = InitSkill::FindPlayerSkill((PLAYER_CLASS)GetClass(), skill_index);
 
-
     auto* skill = m_skills.GetByIndex(skill_index);
     std::uint8_t level = skill ? skill->GetLevel() + 1 : 1;
 
     if(level == 1) // Learn New Skill
     {
-        auto success = m_skills.CreateSkill(init, skill_index, level);
+        auto success = m_skills.Add(init, skill_index, level);
 
         if(!success)
         {
