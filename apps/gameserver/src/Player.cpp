@@ -860,12 +860,42 @@ void Player::OnLearnSkill(bango::network::packet& p)
 
 void Player::OnSkill(bango::network::packet& p)
 {
+    auto index = p.pop<std::uint8_t>();
+    auto kind = p.pop<std::uint8_t>();  // reading this and handling should be moved to execute?
+    auto id = p.pop<Character::id_t>();  // reading this and handling should be moved to execute?
     spdlog::info("OnSkill");
+    auto* skill = m_skills.GetByIndex(index);
+    if (!skill)
+    {
+        spdlog::warn("Player {} wanted to use non existing skill index: {}, class: {}",
+            GetName(), index, GetClass());  // TODO: Consider adding log level "cheat"
+        return;
+    }
+
+    // This should be moved to specific Execute
+    switch (kind)
+    {
+    case CK_PLAYER:
+        // TODO
+        break;
+    case CK_MONSTER:
+        if (!World::ForMonster(id, [&](Monster& monster){
+            if (skill->CanExecute(monster))
+                skill->Execute(p);  // FIXME: Bad design, packet is already stripped out of index/kind/id what is needed in Execute
+            else
+                spdlog::warn("Player {} could not execute skill index {}", GetName(), index);
+        }))
+            spdlog::warn("Player {} wanted to use skill on non existing monster id: {}", GetName(), id);
+        break;
+    default:
+        spdlog::warn("Player {} wanted to use skill on unknown character kind: {}", GetName(), kind);
+        break;
+    }
 }
 
 void Player::OnPreSkill(bango::network::packet& p)
 {
-    spdlog::info("OnPreSkill");
+    spdlog::info("OnPreSkill");  // TODO
 }
 
 void Player::LearnOrUpgradeSkill(const std::uint8_t skill_index)

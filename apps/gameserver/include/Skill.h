@@ -73,6 +73,15 @@ public:
     bool CanExecute(const Character& target) const override;
 };
 
+class PhysicalSkill : public Skill
+{
+public:
+    using Skill::Skill;
+
+    void Execute(bango::network::packet& packet) override;
+    bool CanExecute(const Character& target) const override;
+};
+
 class SkillManager
 {
     Player& m_player;

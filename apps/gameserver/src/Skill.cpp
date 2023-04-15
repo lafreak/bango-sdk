@@ -174,3 +174,14 @@ void Behead::Execute(bango::network::packet& packet)
 {
     spdlog::info("Want to behead!");
 }
+
+bool PhysicalSkill::CanExecute(const Character& target) const
+{
+    return Skill::CanExecute(target)
+        && GetCaster().GetID() != target.GetID();
+}
+
+void PhysicalSkill::Execute(bango::network::packet& packet)
+{
+    spdlog::info("Want to use physical!");
+}
