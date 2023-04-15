@@ -821,7 +821,7 @@ void Player::OnLeaveParty(packet& p)
     LeaveParty();
 }
 
-void Player::OnItemPick(packet& p)
+void Player::OnPickUpItem(packet& p)
 {
     auto item_id = p.pop<id_t>();
     auto x = p.pop<std::int32_t>();
@@ -840,7 +840,7 @@ void Player::OnItemPick(packet& p)
 }
 
 
-void Player::OnSkillUpgrade(bango::network::packet& p)
+void Player::OnSkillUp(bango::network::packet& p)
 {
     auto index = p.pop<std::uint8_t>();
 
@@ -851,10 +851,21 @@ void Player::OnSkillUpgrade(bango::network::packet& p)
     }
     LearnOrUpgradeSkill(index);
 }
-void Player::OnSkillLearn(bango::network::packet& p)
+
+void Player::OnLearnSkill(bango::network::packet& p)
 {
     auto index = p.pop<std::uint8_t>();
     LearnOrUpgradeSkill(index);
+}
+
+void Player::OnSkill(bango::network::packet& p)
+{
+    spdlog::info("OnSkill");
+}
+
+void Player::OnPreSkill(bango::network::packet& p)
+{
+    spdlog::info("OnPreSkill");
 }
 
 void Player::LearnOrUpgradeSkill(const std::uint8_t skill_index)

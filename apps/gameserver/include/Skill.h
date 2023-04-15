@@ -47,66 +47,38 @@ public:
 class Skill
 {
     const InitSkill* m_init;
-    bango::utils::time::point m_last_use_time;
+
+    Character& m_caster;
     std::uint8_t m_level;
-    RESIST_TYPE resist_type;
-protected:
-    Character& m_player;
 
 public:
-    Skill(const InitSkill* init, Character& player, std::uint8_t level);
+    Skill(const InitSkill* init, Character& caster, std::uint8_t level);
 
     std::uint8_t GetLevel() const { return m_level; }
     std::uint8_t GetIndex() const { return m_init->Index; }
+    Character& GetCaster() const { return m_caster; }
+
     void SetLevel(std::uint8_t level) { m_level = level; }
 
-    bango::utils::time::duration GetRemainingCooldown() const;
-    void UpdateCooldownTime() { m_last_use_time = bango::utils::time::now();}
-    virtual void Execute(bango::network::packet& packet) {}
+    virtual void Execute(bango::network::packet& packet);
     virtual bool CanExecute(const Character& target) const;
-    std::int32_t GetAttack() const { return 0; } // TODO: Implement
-    RESIST_TYPE GetResist() const { return resist_type; }
-    virtual bango::network::packet BuildCastPacket(id_t target_id = 0) const;
-};
-
-class PhysicalSkill : public Skill
-{
-    ATTACK_TYPE m_attack_type;
-public:
-    PhysicalSkill(const InitSkill* init, Character& player, std::uint8_t level, ATTACK_TYPE attack_type)
-        : Skill(init, player, level),
-        m_attack_type(attack_type)
-        {}
-
-    ATTACK_TYPE GetAttackType() const { return m_attack_type; }
-};
-
-class MagicSkill : public Skill
-{
-public:
-    MagicSkill(const InitSkill* init, Character& player, std::uint8_t level)
-        : Skill(init, player, level)
-        {}
 };
 
 class Behead : public Skill
 {
 public:
-    Behead(const InitSkill* init, Character& player, std::uint8_t level)
-        : Skill(init, player, level)
-        {}
-    virtual bool CanExecute(const Character& target) const override;
-    virtual void Execute(bango::network::packet& packet) override;
+    using Skill::Skill;
+
+    void Execute(bango::network::packet& packet) override;
+    bool CanExecute(const Character& target) const override;
 };
 
 class SkillManager
 {
-    Character& m_player;
+    Player& m_player;
     std::unordered_map<std::uint8_t, std::unique_ptr<Skill>> m_skills;
 public:
-    SkillManager(Character& player)
-        : m_player(player)
-        {}
+    SkillManager(Player& player) : m_player(player) {}
 
     void Reset() { m_skills.clear(); }
     std::unique_ptr<Skill> CreateSkill(const InitSkill* init, std::uint8_t index, std::uint8_t level);

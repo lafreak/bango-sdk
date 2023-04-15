@@ -64,9 +64,11 @@ public:
     void OnAskPartyAnswer       (bango::network::packet& p);
     void OnExileParty           (bango::network::packet& p);
     void OnLeaveParty           (bango::network::packet& p);
-    void OnItemPick             (bango::network::packet& p);
-    void OnSkillUpgrade         (bango::network::packet& p);
-    void OnSkillLearn           (bango::network::packet& p);
+    void OnPickUpItem           (bango::network::packet& p);
+    void OnSkillUp              (bango::network::packet& p);
+    void OnLearnSkill           (bango::network::packet& p);
+    void OnSkill                (bango::network::packet& p);
+    void OnPreSkill             (bango::network::packet& p);
 
     // Command Endpoints
     void OnGetItem(CommandDispatcher::Token& token);

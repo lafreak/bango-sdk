@@ -118,67 +118,16 @@ bool SkillManager::Upgrade(std::uint8_t index, std::uint8_t level)
      return true;
 }
 
-
 std::unique_ptr<Skill> SkillManager::CreateSkill(const InitSkill* init, std::uint8_t index, std::uint8_t level)
 {
     if(index > InitSkill::MAX_SKILL_INDEX)
         std::runtime_error("Skill index is out of range!");
 
-    switch(init->Class)
-    {
-        case PLAYER_CLASS::PC_KNIGHT:
-        {
-            switch(index)
-            {
-                case SK_BEHEAD:
-                    return std::make_unique<Behead>(init, m_player, level);
-                default:
-                    return std::make_unique<PhysicalSkill>(init, m_player, level, ATT_MEELE);
-            }
-        }
-        case PLAYER_CLASS::PC_MAGE:
-        {
-            switch(index)
-            {
-                case SM_BEHEAD:
-                    return std::make_unique<Behead>(init, m_player, level);
-                default:
-                    return std::make_unique<MagicSkill>(init, m_player, level);
-            }
-        }
-        case PLAYER_CLASS::PC_ARCHER:
-        {
-            switch(index)
-            {
-                case SA_BEHEAD:
-                    return std::make_unique<Behead>(init, m_player, level);
-                default:
-                    return std::make_unique<PhysicalSkill>(init, m_player, level, ATT_RANGE);
-            }
-        }
-        case PLAYER_CLASS::PC_THIEF:
-        {
-            switch(index)
-            {
-                case ST_BEHEAD:
-                    return std::make_unique<Behead>(init, m_player, level);
-                default:
-                    return std::make_unique<PhysicalSkill>(init, m_player, level, ATT_MEELE);
-            }
-        }
-        case PLAYER_CLASS::PC_SHAMAN:
-        {
-            switch(index)
-            {
-                case SS_BEHEAD:
-                    return std::make_unique<Behead>(init, m_player, level);
-                default:
-                    return std::make_unique<MagicSkill>(init, m_player, level);
-            }
-        }
-        default:
-            throw std::runtime_error("Unknown player class while creating skill!");
-    }
+    if (index == 1)
+        return std::make_unique<Behead>(init, m_player, level);
+    
+    // default
+    return std::make_unique<Skill>(init, m_player, level);
 }
 
 bool SkillManager::Learn(const InitSkill* init, std::uint8_t index, std::uint8_t level)
@@ -193,39 +142,24 @@ bool SkillManager::Learn(const InitSkill* init, std::uint8_t index, std::uint8_t
         spdlog::error("Failed to learn skill: {}", e.what());
         return false;
     }
-
 }
 
-
-Skill::Skill(const InitSkill* init, Character& player,std::uint8_t level)
-    : m_init(init),
-    m_player(player),
-    m_last_use_time{}, // TODO: change when cooldown protection is added
-    m_level(level)
+Skill::Skill(const InitSkill* init, Character& caster, std::uint8_t level) :
+    m_init(init), m_caster(caster), m_level(level)
 {
-
-}
-
-time::duration Skill::GetRemainingCooldown() const
-{
-    auto remaining = m_last_use_time + std::chrono::milliseconds(m_init->CoolDown);
-    return remaining < time::now() ? time::duration::zero() : remaining - time::now();
 }
 
 bool Skill::CanExecute(const Character& target) const
 {
-    return m_player.IsNormal()
-        && target.IsNormal()
-        && m_player.GetMap() == target.GetMap()
-        && !m_player.IsGState(CGS_ONTRANSFORM)
-        //&& m_player.IsWState(WS_WEAPON) // TODO: add this check when WearState is added.
-        && m_player.GetCurMP() >= m_init->MP
-        && m_player.CanAttack(target);
+    return
+        m_caster.IsNormal() &&
+        target.IsNormal() &&
+        m_caster.GetMap() == target.GetMap();
 }
 
-packet Skill::BuildCastPacket(id_t target_id) const
+void Skill::Execute(bango::network::packet& packet)
 {
-    return packet(S2C_SKILL, "bddbb", GetIndex(), m_player.GetID(), target_id, std::uint8_t(0 /* b - unused for now */), GetLevel());
+    spdlog::info("This skill is not usable.");
 }
 
 bool Behead::CanExecute(const Character& target) const
@@ -238,5 +172,5 @@ bool Behead::CanExecute(const Character& target) const
 
 void Behead::Execute(bango::network::packet& packet)
 {
-
+    spdlog::info("Want to behead!");
 }
