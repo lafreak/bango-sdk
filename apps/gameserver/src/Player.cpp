@@ -16,8 +16,8 @@
 using namespace bango::network;
 using namespace bango::utils;
 
-Player::Player(const bango::network::taco_client_t& client)
-    : User(client),
+Player::Player(const bango::network::taco_client_t& client) :
+    User(client),
     Character(Character::PLAYER),
     m_skills(*this)
 {
@@ -112,27 +112,25 @@ void Player::OnLoadItems(packet& p)
 void Player::OnLoadSkills(packet& p)
 {
     std::uint8_t count = p.pop<std::uint8_t>();
+
     packet skill_info_packet(S2C_SKILLINFO);
     skill_info_packet << count;
+
     for (std::uint8_t i = 0; i < count; i++)
     {
         auto index = p.pop<std::uint8_t>();
         auto level = p.pop<std::uint8_t>();
-        const auto* init = InitSkill::FindPlayerSkill((PLAYER_CLASS)GetClass(), index);
 
-        if(!init)
-        {
-            spdlog::warn("Player {} has an invalid skill of index {} in database", GetName(), index);
-            continue;
-        }
+        if (!m_skills.Add(index, level))
+            std::runtime_error("cannot load skill");  // TODO
 
         spdlog::info("Player {} loaded skill of index {} at grade {}", GetName(), index, level);
-        m_skills.Add(init, index, level);
 
         std::uint32_t cooldown_remaining = 0; // TODO: cooldown protection.
 
         skill_info_packet << index << level << cooldown_remaining;
     }
+
     write(skill_info_packet);
     OnLoadFinish(); // Should be called on receiving last information from DB before game start.
 }
@@ -828,15 +826,12 @@ void Player::OnPickUpItem(packet& p)
     auto y = p.pop<std::int32_t>();
 
     World::ForLoot(item_id, [&](Loot& loot) {
-                    auto& info = loot.GetItemInfo();
-                    InsertItem(info.Index, info.Num);
-                    spdlog::debug("Removing loot; ID {} from ({},{}) due to pickup by {}",
-                        loot.GetID(),
-                        loot.GetX(),
-                        loot.GetY(),
-                        GetName());
-                    World::Remove(&loot);
-                });
+        auto& info = loot.GetItemInfo();
+        InsertItem(info.Index, info.Num);
+        spdlog::debug("Removing loot; ID {} from ({},{}) due to pickup by {}",
+            loot.GetID(), loot.GetX(), loot.GetY(), GetName());
+        World::Remove(&loot);
+    });
 }
 
 
@@ -875,25 +870,24 @@ void Player::OnSkill(bango::network::packet& p)
 void Player::OnPreSkill(bango::network::packet& p)
 {
     auto index = p.pop<std::uint8_t>();
-    auto id = p.pop<Character::id_t>();
+    auto target_id = p.pop<Character::id_t>();
     // TODO: Check if pre-skill refers to correct player skill (Implement CanPreExecute)
-    WriteInSight(packet(S2C_ACTION, "dbbd", GetID(), AT_SKILL, index, id));
+    WriteInSight(packet(S2C_ACTION, "dbbd", GetID(), AT_SKILL, index, target_id));
     spdlog::info("OnPreSkill");  // TODO
 }
 
+// TODO: Move to level above
 void Player::LearnOrUpgradeSkill(const std::uint8_t skill_index)
 {
     if(!CanLearnSkill(skill_index))
         return;
-
-    const auto* init = InitSkill::FindPlayerSkill((PLAYER_CLASS)GetClass(), skill_index);
 
     auto* skill = m_skills.GetByIndex(skill_index);
     std::uint8_t level = skill ? skill->GetLevel() + 1 : 1;
 
     if(level == 1) // Learn New Skill
     {
-        auto success = m_skills.Add(init, skill_index, level);
+        auto success = m_skills.Add(skill_index, level);
 
         if(!success)
         {
@@ -1058,6 +1052,7 @@ void Player::UpdateExp(std::int64_t amount)
     // Decrease
     if (amount < 0)
     {
+        
         if (std::cmp_greater(std::abs(amount), m_data.Exp))
             amount = -static_cast<std::int64_t>(m_data.Exp);
         m_data.Exp += amount;

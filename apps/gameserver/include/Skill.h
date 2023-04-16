@@ -39,7 +39,7 @@ public:
     std::int32_t Value2 = 0;
     std::int32_t Rage = 0;
 
-    static InitSkill* FindPlayerSkill(PLAYER_CLASS player_class, std::uint8_t skill_index);
+    static InitSkill* FindPlayerSkill(std::uint8_t player_class, std::uint8_t skill_index);
     static InitSkill* FindAnimalSkill(std::uint8_t skill_index);
     static InitSkill* FindMonsterSkill(std::uint8_t skill_index);
 };
@@ -87,14 +87,13 @@ class SkillManager
     Player& m_player;
     std::unordered_map<std::uint8_t, std::unique_ptr<Skill>> m_skills;
 
-    std::unique_ptr<Skill> CreateSkill(const InitSkill* init, std::uint8_t index, std::uint8_t level);
+    std::unique_ptr<Skill> CreateSkill(std::uint8_t index, std::uint8_t level);
 public:
     SkillManager(Player& player) : m_player(player) {}
 
-    bool Add(const InitSkill* init, std::uint8_t index, std::uint8_t level);
+    bool Add(std::uint8_t index, std::uint8_t level);
     void Reset() { m_skills.clear(); }
     bool Upgrade(std::uint8_t index, std::uint8_t level);
-    bool Learn(const InitSkill* init, std::uint8_t index, std::uint8_t level = 1);
     bool Exists(std::uint8_t index) const;
     Skill* GetByIndex(std::uint8_t index) const;
 };

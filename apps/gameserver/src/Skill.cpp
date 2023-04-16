@@ -17,7 +17,7 @@ unsigned int InitSkill::index() const
     return Index;
 }
 
-InitSkill* InitSkill::FindPlayerSkill(PLAYER_CLASS player_class, std::uint8_t skill_index)
+InitSkill* InitSkill::FindPlayerSkill(std::uint8_t player_class, std::uint8_t skill_index)
 {
     if (player_class < 0 || player_class >= MAX_CHARACTER)
     {
@@ -92,15 +92,14 @@ void InitSkill::set(bango::processor::lisp::var param)
         case A_VALUE1:       Value1       = param.pop(); break;
         case A_VALUE2:       Value2       = param.pop(); break;
         case A_RAGE:         Rage         = param.pop(); break;
-
     }
 }
 
+// TODO: To be removed
 bool SkillManager::Exists(std::uint8_t index) const
 {
     return m_skills.find(index) != m_skills.end();
 }
-
 
 Skill* SkillManager::GetByIndex(std::uint8_t index) const
 {
@@ -109,22 +108,24 @@ Skill* SkillManager::GetByIndex(std::uint8_t index) const
 
 bool SkillManager::Upgrade(std::uint8_t index, std::uint8_t level)
 {
-    if(!Exists(index))
+    auto it = m_skills.find(index);
+    if (it == m_skills.end())
         return false;
 
-    if(m_skills.at(index)->GetLevel() >= level)
+    if (it->second->GetLevel() >= level)
         return false;
 
-     m_skills.at(index)->SetLevel(level);
-     return true;
+    it->second->SetLevel(level);
+    return true;
 }
 
 #define MAKE_SKILL_TYPE(type) std::make_unique<type>(init, m_player, level); 
 
-std::unique_ptr<Skill> SkillManager::CreateSkill(const InitSkill* init, std::uint8_t index, std::uint8_t level)
+std::unique_ptr<Skill> SkillManager::CreateSkill(std::uint8_t index, std::uint8_t level)
 {
-    if (index > InitSkill::MAX_SKILL_INDEX)
-        std::runtime_error("Skill index is out of range!");
+    const auto* init = InitSkill::FindPlayerSkill(m_player.GetClass(), index);
+    if (!init)
+        return nullptr;
 
     if (index == 1)
         return MAKE_SKILL_TYPE(Behead);
@@ -159,25 +160,13 @@ std::unique_ptr<Skill> SkillManager::CreateSkill(const InitSkill* init, std::uin
     return MAKE_SKILL_TYPE(Skill);
 }
 
-bool SkillManager::Add(const InitSkill* init, std::uint8_t index, std::uint8_t level)
+bool SkillManager::Add(std::uint8_t index, std::uint8_t level)
 {
-    auto [_, success] = m_skills.insert({index, CreateSkill(init, index, level)});
-    return success;
-}
-
-// TODO: Why do we need initskill here? It should be automatic.
-bool SkillManager::Learn(const InitSkill* init, std::uint8_t index, std::uint8_t level)
-{
-    try
-    {
-        auto [_, success] = m_skills.insert({index, CreateSkill(init, index, level)});
-        return success;
-    }
-    catch(const std::exception& e)
-    {
-        spdlog::error("Failed to learn skill: {}", e.what());
+    auto skill = CreateSkill(index, level);
+    if (!skill)
         return false;
-    }
+    auto [_, success] = m_skills.insert(std::make_pair(index, std::move(skill)));
+    return success;
 }
 
 Skill::Skill(const InitSkill* init, Character& caster, std::uint8_t level) :

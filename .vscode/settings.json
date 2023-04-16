@@ -68,5 +68,6 @@
         "thread": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp"
-    }
+    },
+    "C_Cpp.intelliSenseEngineFallback": "disabled"
 }
