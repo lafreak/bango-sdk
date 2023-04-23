@@ -54,6 +54,8 @@ class Skill
 public:
     Skill(const InitSkill* init, Character& caster, std::uint8_t level);
 
+    const InitSkill& GetInit() const { return *this->m_init; }
+
     std::uint8_t GetLevel() const { return m_level; }
     std::uint8_t GetIndex() const { return m_init->Index; }
     Character& GetCaster() const { return m_caster; }
@@ -84,9 +86,10 @@ public:
 
 class SkillManager
 {
-    Player& m_player;
+    Player& m_player;  // TODO: Similar manager is required for monsters as well
     std::unordered_map<std::uint8_t, std::unique_ptr<Skill>> m_skills;
 
+    // TODO: This needs to unified with skill manager for monsters
     std::unique_ptr<Skill> CreateSkill(std::uint8_t index, std::uint8_t level);
 public:
     SkillManager(Player& player) : m_player(player) {}

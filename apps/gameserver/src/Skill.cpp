@@ -14,7 +14,9 @@ using namespace bango::utils;
 
 unsigned int InitSkill::index() const
 {
-    return Index;
+    if (Class >= 0)
+        return Class * 100 + Index;
+    return (std::abs(Class) + MAX_CHARACTER) * 100 + Index;
 }
 
 InitSkill* InitSkill::FindPlayerSkill(std::uint8_t player_class, std::uint8_t skill_index)
@@ -60,23 +62,15 @@ void InitSkill::set(bango::processor::lisp::var param)
 {
     switch (FindAttribute(param.pop()))
     {
-        case A_CLASS:        Class        = param.pop(); break;
-        case A_INDEX:
-        {
-            Index = param.pop();
-            if(Class >= 0) //Player skills
-                Index = Class * 100 + Index;
-            else           //Animal or Monster skills
-                Index = (std::abs(Class) + MAX_CHARACTER) * 100 + Index;
-            break;
-        }
-        case A_REDISTRIBUTE: Redistribute = param.pop(); break;
+        case A_CLASS:           Class           = param.pop(); break;
+        case A_INDEX:           Index           = param.pop(); break;
+        case A_REDISTRIBUTE:    Redistribute    = param.pop(); break;
         case A_LIMIT:
         {
-            LevelLimit = param.pop();
-            Job        = 1 << (uint32_t)param.pop();
-            RequiredSkillIndex = param.pop();
-            RequiredSkillGrade = param.pop();
+            LevelLimit          = param.pop();
+            Job                 = 1 << (uint32_t)param.pop();
+            RequiredSkillIndex  = param.pop();
+            RequiredSkillGrade  = param.pop();
             break;
         }
         case A_MAXLEVEL:     MaxLevel     = param.pop(); break;
@@ -204,6 +198,7 @@ void Behead::Execute(bango::network::packet& p)
     if (kind != CK_MONSTER)
         return;
 
+    // TODO: Separate out to SingleTargetSkill which will find character on map automatically
     World::ForCharacterInMap(GetCaster().GetMap(), WorldMap::QK_MONSTER, id, [&](Character& target)
     {
         auto lock = target.Lock();
@@ -248,7 +243,7 @@ void PhysicalSkill::Execute(bango::network::packet& p)
 
         // TODO: Implement skill specific behaviors
 
-        std::int16_t damage = 1200;
+        std::int16_t damage = 120;
         if ((uint64_t)damage > target.GetCurHP())
             damage = target.GetCurHP();
 
