@@ -64,6 +64,7 @@ public:
 
     virtual void Execute(bango::network::packet& packet);
     virtual bool CanExecute(const Character& target) const;
+    virtual bool CanLearn() const;
 };
 
 class Behead : public Skill
@@ -89,14 +90,11 @@ class SkillManager
     Player& m_player;  // TODO: Similar manager is required for monsters as well
     std::unordered_map<std::uint8_t, std::unique_ptr<Skill>> m_skills;
 
-    // TODO: This needs to unified with skill manager for monsters
     std::unique_ptr<Skill> CreateSkill(std::uint8_t index, std::uint8_t level);
 public:
     SkillManager(Player& player) : m_player(player) {}
 
     bool Add(std::uint8_t index, std::uint8_t level);
     void Reset() { m_skills.clear(); }
-    bool Upgrade(std::uint8_t index, std::uint8_t level);
-    bool Exists(std::uint8_t index) const;
     Skill* GetByIndex(std::uint8_t index) const;
 };

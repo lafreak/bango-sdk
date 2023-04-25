@@ -164,7 +164,6 @@ public:
     id_t GetPartyID()                                   const   { return m_party_id; }
 
     bool CanLearnSkill(std::uint8_t index) const;
-    void LearnOrUpgradeSkill(std::uint8_t skill_index);
 
     std::uint16_t   GetReqPU(std::uint8_t* stats);
 

@@ -89,28 +89,10 @@ void InitSkill::set(bango::processor::lisp::var param)
     }
 }
 
-// TODO: To be removed
-bool SkillManager::Exists(std::uint8_t index) const
-{
-    return m_skills.find(index) != m_skills.end();
-}
-
 Skill* SkillManager::GetByIndex(std::uint8_t index) const
 {
-    return Exists(index) ? m_skills.at(index).get() : nullptr;
-}
-
-bool SkillManager::Upgrade(std::uint8_t index, std::uint8_t level)
-{
     auto it = m_skills.find(index);
-    if (it == m_skills.end())
-        return false;
-
-    if (it->second->GetLevel() >= level)
-        return false;
-
-    it->second->SetLevel(level);
-    return true;
+    return it == m_skills.end() ? nullptr : it->second.get();
 }
 
 #define MAKE_SKILL_TYPE(type) std::make_unique<type>(init, m_player, level); 
@@ -174,6 +156,13 @@ bool Skill::CanExecute(const Character& target) const
         m_caster.IsNormal() &&
         target.IsNormal() &&
         m_caster.GetMap() == target.GetMap();
+}
+
+bool Skill::CanLearn() const
+{
+    if (GetLevel() >= m_init->MaxLevel)
+        return false;
+    return true;
 }
 
 void Skill::Execute(bango::network::packet& p)
