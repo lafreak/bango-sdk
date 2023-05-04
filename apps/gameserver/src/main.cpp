@@ -249,19 +249,19 @@ int main(int argc, char** argv)
     World::SpawnNpcs();
     World::CreateSpawnsAndSpawnMonsters();
 
-    // try 
-    // {
+    try 
+    {
         Socket::DBClient().connect(db_address, db_port);
         spdlog::info("Connected to DB Server on address {}:{}", db_address, db_port);
 
         Socket::GameServer().start(game_address, game_port);
         spdlog::info("Game Server has started on address {}:{}", game_address, game_port);
-    // } 
-    // catch (const std::exception& e) 
-    // {
-    //     std::cerr << e.what() << std::endl;
-    //     return 1;
-    // }
+    } 
+    catch (const std::exception& e) 
+    {
+        std::cerr << e.what() << std::endl;
+        return 1;
+    }
 
     using namespace std::chrono_literals;
 

@@ -846,11 +846,16 @@ void Player::OnSkillUp(bango::network::packet& p)
     if (!skill)
         return;
 
+    // Upgrade skill
     skill->SetLevel(skill->GetLevel() + 1);
-    
+
+    // Save skill grade to database
     Socket::DBClient().write(S2D_SKILLUP, "dbbw", GetPID(), index, skill->GetLevel(), --m_data.SUPoint);
 
+    // Update grade on the client side
     write(S2C_SKILLUP, "bb", index, skill->GetLevel());
+
+    // Update skill points on the client side
     SendProperty(P_SUPOINT);
 
     spdlog::info("Player {} upgraded skill of index {} to level {}", GetName(), index, skill->GetLevel());

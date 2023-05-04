@@ -83,6 +83,19 @@ public:
 
     void Execute(bango::network::packet& packet) override;
     bool CanExecute(const Character& target) const override;
+    virtual std::uint16_t GetAttack() const { return GetCaster().GetAttack(); }
+};
+
+class StaggeringBlow : public PhysicalSkill
+{
+public:
+    using PhysicalSkill::PhysicalSkill;
+
+    std::uint16_t GetAttack() const override;
+    // TODO:
+    //  - hostility
+    //  - add otp
+    //  - add crit rate
 };
 
 class SkillManager

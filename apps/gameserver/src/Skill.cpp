@@ -119,7 +119,7 @@ std::unique_ptr<Skill> SkillManager::CreateSkill(std::uint8_t index, std::uint8_
     case PC_ARCHER:
         switch (index)
         {
-        case SA_STAGGERING_BLOW: return MAKE_SKILL_TYPE(PhysicalSkill);
+        case SA_STAGGERING_BLOW: return MAKE_SKILL_TYPE(StaggeringBlow);
         default:
             break;
         }
@@ -187,7 +187,7 @@ void Behead::Execute(bango::network::packet& p)
     if (kind != CK_MONSTER)
         return;
 
-    // TODO: Separate out to SingleTargetSkill which will find character on map automatically
+    // TODO: Separate out to SingleTargetSkill which will find character on map automatically and remove duplicated code?
     World::ForCharacterInMap(GetCaster().GetMap(), WorldMap::QK_MONSTER, id, [&](Character& target)
     {
         auto lock = target.Lock();
@@ -206,6 +206,8 @@ void Behead::Execute(bango::network::packet& p)
             target.GetID(),
             is_damage,
             GetLevel()));
+
+        // TODO: Restore caster HP/MP in threadsafe manner
     });
 }
 
@@ -232,7 +234,7 @@ void PhysicalSkill::Execute(bango::network::packet& p)
 
         // TODO: Implement skill specific behaviors
 
-        std::int16_t damage = 120;
+        std::int16_t damage = GetAttack(/*TODO: revise tick*/);
         if ((uint64_t)damage > target.GetCurHP())
             damage = target.GetCurHP();
 
@@ -253,4 +255,12 @@ void PhysicalSkill::Execute(bango::network::packet& p)
             explosive_blow,
             kind));
     });
+}
+
+std::uint16_t StaggeringBlow::GetAttack() const
+{
+    std::uint16_t max_add_attack = 70 * GetLevel() + 200;
+    std::uint16_t add_attack = 7 * GetLevel() * GetCaster().GetDexterity() / 4 / 2 + 50;
+
+    return std::min(add_attack, max_add_attack) + PhysicalSkill::GetAttack();
 }
