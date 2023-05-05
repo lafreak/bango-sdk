@@ -139,7 +139,7 @@ void Player::OnLoadSkills(packet& p)
 void Player::OnLoadFinish()
 {
     write(S2C_PROPERTY, "bsbwwwwwwddwwwwwbIwwwwwwbbbbbd",
-        0, //Grade
+        GetJob(),
         "\0", //GuildName
         0, //GRole
         GetContribute(),
