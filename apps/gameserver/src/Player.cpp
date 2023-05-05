@@ -2,6 +2,7 @@
 
 #include <string>
 #include <utility>
+#include <exception>
 
 #include "spdlog/spdlog.h"
 
@@ -16,7 +17,10 @@
 using namespace bango::network;
 using namespace bango::utils;
 
-Player::Player(const bango::network::taco_client_t& client) : User(client), Character(Character::PLAYER)
+Player::Player(const bango::network::taco_client_t& client) :
+    User(client),
+    Character(Character::PLAYER),
+    m_skills(*this)
 {
     spdlog::trace("Player constructor id: {}", GetID());
 }
@@ -109,27 +113,25 @@ void Player::OnLoadItems(packet& p)
 void Player::OnLoadSkills(packet& p)
 {
     std::uint8_t count = p.pop<std::uint8_t>();
+
     packet skill_info_packet(S2C_SKILLINFO);
     skill_info_packet << count;
+
     for (std::uint8_t i = 0; i < count; i++)
     {
         auto index = p.pop<std::uint8_t>();
         auto level = p.pop<std::uint8_t>();
-        const auto* init = InitSkill::FindPlayerSkill((PLAYER_CLASS)GetClass(), index);
 
-        if(!init)
-        {
-            spdlog::warn("Player {} has an invalid skill of index {} in database", GetName(), index);
-            continue;
-        }
+        if (!m_skills.Add(index, level))
+            std::runtime_error("cannot load skill");  // TODO
 
         spdlog::info("Player {} loaded skill of index {} at grade {}", GetName(), index, level);
-        m_skills.Learn(init, index, level);
 
         std::uint32_t cooldown_remaining = 0; // TODO: cooldown protection.
 
         skill_info_packet << index << level << cooldown_remaining;
     }
+
     write(skill_info_packet);
     OnLoadFinish(); // Should be called on receiving last information from DB before game start.
 }
@@ -664,7 +666,7 @@ void Player::OnPlayerAnimation(packet& p)
 
 void Player::OnAttack(packet& p)
 {
-    auto kind = p.pop<char>();
+    auto kind = p.pop<char>();  // FIXME: Use this param to speed up World call (refer to Behead Execute)
     auto id = p.pop<Character::id_t>();
     auto z = p.pop<unsigned int>();
 
@@ -680,7 +682,7 @@ void Player::OnAttack(packet& p)
 
         if (!m_inventory.HasWeapon())
             return;
-        
+
         auto now = time::now();
 
         auto duration = (now-m_last_attack).count();
@@ -818,80 +820,93 @@ void Player::OnLeaveParty(packet& p)
     LeaveParty();
 }
 
-void Player::OnItemPick(packet& p)
+void Player::OnPickUpItem(packet& p)
 {
     auto item_id = p.pop<id_t>();
     auto x = p.pop<std::int32_t>();
     auto y = p.pop<std::int32_t>();
 
     World::ForLoot(item_id, [&](Loot& loot) {
-                    auto& info = loot.GetItemInfo();
-                    InsertItem(info.Index, info.Num);
-                    spdlog::debug("Removing loot; ID {} from ({},{}) due to pickup by {}",
-                        loot.GetID(),
-                        loot.GetX(),
-                        loot.GetY(),
-                        GetName());
-                    World::Remove(&loot);
-                });
+        auto& info = loot.GetItemInfo();
+        InsertItem(info.Index, info.Num);
+        spdlog::debug("Removing loot; ID {} from ({},{}) due to pickup by {}",
+            loot.GetID(), loot.GetX(), loot.GetY(), GetName());
+        World::Remove(&loot);
+    });
 }
 
-
-void Player::OnSkillUpgrade(bango::network::packet& p)
+void Player::OnSkillUp(bango::network::packet& p)
 {
     auto index = p.pop<std::uint8_t>();
 
-    if(!m_skills.Exists(index))
-    {
-        spdlog::warn("Player {} tried to upgrade skill of index {} without learning it first", GetName(), index);
-        return;
-    }
-    LearnOrUpgradeSkill(index);
-}
-void Player::OnSkillLearn(bango::network::packet& p)
-{
-    auto index = p.pop<std::uint8_t>();
-    LearnOrUpgradeSkill(index);
-}
-
-void Player::LearnOrUpgradeSkill(const std::uint8_t skill_index)
-{
-    if(!CanLearnSkill(skill_index))
+    if (!CanLearnSkill(index))
         return;
 
-    const auto* init = InitSkill::FindPlayerSkill((PLAYER_CLASS)GetClass(), skill_index);
+    auto* skill = m_skills.GetByIndex(index);
+    if (!skill)
+        return;
 
+    // Upgrade skill
+    skill->SetLevel(skill->GetLevel() + 1);
 
-    auto* skill = m_skills.GetByIndex(skill_index);
-    std::uint8_t level = skill ? skill->GetLevel() + 1 : 1;
+    // Save skill grade to database
+    Socket::DBClient().write(S2D_SKILLUP, "dbbw", GetPID(), index, skill->GetLevel(), --m_data.SUPoint);
 
-    if(level == 1) // Learn New Skill
-    {
-        auto success = m_skills.Learn(init, skill_index);
+    // Update grade on the client side
+    write(S2C_SKILLUP, "bb", index, skill->GetLevel());
 
-        if(!success)
-        {
-            spdlog::warn("Something went wrong when Player {} tried to learn skill of index {}", GetName(), skill_index);
-            return;
-        }
-        Socket::DBClient().write(S2D_LEARNSKILL, "dbw", GetPID(), skill_index, --m_data.SUPoint);
-        spdlog::info("Player {} learned skill of index {}", GetName(), skill_index);
-    }
-    else                 // Upgrade Skill
-    {
-        bool success = m_skills.Upgrade(skill_index, level);
-
-        if(!success)
-        {
-            spdlog::warn("Something went wrong when Player {} tried to upgrade skill of index {} to grade {}", GetName(), skill_index, level);
-            return;
-        }
-        Socket::DBClient().write(S2D_SKILLUP, "dbbw", GetPID(), skill_index, level, --m_data.SUPoint);
-        spdlog::info("Player {} upgraded skill of index {} to level {}", GetName(), skill_index, level);
-
-    }
-    write(S2C_SKILLUP, "bb", skill_index, level);
+    // Update skill points on the client side
     SendProperty(P_SUPOINT);
+
+    spdlog::info("Player {} upgraded skill of index {} to level {}", GetName(), index, skill->GetLevel());
+}
+
+void Player::OnLearnSkill(bango::network::packet& p)
+{
+    auto index = p.pop<std::uint8_t>();
+
+    if (!CanLearnSkill(index))
+        return;
+    
+    auto* skill = m_skills.GetByIndex(index);
+    if (skill)
+        return;
+
+    if(!m_skills.Add(index, 1))
+        throw std::runtime_error("cannot learn skill");
+
+    Socket::DBClient().write(S2D_LEARNSKILL, "dbw", GetPID(), index, --m_data.SUPoint);
+
+    write(S2C_SKILLUP, "bb", index, 1);
+    SendProperty(P_SUPOINT);
+
+    spdlog::info("Player {} learned skill of index {}", GetName(), index);
+}
+
+void Player::OnSkill(bango::network::packet& p)
+{
+    auto index = p.pop<std::uint8_t>();
+
+    spdlog::info("OnSkill");
+
+    auto* skill = m_skills.GetByIndex(index);
+    if (!skill)
+    {
+        spdlog::warn("Player {} wanted to use non existing skill index: {}, class: {}",
+            GetName(), index, GetClass());  // TODO: Consider adding log level "cheat"
+        return;
+    }
+
+    skill->Execute(p);
+}
+
+void Player::OnPreSkill(bango::network::packet& p)
+{
+    auto index = p.pop<std::uint8_t>();
+    auto target_id = p.pop<Character::id_t>();
+    // TODO: Check if pre-skill refers to correct player skill (Implement CanPreExecute)
+    WriteInSight(packet(S2C_ACTION, "dbbd", GetID(), AT_SKILL, index, target_id));
+    spdlog::info("OnPreSkill");  // TODO
 }
 
 bool Player::CanLearnSkill(const std::uint8_t index) const
@@ -920,26 +935,25 @@ bool Player::CanLearnSkill(const std::uint8_t index) const
         return false;
     }
 
-    if(m_skills.Exists(index) && m_skills.GetByIndex(index)->GetLevel() >= init->MaxLevel)
-    {
-        spdlog::warn("Player {} tried to learn a skill of index {} but it is already max level", GetName(), index);
-        return false;
-    }
-
     if(init->RequiredSkillIndex != 0)
     {
-        const auto required_skill_grade = init->RequiredSkillGrade;
-        if(!m_skills.Exists(init->RequiredSkillIndex))
+        auto* required_skill = m_skills.GetByIndex(init->RequiredSkillIndex);
+        if(!required_skill)
         {
-            spdlog::warn("Player {} tried to learn a skill of index {} but does not have the required skill", GetName(), index);
+            spdlog::warn("Player {} tried to learn a skill of index {} but does not have the required skill index: {}", GetName(), index, init->RequiredSkillIndex);
             return false;
         }
-        else if(m_skills.GetByIndex(init->RequiredSkillIndex)->GetLevel() < required_skill_grade)
+        if(required_skill->GetLevel() < init->RequiredSkillGrade)
         {
-            spdlog::warn("Player {} tried to learn a skill of index {} but does not have the required skill grade", GetName(), index);
+            spdlog::warn("Player {} tried to learn a skill of index {} but does not have the required skill index: {}; grade {}", GetName(), index, init->RequiredSkillIndex, init->RequiredSkillGrade);
             return false;
         }
     }
+
+    auto* skill = m_skills.GetByIndex(index);
+
+    if (skill && !skill->CanLearn())
+        return false;
 
     return true;
 }
@@ -1017,7 +1031,7 @@ void Player::ResetStates()
 {
     Character::ResetStates();
     m_inventory = Inventory();
-    m_skills = SkillManager();
+    m_skills.Reset();
     LeaveParty();
 }
 
@@ -1032,6 +1046,7 @@ void Player::UpdateExp(std::int64_t amount)
     // Decrease
     if (amount < 0)
     {
+        
         if (std::cmp_greater(std::abs(amount), m_data.Exp))
             amount = -static_cast<std::int64_t>(m_data.Exp);
         m_data.Exp += amount;

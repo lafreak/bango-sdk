@@ -132,6 +132,7 @@ public:
 
     void WriteInSight(const bango::network::packet& p) const;
     void ApplyVisualEffect(std::uint8_t effect_id);
+    bool IsNormal() const;
 
     virtual void Tick() = 0;
     virtual void Die() = 0;

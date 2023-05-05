@@ -35,7 +35,11 @@
 	// Configure tool-specific properties.
 	"customizations": {
 		"vscode": {
-			"extensions": ["ms-vscode.cpptools"]
+			"extensions": [
+				"ms-vscode.cpptools",
+				"twxs.cmake",
+				"ms-vscode.cmake-tools"
+			]
 		}
 	},
 

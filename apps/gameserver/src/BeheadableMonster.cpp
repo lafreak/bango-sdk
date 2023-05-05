@@ -10,7 +10,7 @@ using namespace bango::utils;
 void BeheadableMonster::Die()
 {
     Monster::Die();
-    SetGState(CGS_KNEE);
+    AddGState(CGS_KNEE);
     SetDeathTime(time::now());
     WriteInSight(packet(S2C_ACTION, "db", GetID(), AT_KNEE));
 }
@@ -19,7 +19,8 @@ void BeheadableMonster::Tick()
 {
     if(IsGState(CGS_KNEE) && (time::now() - GetDeathTime()).count() >= MAX_KNEE_TIME)
     {
-        SetGState(CGS_KO);
+        AddGState(CGS_KO);
+        SubGState(CGS_KNEE);
         WriteInSight(packet(S2C_ACTION, "db", GetID(), AT_DIE));
     }
 }

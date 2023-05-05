@@ -53,7 +53,7 @@ int main(int argc, char** argv)
         return app.exit(e);
     }
 
-    spdlog::set_level(spdlog::level::trace);
+    spdlog::set_level(spdlog::level::info);
     spdlog::set_pattern("[%H:%M:%S.%e] [%l] [tid %t] %v");
 
     try
@@ -113,9 +113,11 @@ int main(int argc, char** argv)
     Socket::GameServer().when(C2S_ANS_ASKPARTY,     std::bind(&Player::OnAskPartyAnswer,     _1, _2));
     Socket::GameServer().when(C2S_EXILEPARTY,       std::bind(&Player::OnExileParty,         _1, _2));
     Socket::GameServer().when(C2S_LEAVEPARTY,       std::bind(&Player::OnLeaveParty,         _1, _2));
-    Socket::GameServer().when(C2S_PICKUPITEM,       std::bind(&Player::OnItemPick,           _1, _2));
-    Socket::GameServer().when(C2S_SKILLUP,          std::bind(&Player::OnSkillUpgrade,       _1, _2));
-    Socket::GameServer().when(C2S_LEARNSKILL,       std::bind(&Player::OnSkillLearn,         _1, _2));
+    Socket::GameServer().when(C2S_PICKUPITEM,       std::bind(&Player::OnPickUpItem,         _1, _2));
+    Socket::GameServer().when(C2S_SKILLUP,          std::bind(&Player::OnSkillUp,            _1, _2));
+    Socket::GameServer().when(C2S_LEARNSKILL,       std::bind(&Player::OnLearnSkill,         _1, _2));
+    Socket::GameServer().when(C2S_SKILL,            std::bind(&Player::OnSkill,              _1, _2));
+    Socket::GameServer().when(C2S_PRESKILL,         std::bind(&Player::OnPreSkill,           _1, _2));
 
     Socket::DBClient().when(D2S_LOGIN,              std::bind(&DBListener::OnLogin,             _1));
     Socket::DBClient().when(D2S_AUTHORIZED,         std::bind(&DBListener::OnAuthorized,        _1));

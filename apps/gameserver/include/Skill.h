@@ -3,15 +3,22 @@
 #include <unordered_map>
 #include <memory>
 
+#include "Character.h"
+
 #include <bango/processor/db.h>
+#include <bango/network/packet.h>
+#include <bango/utils/time.h>
 #include <inix.h>
+
+class Player;
 
 class InitSkill : public bango::processor::db_object<InitSkill>
 {
-    static constexpr std::uint8_t MAX_SKILL_INDEX = 84;
     enum Kind : int64_t { ANIMAL=1, MONSTER=2 };
 
 public:
+    static constexpr std::uint8_t MAX_SKILL_INDEX = 84;
+
     unsigned int index() const;
     virtual void set(bango::processor::lisp::var param) override;
 
@@ -32,7 +39,7 @@ public:
     std::int32_t Value2 = 0;
     std::int32_t Rage = 0;
 
-    static InitSkill* FindPlayerSkill(PLAYER_CLASS player_class, std::uint8_t skill_index);
+    static InitSkill* FindPlayerSkill(std::uint8_t player_class, std::uint8_t skill_index);
     static InitSkill* FindAnimalSkill(std::uint8_t skill_index);
     static InitSkill* FindMonsterSkill(std::uint8_t skill_index);
 };
@@ -40,24 +47,67 @@ public:
 class Skill
 {
     const InitSkill* m_init;
-    std::uint32_t m_last_use;
+
+    Character& m_caster;
     std::uint8_t m_level;
 
 public:
-    Skill(const InitSkill* init,std::uint8_t level);
+    Skill(const InitSkill* init, Character& caster, std::uint8_t level);
+
+    const InitSkill& GetInit() const { return *this->m_init; }
 
     std::uint8_t GetLevel() const { return m_level; }
     std::uint8_t GetIndex() const { return m_init->Index; }
+    Character& GetCaster() const { return m_caster; }
+
     void SetLevel(std::uint8_t level) { m_level = level; }
+
+    virtual void Execute(bango::network::packet& packet);
+    virtual bool CanExecute(const Character& target) const;
+    virtual bool CanLearn() const;
+};
+
+class Behead : public Skill
+{
+public:
+    using Skill::Skill;
+
+    void Execute(bango::network::packet& packet) override;
+    bool CanExecute(const Character& target) const override;
+};
+
+class PhysicalSkill : public Skill
+{
+public:
+    using Skill::Skill;
+
+    void Execute(bango::network::packet& packet) override;
+    bool CanExecute(const Character& target) const override;
+    virtual std::uint16_t GetAttack() const { return GetCaster().GetAttack(); }
+};
+
+class StaggeringBlow : public PhysicalSkill
+{
+public:
+    using PhysicalSkill::PhysicalSkill;
+
+    std::uint16_t GetAttack() const override;
+    // TODO:
+    //  - hostility
+    //  - add otp
+    //  - add crit rate
 };
 
 class SkillManager
 {
-public:
+    Player& m_player;  // TODO: Similar manager is required for monsters as well
     std::unordered_map<std::uint8_t, std::unique_ptr<Skill>> m_skills;
 
-    bool Upgrade(std::uint8_t index, std::uint8_t level);
-    bool Learn(const InitSkill* init, std::uint8_t index, std::uint8_t level = 1);
-    bool Exists(std::uint8_t index) const;
+    std::unique_ptr<Skill> CreateSkill(std::uint8_t index, std::uint8_t level);
+public:
+    SkillManager(Player& player) : m_player(player) {}
+
+    bool Add(std::uint8_t index, std::uint8_t level);
+    void Reset() { m_skills.clear(); }
     Skill* GetByIndex(std::uint8_t index) const;
 };
