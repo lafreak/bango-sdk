@@ -3,7 +3,15 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/core/network/include",
+                "${workspaceFolder}/core/persistence/include",
+                "${workspaceFolder}/core/processor/include",
+                "${workspaceFolder}/core/space/include",
+                "${workspaceFolder}/core/utils/include",
+                "${workspaceFolder}/apps/dbserver/include",
+                "${workspaceFolder}/apps/gameserver/include",
+                "${workspaceFolder}/apps/shared"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++-11",
