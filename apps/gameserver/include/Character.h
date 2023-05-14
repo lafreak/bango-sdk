@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <mutex>
+#include <cstring>
 
 #include <bango/space/quadtree.h>
 #include <bango/network/packet.h>
@@ -20,7 +21,9 @@ private:
     std::uint16_t   m_dir;
 
 protected: //TODO: Add method to inherit?
-    std::uint32_t m_curhp=1, m_curmp=1;
+    std::uint32_t   m_curhp=1,
+                    m_curmp=1;
+    PROPERTY_PT     m_property_point;
 
 public:
     int             m_z;
@@ -39,6 +42,8 @@ public:
     {
         //TODO: Make ID pool for players.
         AssignNewId();
+
+        std::memset(&m_property_point,  0, sizeof(m_property_point));
     }
 
     constexpr static std::uint8_t PLAYER    =0;
@@ -73,7 +78,7 @@ public:
     std::uint16_t           GetAttack()     const { return bango::utils::random::between(GetMinAttack(),  GetMaxAttack());  }
     std::uint16_t           GetMagic()      const { return bango::utils::random::between(GetMinMagic (),  GetMaxMagic ());  }
 
-    virtual std::uint16_t   GetHit()        const { return GetDexterity() / 8 + 15 * GetStrength() / 54; }
+    virtual std::uint16_t   GetHit()        const { return GetDexterity() / 8 + 15 * GetStrength() / 54 + m_property_point.nHit; }
     virtual std::uint16_t   GetDodge()      const { return GetDexterity() / 3; }
     virtual std::uint16_t   GetAbsorb()     const { return 0; }
 
@@ -87,6 +92,8 @@ public:
 
     virtual std::uint32_t GetMaxHP() const { return 1; }
     virtual std::uint32_t GetMaxMP() const { return 1; }
+
+    virtual void UpdatePropertyPoint(std::uint8_t kind, std::int64_t value);
 
     void SetGState(std::uint64_t gstate)       { m_gstate = gstate; }
     void SetMState(std::uint64_t mstate)       { m_mstate = mstate; }

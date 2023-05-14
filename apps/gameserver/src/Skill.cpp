@@ -111,6 +111,7 @@ std::unique_ptr<Skill> SkillManager::CreateSkill(std::uint8_t index, std::uint8_
     case PC_KNIGHT:
         switch (index)
         {
+        case SK_WEAPON_MASTERY: return MAKE_SKILL_TYPE(WeaponMastery);
         case SK_LIGHTNING_SLASH: return MAKE_SKILL_TYPE(PhysicalSkill);
         default:
             break;
@@ -136,13 +137,15 @@ std::unique_ptr<Skill> SkillManager::CreateSkill(std::uint8_t index, std::uint8_
     return MAKE_SKILL_TYPE(Skill);
 }
 
-bool SkillManager::Add(std::uint8_t index, std::uint8_t level)
+Skill* SkillManager::Add(std::uint8_t index, std::uint8_t level)
 {
     auto skill = CreateSkill(index, level);
     if (!skill)
-        return false;
-    auto [_, success] = m_skills.insert(std::make_pair(index, std::move(skill)));
-    return success;
+        return nullptr;
+    auto [it, success] = m_skills.insert(std::make_pair(index, std::move(skill)));
+    if (success)
+        return it->second.get();
+    return nullptr;
 }
 
 Skill::Skill(const InitSkill* init, Character& caster, std::uint8_t level) :
@@ -263,4 +266,14 @@ std::uint16_t StaggeringBlow::GetAttack() const
     std::uint16_t add_attack = 7 * GetLevel() * GetCaster().GetDexterity() / 4 / 2 + 50;
 
     return std::min(add_attack, max_add_attack) + PhysicalSkill::GetAttack();
+}
+
+void WeaponMastery::OnApply(std::uint8_t previous_level)
+{
+    // OTP
+    int previous_otp = previous_level / 2;
+    int current_otp = GetLevel() / 2;
+    GetCaster().UpdatePropertyPoint(P_HIT, current_otp - previous_otp);
+
+    // TODO: Implement Min/Max attack
 }

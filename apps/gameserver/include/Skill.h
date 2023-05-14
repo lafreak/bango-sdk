@@ -65,6 +65,8 @@ public:
     virtual void Execute(bango::network::packet& packet);
     virtual bool CanExecute(const Character& target) const;
     virtual bool CanLearn() const;
+
+    virtual void OnApply(std::uint8_t previous_level=0) {}
 };
 
 class Behead : public Skill
@@ -98,6 +100,14 @@ public:
     //  - add crit rate
 };
 
+class WeaponMastery : public Skill
+{
+public:
+    using Skill::Skill;
+
+    void OnApply(std::uint8_t previous_level=0) override;
+};
+
 class SkillManager
 {
     Player& m_player;  // TODO: Similar manager is required for monsters as well
@@ -107,7 +117,7 @@ class SkillManager
 public:
     SkillManager(Player& player) : m_player(player) {}
 
-    bool Add(std::uint8_t index, std::uint8_t level);
+    Skill* Add(std::uint8_t index, std::uint8_t level);
     void Reset() { m_skills.clear(); }
     Skill* GetByIndex(std::uint8_t index) const;
 };

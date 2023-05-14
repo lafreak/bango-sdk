@@ -48,6 +48,18 @@ std::uint16_t Character::GetResist(std::uint8_t type) const
     }
 }
 
+void Character::UpdatePropertyPoint(std::uint8_t kind, std::int64_t value)
+{
+    switch (kind)
+    {
+    case P_HIT:
+        m_property_point.nHit += value;
+        break;
+    default:
+        throw std::runtime_error("not implemented");
+    }
+}
+
 bool Character::CanAttack(const Character& target) const
 {
     if (target.GetCurHP() <= 0)
@@ -129,6 +141,8 @@ void Character::ResetStates()
     m_gstate_ex = 0;
     m_mstate = 0;
     m_mstate_ex = 0;
+
+    std::memset(&m_property_point,  0, sizeof(m_property_point));
 }
 
 void Character::ReceiveDamage(id_t id, std::uint32_t damage)
