@@ -219,6 +219,41 @@ struct BASEPROPERTY
 	int nMP;
 };
 
+struct PROPERTY_PT
+{
+    BASEPROPERTY nPt;
+    int nHit;
+    int nDodge;
+    int nMinAttack;
+    int nMaxAttack;
+    int nMinMagic;
+    int nMaxMagic;
+    int nDefense[2];
+    int nAbsorb;
+    int nASpeed;
+    int nResist[5];
+    int nFatal;
+    int nMortal;
+};
+
+struct PROPERTY_PER
+{
+    BASEPROPERTY nPer;
+    int nHit;
+    int nDodge;
+    int nMinAttack;
+    int nMaxAttack;
+    int nMinMagic;
+    int nMaxMagic;
+    int nDefense[2];
+    int nAbsorb;
+    int nASpeed;
+    int nFatal;
+    int nMSpeed;
+    int nBlock;
+    int nHost;
+};
+
 #define GAME_HERO 0x80
 
 static BASEPROPERTY g_baseproperty[] = {

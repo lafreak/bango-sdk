@@ -122,8 +122,11 @@ void Player::OnLoadSkills(packet& p)
         auto index = p.pop<std::uint8_t>();
         auto level = p.pop<std::uint8_t>();
 
-        if (!m_skills.Add(index, level))
+        auto skill = m_skills.Add(index, level);
+        if (!skill)
             std::runtime_error("cannot load skill");  // TODO
+
+        skill->OnApply();
 
         spdlog::info("Player {} loaded skill of index {} at grade {}", GetName(), index, level);
 
@@ -553,6 +556,8 @@ void Player::SendProperty(std::uint8_t kind, std::int64_t amount) const
             write(S2C_UPDATEPROPERTY, "bw",     P_ABSORB, GetAbsorb()); break;
         case P_DEFENSE:
             write(S2C_UPDATEPROPERTY, "bww",    P_DEFENSE, GetDefense(), GetDefense()); break;
+        case P_HIT:
+            write(S2C_UPDATEPROPERTY, "bw",     P_HIT, GetHit()); break;
         case P_DODGE:
             write(S2C_UPDATEPROPERTY, "bww",    P_DODGE, GetDodge(), GetDodge()); break;
         case P_PUPOINT:
@@ -585,6 +590,21 @@ void Player::SaveAllProperty() const
         << GetRage();
     Socket::DBClient().write(p);
 }
+
+void Player::UpdatePropertyPoint(std::uint8_t kind, std::int64_t value)
+{
+    Character::UpdatePropertyPoint(kind, value);
+
+    switch (kind)
+    {
+    case P_HIT:
+        SendProperty(P_HIT);
+        break;
+    default:
+        throw std::runtime_error("not implemented");
+    }
+}
+
 std::uint16_t Player::GetReqPU(std::uint8_t* stats)
 {
 	std::uint16_t req=0;
@@ -846,8 +866,10 @@ void Player::OnSkillUp(bango::network::packet& p)
     if (!skill)
         return;
 
+    auto previous_level = skill->GetLevel();
+
     // Upgrade skill
-    skill->SetLevel(skill->GetLevel() + 1);
+    skill->SetLevel(previous_level + 1);
 
     // Save skill grade to database
     Socket::DBClient().write(S2D_SKILLUP, "dbbw", GetPID(), index, skill->GetLevel(), --m_data.SUPoint);
@@ -857,6 +879,9 @@ void Player::OnSkillUp(bango::network::packet& p)
 
     // Update skill points on the client side
     SendProperty(P_SUPOINT);
+
+    // Reflect on passive skill properties
+    skill->OnApply(previous_level);
 
     spdlog::info("Player {} upgraded skill of index {} to level {}", GetName(), index, skill->GetLevel());
 }
@@ -872,13 +897,16 @@ void Player::OnLearnSkill(bango::network::packet& p)
     if (skill)
         return;
 
-    if(!m_skills.Add(index, 1))
+    skill = m_skills.Add(index, 1);
+    if (!skill)
         throw std::runtime_error("cannot learn skill");
 
     Socket::DBClient().write(S2D_LEARNSKILL, "dbw", GetPID(), index, --m_data.SUPoint);
 
     write(S2C_SKILLUP, "bb", index, 1);
     SendProperty(P_SUPOINT);
+
+    skill->OnApply();
 
     spdlog::info("Player {} learned skill of index {}", GetName(), index);
 }

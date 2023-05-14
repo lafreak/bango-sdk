@@ -138,6 +138,8 @@ public:
     std::uint32_t       GetHonorGrade() const { return 0; }
     std::uint32_t       GetHonorOption()const { return 0; }
 
+    virtual void UpdatePropertyPoint(std::uint8_t kind, std::int64_t value) override;
+
     bool CanLogout() const { return true; }
     void SendInventoryProperty() const;
     void SendProperty(std::uint8_t kind, std::int64_t amount = 0) const;
