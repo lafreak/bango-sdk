@@ -69,23 +69,38 @@ public:
     virtual void OnApply(std::uint8_t previous_level=0) {}
 };
 
-class Behead : public Skill
+class SingleTargetSkill : public Skill
 {
 public:
     using Skill::Skill;
 
     void Execute(bango::network::packet& packet) override;
     bool CanExecute(const Character& target) const override;
+    virtual void ExecuteSpecificBehavior(Character& target) = 0;
+    virtual std::uint16_t GetAttack() const = 0;
 };
 
-class PhysicalSkill : public Skill
+class Behead : public SingleTargetSkill
 {
 public:
-    using Skill::Skill;
+    using SingleTargetSkill::SingleTargetSkill;
 
-    void Execute(bango::network::packet& packet) override;
     bool CanExecute(const Character& target) const override;
-    virtual std::uint16_t GetAttack() const { return GetCaster().GetAttack(); }
+    void ExecuteSpecificBehavior(Character& target) override;
+    std::uint16_t GetAttack() const override { return 0; }
+};
+
+class PhysicalSkill : public SingleTargetSkill
+{
+    using SingleTargetSkill::SingleTargetSkill;
+    void ExecuteSpecificBehavior(Character& target) override;
+};
+
+class MagicSkill : public SingleTargetSkill
+{
+    //TODO: damage for mage skills and damage reduction based on resistances.
+    using SingleTargetSkill::SingleTargetSkill;
+    void ExecuteSpecificBehavior(Character& target) override;
 };
 
 class StaggeringBlow : public PhysicalSkill
@@ -106,6 +121,36 @@ public:
     using Skill::Skill;
 
     void OnApply(std::uint8_t previous_level=0) override;
+};
+
+class LightningSlash : public PhysicalSkill
+{
+public:
+    using PhysicalSkill::PhysicalSkill;
+
+    std::uint16_t GetAttack() const override;
+};
+
+class LightningMagic : public MagicSkill
+{
+    using MagicSkill::MagicSkill;
+
+    std::uint16_t GetAttack() const override;
+};
+
+class IceMagic : public MagicSkill
+{
+    using MagicSkill::MagicSkill;
+
+    std::uint16_t GetAttack() const override;
+    // TODO: Implement Ice Mastery interaction
+};
+
+class FireMagic : public MagicSkill
+{
+    using MagicSkill::MagicSkill;
+
+    std::uint16_t GetAttack() const override;
 };
 
 class SkillManager
