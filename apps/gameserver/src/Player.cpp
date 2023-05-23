@@ -1147,3 +1147,8 @@ void Player::LevelUp()
     ApplyVisualEffect(E_LEVELUP);
     //m_data.Exp = 0;
 }
+
+void Player::PrivateNotice (std::string message)
+{
+    write(packet(S2C_NOTICE, "s", message.c_str()));
+}
