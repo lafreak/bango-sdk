@@ -177,4 +177,5 @@ public:
     bool CanReceiveExp();  // TODO: Make use of it
     std::uint64_t CalculateExp(std::uint64_t exp, std::uint8_t monster_level);
     void LevelUp();
+    void PrivateNotice(std::string message);
 };
