@@ -77,7 +77,6 @@ public:
     void Execute(bango::network::packet& packet) override;
     bool CanExecute(const Character& target) const override;
     virtual void ExecuteSpecificBehavior(Character& target) = 0;
-    virtual std::uint16_t GetAttack() const = 0;
 };
 
 class Behead : public SingleTargetSkill
@@ -87,20 +86,23 @@ public:
 
     bool CanExecute(const Character& target) const override;
     void ExecuteSpecificBehavior(Character& target) override;
-    std::uint16_t GetAttack() const override { return 0; }
 };
 
 class PhysicalSkill : public SingleTargetSkill
 {
+public:
     using SingleTargetSkill::SingleTargetSkill;
     void ExecuteSpecificBehavior(Character& target) override;
+    virtual std::uint16_t GetAttack() const { return GetCaster().GetAttack(); }
 };
 
 class MagicSkill : public SingleTargetSkill
 {
+public:
     //TODO: damage for mage skills and damage reduction based on resistances.
     using SingleTargetSkill::SingleTargetSkill;
     void ExecuteSpecificBehavior(Character& target) override;
+    virtual std::uint16_t GetMagic() const { return GetCaster().GetMagic(); }
 };
 
 class StaggeringBlow : public PhysicalSkill
@@ -135,14 +137,14 @@ class LightningMagic : public MagicSkill
 {
     using MagicSkill::MagicSkill;
 
-    std::uint16_t GetAttack() const override;
+    std::uint16_t GetMagic() const override;
 };
 
 class IceMagic : public MagicSkill
 {
     using MagicSkill::MagicSkill;
 
-    std::uint16_t GetAttack() const override;
+    std::uint16_t GetMagic() const override;
     // TODO: Implement Ice Mastery interaction
 };
 
@@ -150,7 +152,7 @@ class FireMagic : public MagicSkill
 {
     using MagicSkill::MagicSkill;
 
-    std::uint16_t GetAttack() const override;
+    std::uint16_t GetMagic() const override;
 };
 
 class SkillManager

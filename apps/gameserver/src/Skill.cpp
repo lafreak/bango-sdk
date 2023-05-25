@@ -128,7 +128,9 @@ std::unique_ptr<Skill> SkillManager::CreateSkill(std::uint8_t index, std::uint8_
     case PC_MAGE:
         switch (index)
         {
-        case SM_LIGHTNING_MAGIC: return MAKE_SKILL_TYPE(LightningMagic);
+        case SM_FIRE_MAGIC: return MAKE_SKILL_TYPE(LightningMagic);
+        case SM_ICE_MAGIC: return MAKE_SKILL_TYPE(IceMagic);
+        case SM_LIGHTNING_MAGIC: return MAKE_SKILL_TYPE(FireMagic);
         default:
             break;
         }
@@ -186,40 +188,6 @@ bool Behead::CanExecute(const Character& target) const
         && target.GetType() == Character::MONSTER;
 }
 
-// void Behead::Execute(bango::network::packet& p)
-// {
-//     spdlog::info("Want to behead!");
-
-//     auto kind = p.pop<std::uint8_t>();
-//     auto id = p.pop<Character::id_t>();
-
-//     if (kind != CK_MONSTER)
-//         return;
-
-//     // TODO: Separate out to SingleTargetSkill which will find character on map automatically and remove duplicated code?
-//     World::ForCharacterInMap(GetCaster().GetMap(), WorldMap::QK_MONSTER, id, [&](Character& target)
-//     {
-//         auto lock = target.Lock();
-
-//         if (!CanExecute(target))
-//             return;
-
-//         target.AddGState(CGS_KO);
-//         target.SubGState(CGS_KNEE);
-//         target.WriteInSight(packet(S2C_ACTION, "db", target.GetID(), AT_DIE));
-
-//         std::uint8_t is_damage = 0;
-//         GetCaster().WriteInSight(packet(S2C_SKILL, "bddbb",
-//             GetIndex(),
-//             GetCaster().GetID(),
-//             target.GetID(),
-//             is_damage,
-//             GetLevel()));
-
-//         // TODO: Restore caster HP/MP in threadsafe manner
-//     });
-// }
-
 bool SingleTargetSkill::CanExecute(const Character& target) const
 {
     return Skill::CanExecute(target) && GetCaster().GetID() != target.GetID();
@@ -276,7 +244,7 @@ void PhysicalSkill::ExecuteSpecificBehavior(Character& target)
         GetCaster().GetID(),
         target.GetID(),
         is_damage,
-        GetLevel(), 
+        GetLevel(),
         damage,
         explosive_blow,
         target.GetType()));
@@ -284,7 +252,7 @@ void PhysicalSkill::ExecuteSpecificBehavior(Character& target)
 
 void MagicSkill::ExecuteSpecificBehavior(Character& target)
 {
-    std::int16_t damage = GetAttack(/*TODO: revise tick*/);
+    std::int16_t damage = GetMagic(/*TODO: revise tick*/);
     if ((uint64_t)damage > target.GetCurHP())
         damage = target.GetCurHP();
 
@@ -302,7 +270,7 @@ void MagicSkill::ExecuteSpecificBehavior(Character& target)
         GetCaster().GetID(),
         target.GetID(),
         is_damage,
-        GetLevel(), 
+        GetLevel(),
         damage,
         explosive_blow,
         target.GetType()));
@@ -330,7 +298,8 @@ std::uint16_t StaggeringBlow::GetAttack() const
     std::uint16_t max_add_attack = 70 * GetLevel() + 200;
     std::uint16_t add_attack = 7 * GetLevel() * GetCaster().GetDexterity() / 4 / 2 + 50;
 
-    return std::min(add_attack, max_add_attack) + GetCaster().GetAttack();
+
+    return std::min(add_attack, max_add_attack) + PhysicalSkill::GetAttack();
 }
 
 void WeaponMastery::OnApply(std::uint8_t previous_level)
@@ -347,24 +316,40 @@ std::uint16_t LightningSlash::GetAttack() const
     return GetCaster().GetAttack() + 8 * GetLevel();
 }
 
-std::uint16_t LightningMagic::GetAttack() const
+//TODO: this 3 methods code is redundant
+std::uint16_t LightningMagic::GetMagic() const
 {
-    int level_multiply = 3 * GetCaster().GetLevel() / 2;
-    int min = (level_multiply + 2 * GetLevel() * GetCaster().GetInteligence() / 16) / 2;
-    int max = min; // TODO: GetPrtyMagic from lightning mastery
+    std::uint16_t level_multiply = 3 * GetCaster().GetLevel() / 2;
+    std::uint16_t min_add_magic = (level_multiply + 2 * GetLevel() * GetCaster().GetInteligence() / 16) / 2;
+    std::uint16_t max_add_magic = min_add_magic; // TODO: GetPropertyPoint from lightning mastery
 
-    min = std::min(min, 12 * GetLevel() + 30);
-    max = std::min(12 * GetLevel() + 180, max);
+    std::uint16_t min_add_magic_limit = 12 * GetLevel() + 30;
+    std::uint16_t max_add_magic_limit = 12 * GetLevel() + 180;
 
-    return GetCaster().GetMagic() + bango::utils::random::between(min, max);
+    min_add_magic = std::min(min_add_magic, min_add_magic_limit);
+    max_add_magic = std::min(max_add_magic, max_add_magic_limit);
+
+    std::uint16_t damage = bango::utils::random::between(min_add_magic, max_add_magic) + MagicSkill::GetMagic();
+
+    return damage;
 }
 
-std::uint16_t FireMagic::GetAttack() const
+std::uint16_t FireMagic::GetMagic() const
 {
-    return 100;
+  std::uint16_t level_multiply = 3 * GetCaster().GetLevel() / 2;
+  std::uint16_t add_magic = (level_multiply + 3 * GetLevel() * GetCaster().GetInteligence() / 10) / 2;
+  std::uint16_t max_add_magic = 21 * GetLevel() + 30;
+  std::uint16_t damage = std::min(max_add_magic, add_magic) + MagicSkill::GetMagic() + 2 * GetLevel();
+
+  return damage;
 }
 
-std::uint16_t IceMagic::GetAttack() const
+std::uint16_t IceMagic::GetMagic() const
 {
-    return 100;
+  std::uint16_t level_multiply = 3 * GetCaster().GetLevel() / 2;
+  std::uint16_t add_magic = (level_multiply + 3 * GetLevel() * GetCaster().GetInteligence() / 13) / 2;
+  std::uint16_t max_add_magic = 16 * GetLevel() + 30;
+  std::uint16_t damage = std::min(max_add_magic, add_magic) + MagicSkill::GetMagic();
+
+  return damage;
 }
